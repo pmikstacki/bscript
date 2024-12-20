@@ -1,0 +1,70 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{870D9301-BE3D-44EA-BF9C-FCC2E87FE4CD}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		solution-helper.psm1 = solution-helper.psm1
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hyperbee.ExpressionScript", "src\Hyperbee.ExpressionScript\Hyperbee.ExpressionScript.csproj", "{6725FAD8-FADC-413A-B352-0CF583DD1CC2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Tests", "Solution Tests", "{F9B24CD9-E06B-4834-84CB-8C29E5F10BE0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{1FA7CE2A-C9DA-4DC3-A242-5A7EAF8EE4FC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{4DBDB7F5-3F66-4572-80B5-3322449C77A4}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\create-release.yml = .github\workflows\create-release.yml
+		.github\workflows\format.yml = .github\workflows\format.yml
+		.github\workflows\issue-branch.yml = .github\workflows\issue-branch.yml
+		.github\workflows\publish.yml = .github\workflows\publish.yml
+		.github\workflows\test-report.yml = .github\workflows\test-report.yml
+		.github\workflows\test.yml = .github\workflows\test.yml
+	EndProjectSection
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "docs", "docs\docs.shproj", "{FC3B0A95-4DA0-43A0-A19D-624152BDF2F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hyperbee.ExpressionScript.Benchmark", "test\Hyperbee.ExpressionScript.Benchmark\Hyperbee.ExpressionScript.Benchmark.csproj", "{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hyperbee.ExpressionScript.Tests", "test\Hyperbee.ExpressionScript.Tests\Hyperbee.ExpressionScript.Tests.csproj", "{97558B51-39FB-44DE-950B-8A371F1681D2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6725FAD8-FADC-413A-B352-0CF583DD1CC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6725FAD8-FADC-413A-B352-0CF583DD1CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6725FAD8-FADC-413A-B352-0CF583DD1CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6725FAD8-FADC-413A-B352-0CF583DD1CC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97558B51-39FB-44DE-950B-8A371F1681D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97558B51-39FB-44DE-950B-8A371F1681D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97558B51-39FB-44DE-950B-8A371F1681D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97558B51-39FB-44DE-950B-8A371F1681D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1FA7CE2A-C9DA-4DC3-A242-5A7EAF8EE4FC} = {870D9301-BE3D-44EA-BF9C-FCC2E87FE4CD}
+		{4DBDB7F5-3F66-4572-80B5-3322449C77A4} = {1FA7CE2A-C9DA-4DC3-A242-5A7EAF8EE4FC}
+		{FC3B0A95-4DA0-43A0-A19D-624152BDF2F6} = {870D9301-BE3D-44EA-BF9C-FCC2E87FE4CD}
+		{09C6AF13-7D3D-491C-87B1-4BA9B598D5ED} = {F9B24CD9-E06B-4834-84CB-8C29E5F10BE0}
+		{97558B51-39FB-44DE-950B-8A371F1681D2} = {F9B24CD9-E06B-4834-84CB-8C29E5F10BE0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {32874F5B-B467-4F28-A8E2-82C2536FB228}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		docs\docs.projitems*{fc3b0a95-4da0-43a0-a19d-624152bdf2f6}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal

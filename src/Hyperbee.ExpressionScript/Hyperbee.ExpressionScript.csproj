@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+
+    <Authors>Stillpoint Software, Inc.</Authors>
+    <PackageId>Hyperbee.ExpressionScript</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>expressions;script</PackageTags>
+
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://stillpoint-software.github.io/hyperbee.expressionscript/</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Copyright>Stillpoint Software, Inc.</Copyright>
+    <Title>Hyperbee Expression Script</Title>
+    <Description>ExpressionScript (ES) is a minimalist scripting language for .NET Expression Trees.</Description>
+    <RepositoryUrl>https://github.com/Stillpoint-Software/Hyperbee.ExpressionScript</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>https://github.com/Stillpoint-Software/Hyperbee.ExpressionScript/releases/latest</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="$(MSBuildProjectName).csproj.DotSettings" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Benchmark</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\assets\icon.png" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="..\..\README.md" Pack="true" Visible="true" PackagePath="/" Link="README.md" />
+    <None Include="..\..\LICENSE" Pack="true" Visible="false" PackagePath="/" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
