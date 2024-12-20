@@ -33,7 +33,7 @@ public class ExpressionScriptParser
 
     public static Expression Parse( string script )
     {
-        if( Script.TryParse( script, out var result ) )
+        if ( Script.TryParse( script, out var result ) )
         {
             return result;
         }

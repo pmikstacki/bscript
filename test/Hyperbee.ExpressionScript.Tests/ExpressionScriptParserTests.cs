@@ -15,7 +15,7 @@ public class ExpressionScriptParserTests
         var compiled = Lambda( expression );
 
         var r = compiled.Compile();
-        
+
         Assert.IsNotNull( r );
 
         Assert.IsTrue( true );
