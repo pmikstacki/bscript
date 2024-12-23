@@ -10,7 +10,8 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithScript()
     {
-        var expression = ExpressionScriptParser.Parse( "let x = 10" );
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse( "var x = 10;" );
 
         var lambda = Lambda( expression );
 

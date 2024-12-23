@@ -11,45 +11,45 @@ public interface IParserExtension
     void Extend( Parser<Expression> parser );
 }
 
+//public class ExpressionScriptParser
+//{
+//    public static readonly Parser<BinaryExpression> Script;
+
+//    static ExpressionScriptParser()
+//    {
+//        var identifier = Terms.Identifier();
+//        var integerLiteral = Terms.Integer();
+
+//        // Primary expressions
+
+//        var primary = identifier.Then( name => Parameter( typeof(long), name.ToString() ) );
+
+//        // Variable declarations
+
+//        var variableDeclaration = Terms.Text( "let" ).SkipAnd( identifier )
+//            .AndSkip( Terms.Text( "=" ) )
+//            .And( integerLiteral ).Then( parts =>
+//            {
+
+//                var variable = Parameter( typeof(long), parts.Item1.ToString() );
+//                return Assign( variable, Constant( parts.Item2 ) );
+//            } );
+
+//        Script = variableDeclaration;
+//    }
+
+//    public static Expression Parse( string script )
+//    {
+//        if ( Script.TryParse( script, out var result ) )
+//        {
+//            return result;
+//        }
+
+//        return null;
+//    }
+//}
+
 public class ExpressionScriptParser
-{
-    public static readonly Parser<BinaryExpression> Script;
-
-    static ExpressionScriptParser()
-    {
-        var identifier = Terms.Identifier();
-        var integerLiteral = Terms.Integer();
-
-        // Primary expressions
-
-        var primary = identifier.Then( name => Parameter( typeof(long), name.ToString() ) );
-
-        // Variable declarations
-
-        var variableDeclaration = Terms.Text( "let" ).SkipAnd( identifier )
-            .AndSkip( Terms.Text( "=" ) )
-            .And( integerLiteral ).Then( parts =>
-            {
-
-                var variable = Parameter( typeof(long), parts.Item1.ToString() );
-                return Assign( variable, Constant( parts.Item2 ) );
-            } );
-
-        Script = variableDeclaration;
-    }
-
-    public static Expression Parse( string script )
-    {
-        if ( Script.TryParse( script, out var result ) )
-        {
-            return result;
-        }
-
-        return null;
-    }
-}
-
-public class ExpressionScriptParser1
 {
     private Parser<Expression> _parser;
     //private readonly List<IParserExtension> _extensions = [];
@@ -57,7 +57,7 @@ public class ExpressionScriptParser1
 
     private readonly Stack<LoopContext> _loopContexts = new();
 
-    public ExpressionScriptParser1( Dictionary<string, MethodInfo> methodTable = null )
+    public ExpressionScriptParser( Dictionary<string, MethodInfo> methodTable = null )
     {
         _methodTable = methodTable ?? new Dictionary<string, MethodInfo>();
         InitializeParser();
