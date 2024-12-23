@@ -123,7 +123,7 @@ public class ExpressionScriptParser
 
         // Binary Expressions
 
-        var binaryExpression = baseExpression.LeftAssociative( 
+        var binaryExpression = baseExpression.LeftAssociative(
             (Terms.Text( "*" ), Multiply),
             (Terms.Text( "/" ), Divide),
             (Terms.Text( "+" ), Add),
@@ -136,11 +136,11 @@ public class ExpressionScriptParser
             (Terms.Text( ">=" ), GreaterThanOrEqual),
             (Terms.Text( "&&" ), AndAlso),
             (Terms.Text( "||" ), OrElse),
-            (Terms.Text( "??" ), Coalesce )
+            (Terms.Text( "??" ), Coalesce)
         );
 
         // Postfix Expressions
-        var postfixOperators = OneOf(Terms.Text( "++" ), Terms.Text( "--" ) );
+        var postfixOperators = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) );
 
         var postfixExpression = identifier
             //.AndSkip( Literals.WhiteSpace() )
@@ -219,7 +219,7 @@ public class ExpressionScriptParser
         _script = ZeroOrMany( statement.AndSkip( Terms.Char( ';' ) ) )
             .Then<Expression>( x => Block(
                 _variableTable.Values,
-                x ) 
+                x )
             );
 
     }
@@ -230,7 +230,8 @@ public class ExpressionScriptParser
             .SkipAnd( Terms.Identifier() )
             .AndSkip( Terms.Text( "=" ) )
             .And( expression )
-            .Then<Expression>( parts => {
+            .Then<Expression>( parts =>
+            {
                 var variable = Variable( parts.Item2.Type, parts.Item1.ToString() );
                 _variableTable.Add( parts.Item1.ToString(), variable );
 

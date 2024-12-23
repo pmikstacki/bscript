@@ -89,7 +89,7 @@ public class ExpressionScriptParserTests
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual( 36,  result );
+        Assert.AreEqual( 36, result );
     }
 
     [TestMethod]
