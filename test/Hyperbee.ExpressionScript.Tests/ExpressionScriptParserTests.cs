@@ -12,11 +12,11 @@ public class ExpressionScriptParserTests
     {
         var expression = ExpressionScriptParser.Parse( "let x = 10" );
 
-        var compiled = Lambda( expression );
+        var lambda = Lambda( expression );
 
-        var r = compiled.Compile();
+        var compiled = lambda.Compile();
 
-        Assert.IsNotNull( r );
+        Assert.IsNotNull( compiled );
 
         Assert.IsTrue( true );
     }
