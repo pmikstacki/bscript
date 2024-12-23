@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
@@ -100,7 +100,7 @@ public class ExpressionScriptParser
 
         // Unary Expressions
         var unaryOperators = Terms.Text( "!" ).Or( Terms.Text( "-" ) );
-        
+
         var unaryExpression = unaryOperators
             .And( expression )
             .Then<Expression>( parts =>
@@ -330,7 +330,7 @@ public class ExpressionScriptParser
             {
                 var condition = parts.Item1;
                 var ifTrue = Block( parts.Item2 );
-                var ifFalse = parts.Item3 ?? Default( typeof(void) );
+                var ifFalse = parts.Item3 ?? Default( typeof( void ) );
 
                 return Condition( condition, ifTrue, ifFalse );
             } );
@@ -370,8 +370,8 @@ public class ExpressionScriptParser
             )
             .Then<Expression>( parts =>
             {
-                var breakLabel = Label( typeof(void), "Break" );
-                var continueLabel = Label( typeof(void), "Continue" );
+                var breakLabel = Label( typeof( void ), "Break" );
+                var continueLabel = Label( typeof( void ), "Continue" );
                 _loopContexts.Push( new LoopContext( breakLabel, continueLabel ) );
                 try
                 {
@@ -407,7 +407,7 @@ public class ExpressionScriptParser
             .Then<Expression>( parts =>
             {
                 // Implement switch parsing logic here
-                return Default( typeof(void) ); //BF TODO Placeholder
+                return Default( typeof( void ) ); //BF TODO Placeholder
             } );
 
         return parser;
@@ -436,7 +436,7 @@ public class ExpressionScriptParser
                                     .Then( parts =>
                                     {
                                         // Build the exception parameter (or null if not provided)
-                                        var exceptionType = Type.GetType( parts.Item1.ToString() ) ?? typeof(Exception); //BF we probably need a resolver here to resolve the type
+                                        var exceptionType = Type.GetType( parts.Item1.ToString() ) ?? typeof( Exception ); //BF we probably need a resolver here to resolve the type
                                         var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, parts.Item2.ToString() ) : null;
                                         return exceptionVariable;
                                     } )
