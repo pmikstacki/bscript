@@ -51,9 +51,12 @@ public interface IParserExtension
 
 public class ExpressionScriptParser
 {
-    private Parser<Expression> _parser;
+    private Parser<Expression> _script;
     //private readonly List<IParserExtension> _extensions = [];
     private readonly Dictionary<string, MethodInfo> _methodTable;
+
+    // TODO: Add Linked dictionary to push and pop scopes
+    private readonly Dictionary<string, ParameterExpression> _variableTable = [];
 
     private readonly Stack<LoopContext> _loopContexts = new();
 
@@ -72,7 +75,7 @@ public class ExpressionScriptParser
     {
         var scanner = new Parlot.Scanner( script );
         var context = new ParseContext( scanner, useNewLines: true );
-        return _parser.Parse( context );
+        return _script.Parse( context );
     }
 
     // Add Goto
@@ -95,14 +98,21 @@ public class ExpressionScriptParser
         var literal = OneOf( integerLiteral, floatLiteral, stringLiteral, booleanLiteral, nullLiteral );
 
         // Identifiers
-        var identifier = Terms.Identifier()
-            .Then<Expression>( name => Parameter( typeof( object ), name.ToString() ) );
+        var identifier = Terms
+            .Identifier()
+            .Then<Expression>( name => _variableTable[name.ToString()] );
+
+        // Grouped Expressions
+        var groupedExpression = Between( Terms.Char( '(' ), expression, Terms.Char( ')' ) );
+
+        // TODO: Feels like this should be an expression?
+        var baseExpression = OneOf( literal, identifier, groupedExpression );
 
         // Unary Expressions
         var unaryOperators = Terms.Text( "!" ).Or( Terms.Text( "-" ) );
 
         var unaryExpression = unaryOperators
-            .And( expression )
+            .And( baseExpression )
             .Then<Expression>( parts =>
             parts.Item1 switch
             {
@@ -112,57 +122,28 @@ public class ExpressionScriptParser
             } );
 
         // Binary Expressions
-        var binaryOperators = Terms.Text( "+" )
-            .Or( Terms.Text( "-" ) )
-            .Or( Terms.Text( "*" ) )
-            .Or( Terms.Text( "/" ) )
-            .Or( Terms.Text( "%" ) )
-            .Or( Terms.Text( "&&" ) )
-            .Or( Terms.Text( "||" ) )
-            .Or( Terms.Text( "==" ) )
-            .Or( Terms.Text( "!=" ) )
-            .Or( Terms.Text( "<" ) )
-            .Or( Terms.Text( ">" ) )
-            .Or( Terms.Text( "<=" ) )
-            .Or( Terms.Text( ">=" ) )
-            .Or( Terms.Text( "??" ) );
 
-        var binaryExpression = Separated( binaryOperators, expression )
-            .Then( parts =>
-            {
-                var expr = parts[0];
-                for ( var i = 1; i < parts.Count; i += 2 )
-                {
-                    var op = parts[i].ToString();
-                    var right = parts[i + 1];
-
-                    expr = op switch
-                    {
-                        "+" => Add( expr, right ),
-                        "-" => Subtract( expr, right ),
-                        "*" => Multiply( expr, right ),
-                        "/" => Divide( expr, right ),
-                        "%" => Modulo( expr, right ),
-                        "&&" => AndAlso( expr, right ),
-                        "||" => OrElse( expr, right ),
-                        "==" => Equal( expr, right ),
-                        "!=" => NotEqual( expr, right ),
-                        "<" => LessThan( expr, right ),
-                        ">" => GreaterThan( expr, right ),
-                        "<=" => LessThanOrEqual( expr, right ),
-                        ">=" => GreaterThanOrEqual( expr, right ),
-                        "??" => Coalesce( expr, right ),
-                        _ => throw new InvalidOperationException( $"Unsupported operator: {op}" )
-                    };
-                }
-
-                return expr;
-            } );
+        var binaryExpression = baseExpression.LeftAssociative( 
+            (Terms.Text( "*" ), Multiply),
+            (Terms.Text( "/" ), Divide),
+            (Terms.Text( "+" ), Add),
+            (Terms.Text( "-" ), Subtract),
+            (Terms.Text( "==" ), Equal),
+            (Terms.Text( "!=" ), NotEqual),
+            (Terms.Text( "<" ), LessThan),
+            (Terms.Text( ">" ), GreaterThan),
+            (Terms.Text( "<=" ), LessThanOrEqual),
+            (Terms.Text( ">=" ), GreaterThanOrEqual),
+            (Terms.Text( "&&" ), AndAlso),
+            (Terms.Text( "||" ), OrElse),
+            (Terms.Text( "??" ), Coalesce )
+        );
 
         // Postfix Expressions
-        var postfixOperators = Terms.Text( "++" ).Or( Terms.Text( "--" ) );
+        var postfixOperators = OneOf(Terms.Text( "++" ), Terms.Text( "--" ) );
 
         var postfixExpression = identifier
+            //.AndSkip( Literals.WhiteSpace() )
             .And( postfixOperators )
             .Then<Expression>( parts =>
             parts.Item2 switch
@@ -172,23 +153,8 @@ public class ExpressionScriptParser
                 _ => throw new Exception( "Invalid postfix operator." )
             } );
 
-        // Grouped Expressions
-        var groupedExpression = Between( Terms.Char( '(' ), expression, Terms.Char( ')' ) );
-
-        // Combine Parsers into Expression
-        expression.Parser = literal
-            .Or( postfixExpression )
-            .Or( groupedExpression )
-            .Or( unaryExpression )
-            .Or( binaryExpression )
-            .Or( identifier );
-
         // Variable Declarations
-        var varDeclaration = Terms.Text( "var" ) //BF var is declaration plus assignment. we need to also support assignment without var.
-            .SkipAnd( identifier )
-            .AndSkip( Terms.Text( "=" ) )
-            .And( expression )
-            .Then<Expression>( parts => Assign( parts.Item1, parts.Item2 ) );
+        var varDeclaration = DeclareVariableParser( expression );
 
         // Assignments
         var assignmentOperators = Terms.Text( "=" )
@@ -216,6 +182,15 @@ public class ExpressionScriptParser
                 };
             } );
 
+        // Combine Parsers into Expression
+        expression.Parser = OneOf(
+            varDeclaration,
+            binaryExpression,
+            unaryExpression,
+            postfixExpression,
+            baseExpression );
+
+        /*
         // Statements
 
         var conditionalStatement = ConditionalParser( expression );
@@ -236,9 +211,31 @@ public class ExpressionScriptParser
             .Or( lambdaInvocation )
             .Or( tryCatchStatement )
             .Or( expression );
+        */
+
+        var statement = expression;
 
         // Script Parsing
-        _parser = ZeroOrMany( statement.AndSkip( Terms.Char( ';' ) ) ).Then<Expression>( Block );
+        _script = ZeroOrMany( statement.AndSkip( Terms.Char( ';' ) ) )
+            .Then<Expression>( x => Block(
+                _variableTable.Values,
+                x ) 
+            );
+
+    }
+
+    private Parser<Expression> DeclareVariableParser( Deferred<Expression> expression )
+    {
+        return Terms.Text( "var" )
+            .SkipAnd( Terms.Identifier() )
+            .AndSkip( Terms.Text( "=" ) )
+            .And( expression )
+            .Then<Expression>( parts => {
+                var variable = Variable( parts.Item2.Type, parts.Item1.ToString() );
+                _variableTable.Add( parts.Item1.ToString(), variable );
+
+                return Assign( variable, parts.Item2 );
+            } );
     }
 
     private Parser<Expression> MethodCallParser( Deferred<Expression> expression, Parser<Expression> identifier )

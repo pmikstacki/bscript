@@ -1,8 +1,8 @@
-﻿# ExpressionScript (ES) Language Specification
+﻿# e***X***pression***S***cript (***XS***) Language :rocket:
 
 ## 1. Summary of Objectives
 
-ExpressionScript (ES) is a minimalist scripting language designed to:
+e***X***pression***S***cript (***XS***) is a minimalist scripting language designed to:
 
 1. **Map directly to `System.Linq.Expressions`**:
    - Every construct in ES aligns conceptually and functionally with `System.Linq.Expressions` APIs.
