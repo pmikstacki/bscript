@@ -163,12 +163,25 @@ public class ExpressionScriptParserTests
         Assert.AreEqual( 20, result );
     }
 
-
     [TestMethod]
-    public void Compile_ShouldSucceed_WithVariableAndPostFixResult()
+    public void Compile_ShouldSucceed_WithVariableAndPostResult()
     {
         var parser = new ExpressionScriptParser();
-        var expression = parser.Parse( "var x = 10; x ++;" );
+        var expression = parser.Parse( "var x = 10; x++;" );
+
+        var lambda = Lambda<Func<long>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result ); // x++ returns the value before increment
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableAndPrefixResult()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse( "var x = 10; ++x;" ); 
 
         var lambda = Lambda<Func<long>>( expression );
 
