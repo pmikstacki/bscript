@@ -57,7 +57,8 @@ public class ExpressionScriptParser
         var expression = Deferred<Expression>();
 
         // Literals
-        var integerLiteral = Terms.Integer().Then<Expression>( value => Constant( value ) );
+        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
+        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var floatLiteral = Terms.Decimal( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var stringLiteral = Terms.String().Then<Expression>( value => Constant( value ) );
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( value => Constant( bool.Parse( value ) ) );
@@ -65,6 +66,7 @@ public class ExpressionScriptParser
 
         var literal = OneOf(
             integerLiteral,
+            longLiteral,
             floatLiteral,
             stringLiteral,
             booleanLiteral,

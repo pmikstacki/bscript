@@ -14,7 +14,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "5;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -28,7 +28,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "-1 + 3;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -70,7 +70,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "10 + 12;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -84,7 +84,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "10 + 12 + 14;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -98,7 +98,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "(10 + 12) * 2;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -112,7 +112,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "(10 + 12) * (1 + 1);" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -155,7 +155,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "var x = 10; x + 10;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -169,7 +169,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "var x = 10; x++;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
@@ -183,7 +183,7 @@ public class ExpressionScriptParserTests
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse( "var x = 10; ++x;" );
 
-        var lambda = Lambda<Func<long>>( expression );
+        var lambda = Lambda<Func<int>>( expression );
 
         var compiled = lambda.Compile();
         var result = compiled();
