@@ -81,13 +81,14 @@ public class ExpressionScriptParser
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
-                var variable = _variableTable[parts.Item2.ToString()!];
                 var op = parts.Item1.ToString();
+                var variable = _variableTable[parts.Item2.ToString()!];
+
                 return op switch
                 {
                     "++" => PreIncrementAssign( variable ),
                     "--" => PreDecrementAssign( variable ),
-                    _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
+                    _ => throw new InvalidOperationException( $"Unsupported prefix operator: {op}." )
                 };
             } );
 
@@ -95,13 +96,14 @@ public class ExpressionScriptParser
             .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
             .Then<Expression>( parts =>
             {
-                var variable = _variableTable[parts.Item1.ToString()!];
                 var op = parts.Item2.ToString();
+                var variable = _variableTable[parts.Item1.ToString()!];
+
                 return op switch
                 {
                     "++" => PostIncrementAssign( variable ),
                     "--" => PostDecrementAssign( variable ),
-                    _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
+                    _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
                 };
             } );
 
