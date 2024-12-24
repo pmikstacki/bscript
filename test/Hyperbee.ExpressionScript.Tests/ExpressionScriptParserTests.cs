@@ -223,7 +223,7 @@ public class ExpressionScriptParserTests
     public void Compile_ShouldSucceed_WithConditional()
     {
         var parser = new ExpressionScriptParser();
-        var expression = parser.Parse( 
+        var expression = parser.Parse(
         """
         if (true)
         {

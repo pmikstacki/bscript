@@ -43,7 +43,7 @@ public class ExpressionScriptParser
         {
             var scanner = new Parlot.Scanner( script );
             var context = new ParseContext( scanner );
-     
+
             return _xs.Parse( context );
         }
     }
@@ -174,21 +174,21 @@ public class ExpressionScriptParser
                 _variableTable.Add( left.ToString()!, variable );
 
                 return Assign( variable, right );
-            } 
+            }
         ).Named( "declaration" );
 
         // Assignments
 
         var assignment =
             Terms.Identifier()
-            .And( 
-                SkipWhiteSpace( 
+            .And(
+                SkipWhiteSpace(
                     Terms.Text( "=" )
                     .Or( Terms.Text( "+=" ) )
                     .Or( Terms.Text( "-=" ) )
                     .Or( Terms.Text( "*=" ) )
-                    .Or( Terms.Text( "/=" ) ) 
-                ) 
+                    .Or( Terms.Text( "/=" ) )
+                )
             )
             .And( expression )
             .Then<Expression>( parts =>
@@ -206,7 +206,7 @@ public class ExpressionScriptParser
                         "/=" => DivideAssign( left, right ),
                         _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
                     };
-                } 
+                }
             ).Named( "assignment" );
 
         // Statements
@@ -232,8 +232,8 @@ public class ExpressionScriptParser
 
         var complexStatement = OneOf(
             conditionalStatement
-            //loopStatement
-            //switchStatement
+        //loopStatement
+        //switchStatement
         ).Named( "complex-statement" );
 
         var simpleStatement = OneOf(
@@ -246,13 +246,13 @@ public class ExpressionScriptParser
         expression.Parser = OneOf(
             complexStatement,
             simpleStatement,
-            binaryExpression 
+            binaryExpression
         );
 
         _xs = ZeroOrMany( expression )
             .Then<Expression>( expressions => Block(
                 _variableTable.Items().Select( kvp => kvp.Value ),
-                expressions 
+                expressions
             ) );
     }
 
@@ -349,14 +349,14 @@ public class ExpressionScriptParser
                 var ifTrue = trueExprs.Length > 1
                     ? Block( trueExprs )
                     : trueExprs[0];
-                
+
                 var falseExprs = parts.Item3.ToArray();
 
                 var ifFalse = falseExprs.Length > 1
                     ? Block( falseExprs )
                     : falseExprs[0];
 
-                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof(void);
+                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
                 var condition = Condition( test, ifTrue!, ifFalse!, type );
                 return condition; //BF looks ok here
