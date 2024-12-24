@@ -58,7 +58,7 @@ public class ExpressionScriptParser
         var expression = Deferred<Expression>();
 
         // Literals
-        
+
         var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
@@ -177,13 +177,13 @@ public class ExpressionScriptParser
 
         // Assignments
 
-        var assignment =  
+        var assignment =
             Terms.Identifier()
             .And( SkipWhiteSpace( Terms.Text( "=" )
                 .Or( Terms.Text( "+=" ) )
                 .Or( Terms.Text( "-=" ) )
                 .Or( Terms.Text( "*=" ) )
-                .Or( Terms.Text( "/=" ) ) 
+                .Or( Terms.Text( "/=" ) )
             ) )
             .And( expression )
             .Then<Expression>( parts =>
