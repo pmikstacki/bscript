@@ -37,7 +37,7 @@ public class ExpressionScriptParser
 
     public Expression Parse( string script )
     {
-        using ( _variableTable.Enter( default ) ) 
+        using ( _variableTable.Enter( default ) )
         {
             var scanner = new Parlot.Scanner( script );
             var context = new ParseContext( scanner, useNewLines: true );
@@ -63,12 +63,12 @@ public class ExpressionScriptParser
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( value => Constant( bool.Parse( value ) ) );
         var nullLiteral = Terms.Text( "null" ).Then<Expression>( _ => Constant( null ) );
 
-        var literal = OneOf( 
-            integerLiteral, 
-            floatLiteral, 
-            stringLiteral, 
-            booleanLiteral, 
-            nullLiteral 
+        var literal = OneOf(
+            integerLiteral,
+            floatLiteral,
+            stringLiteral,
+            booleanLiteral,
+            nullLiteral
         );
 
         // Identifiers
@@ -115,18 +115,18 @@ public class ExpressionScriptParser
 
         // Grouped Expressions
 
-        var groupedExpression = Between( 
-            Terms.Char( '(' ), 
-            expression, 
-            Terms.Char( ')' ) 
+        var groupedExpression = Between(
+            Terms.Char( '(' ),
+            expression,
+            Terms.Char( ')' )
         );
 
         // Primary Expressions
 
-        var primaryExpression = OneOf( 
+        var primaryExpression = OneOf(
             literal,
             identifier,
-            groupedExpression 
+            groupedExpression
         );
 
         // Unary Expressions

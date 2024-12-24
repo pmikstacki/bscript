@@ -181,7 +181,7 @@ public class ExpressionScriptParserTests
     public void Compile_ShouldSucceed_WithVariableAndPrefixResult()
     {
         var parser = new ExpressionScriptParser();
-        var expression = parser.Parse( "var x = 10; ++x;" ); 
+        var expression = parser.Parse( "var x = 10; ++x;" );
 
         var lambda = Lambda<Func<long>>( expression );
 
