@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Linq;
 using Hyperbee.Collections;
@@ -41,8 +42,8 @@ public class ExpressionScriptParser
         using ( _variableTable.Enter( default ) )
         {
             var scanner = new Parlot.Scanner( script );
-            var context = new ParseContext( scanner, useNewLines: true );
-
+            var context = new ParseContext( scanner );
+     
             return _xs.Parse( context );
         }
     }
@@ -63,7 +64,7 @@ public class ExpressionScriptParser
         var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
 
-        var stringLiteral = Terms.String().Then<Expression>( value => Constant( value ) );
+        var stringLiteral = Terms.String().Then<Expression>( value => Constant( value.ToString() ) );
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( value => Constant( bool.Parse( value ) ) );
         var nullLiteral = Terms.Text( "null" ).Then<Expression>( _ => Constant( null ) );
 
@@ -74,7 +75,7 @@ public class ExpressionScriptParser
             stringLiteral,
             booleanLiteral,
             nullLiteral
-        );
+        ).Named( "literal" );
 
         // Identifiers
 
@@ -112,10 +113,10 @@ public class ExpressionScriptParser
             } );
 
         var identifier = OneOf(
-            prefixedIdentifier,
-            postfixedIdentifier,
-            primaryIdentifier
-        );
+            prefixedIdentifier.Named( "prefix-identifier" ),
+            postfixedIdentifier.Named( "postfix-identifier" ),
+            primaryIdentifier.Named( "primary-identifier" )
+        ).Named( "identifier" );
 
         // Grouped Expressions
 
@@ -123,7 +124,7 @@ public class ExpressionScriptParser
             Terms.Char( '(' ),
             expression,
             Terms.Char( ')' )
-        );
+        ).Named( "group" );
 
         // Primary Expressions
 
@@ -131,14 +132,14 @@ public class ExpressionScriptParser
             literal,
             identifier,
             groupedExpression
-        );
+        ).Named( "primary" );
 
         // Unary Expressions
 
         var unaryExpression = primaryExpression.Unary(
             (Terms.Text( "!" ), Not),
             (Terms.Text( "-" ), Negate)
-        );
+        ).Named( "unary" );
 
         // Binary Expressions
 
@@ -156,7 +157,7 @@ public class ExpressionScriptParser
             (Terms.Text( "&&" ), AndAlso),
             (Terms.Text( "||" ), OrElse),
             (Terms.Text( "??" ), Coalesce)
-        );
+        ).Named( "binary" );
 
         // Variable Declarations
 
@@ -173,39 +174,45 @@ public class ExpressionScriptParser
                 _variableTable.Add( left.ToString()!, variable );
 
                 return Assign( variable, right );
-            } );
+            } 
+        ).Named( "declaration" );
 
         // Assignments
 
         var assignment =
             Terms.Identifier()
-            .And( SkipWhiteSpace( Terms.Text( "=" )
-                .Or( Terms.Text( "+=" ) )
-                .Or( Terms.Text( "-=" ) )
-                .Or( Terms.Text( "*=" ) )
-                .Or( Terms.Text( "/=" ) )
-            ) )
+            .And( 
+                SkipWhiteSpace( 
+                    Terms.Text( "=" )
+                    .Or( Terms.Text( "+=" ) )
+                    .Or( Terms.Text( "-=" ) )
+                    .Or( Terms.Text( "*=" ) )
+                    .Or( Terms.Text( "/=" ) ) 
+                ) 
+            )
             .And( expression )
             .Then<Expression>( parts =>
-            {
-                var left = _variableTable[parts.Item1.ToString()!];
-                var op = parts.Item2;
-                var right = parts.Item3;
-
-                return op switch
                 {
-                    "=" => Assign( left, right ),
-                    "+=" => AddAssign( left, right ),
-                    "-=" => SubtractAssign( left, right ),
-                    "*=" => MultiplyAssign( left, right ),
-                    "/=" => DivideAssign( left, right ),
-                    _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
-                };
-            } );
+                    var left = _variableTable[parts.Item1.ToString()!];
+                    var op = parts.Item2;
+                    var right = parts.Item3;
+
+                    return op switch
+                    {
+                        "=" => Assign( left, right ),
+                        "+=" => AddAssign( left, right ),
+                        "-=" => SubtractAssign( left, right ),
+                        "*=" => MultiplyAssign( left, right ),
+                        "/=" => DivideAssign( left, right ),
+                        _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
+                    };
+                } 
+            ).Named( "assignment" );
 
         // Statements
 
-        //var conditionalStatement = ConditionalParser( expression );
+        var conditionalStatement = ConditionalParser( expression ).Named( "conditional" );
+
         //var loopStatement = LoopParser( expression, out var breakStatement, out var continueStatement );
         //var switchStatement = SwitchParser( expression );
         //var tryCatchStatement = TryCatchParser( expression, identifier );
@@ -213,8 +220,6 @@ public class ExpressionScriptParser
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
 
         //var statement = 
-        //    varDeclaration
-        //    .Or( assignment )
         //    .Or( conditionalStatement )
         //    .Or( loopStatement )
         //    .Or( switchStatement )
@@ -225,24 +230,30 @@ public class ExpressionScriptParser
         //    .Or( tryCatchStatement )
         //    .Or( expression );
 
+        var complexStatement = OneOf(
+            conditionalStatement
+            //loopStatement
+            //switchStatement
+        ).Named( "complex-statement" );
+
+        var simpleStatement = OneOf(
+            declaration,
+            assignment
+        ).AndSkip( Terms.Char( ';' ) ).Named( "simple-statement" );
+
         // Combine Parsers
 
         expression.Parser = OneOf(
-            declaration,
-            assignment,
-            binaryExpression,
-            primaryExpression
+            complexStatement,
+            simpleStatement,
+            binaryExpression 
         );
 
-        var statement = expression;
-
-        // XS
-
-        _xs = ZeroOrMany( statement.AndSkip( Terms.Char( ';' ) ) )
-            .Then<Expression>( x => Block(
+        _xs = ZeroOrMany( expression )
+            .Then<Expression>( expressions => Block(
                 _variableTable.Items().Select( kvp => kvp.Value ),
-                x )
-            );
+                expressions 
+            ) );
     }
 
     private Parser<Expression> MethodCallParser( Deferred<Expression> expression, Parser<Expression> identifier )
@@ -315,7 +326,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression ),
+                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ),
                     Terms.Char( '}' )
                 )
             )
@@ -324,19 +335,31 @@ public class ExpressionScriptParser
                     .SkipAnd(
                         Between(
                             Terms.Char( '{' ),
-                            ZeroOrMany( expression ),
+                            ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ),
                             Terms.Char( '}' )
                         )
                     )
-                    .Then( Expression ( elseBlock ) => Block( elseBlock ) )
             )
             .Then<Expression>( parts =>
             {
-                var condition = parts.Item1;
-                var ifTrue = Block( parts.Item2 );
-                var ifFalse = parts.Item3 ?? Default( typeof( void ) );
+                var test = parts.Item1;
 
-                return Condition( condition, ifTrue, ifFalse );
+                var trueExprs = parts.Item2.ToArray();
+
+                var ifTrue = trueExprs.Length > 1
+                    ? Block( trueExprs )
+                    : trueExprs[0];
+                
+                var falseExprs = parts.Item3.ToArray();
+
+                var ifFalse = falseExprs.Length > 1
+                    ? Block( falseExprs )
+                    : falseExprs[0];
+
+                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof(void);
+
+                var condition = Condition( test, ifTrue!, ifFalse!, type );
+                return condition; //BF looks ok here
             } );
 
         return parser;

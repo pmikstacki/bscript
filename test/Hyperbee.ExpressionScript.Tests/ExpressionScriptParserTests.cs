@@ -178,6 +178,20 @@ public class ExpressionScriptParserTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableAddAssignmentResult()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse( "var x = 10; x += 32;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndPostResult()
     {
         var parser = new ExpressionScriptParser();
@@ -203,5 +217,29 @@ public class ExpressionScriptParserTests
         var result = compiled();
 
         Assert.AreEqual( 11, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithConditional()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse( 
+        """
+        if (true)
+        {
+            "hello";
+        } 
+        else
+        { 
+            "goodBye";
+        }
+        """ );
+
+        var lambda = Lambda<Func<string>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "hello", result );
     }
 }
