@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Linq;
@@ -212,25 +212,25 @@ public class ExpressionScriptParser
         // Statements
 
         var conditionalStatement = ConditionalParser( expression ).Named( "conditional" );
+        var loopStatement = LoopParser( expression, out var breakStatement, out var continueStatement );
 
-        //var loopStatement = LoopParser( expression, out var breakStatement, out var continueStatement );
         //var switchStatement = SwitchParser( expression );
         //var tryCatchStatement = TryCatchParser( expression, identifier );
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
 
         var complexStatement = OneOf( // Complex statements are statements that contain other statements
-            conditionalStatement
-        //loopStatement
-        //switchStatement
-        //tryCatchStatement
+            conditionalStatement,
+            loopStatement
+            //switchStatement
+            //tryCatchStatement
         ).Named( "complex-statement" );
 
         var simpleStatement = OneOf( // Simple statements are statements that can be terminated with a semicolon
-                                     //breakStatement
-                                     //continueStatement
-                                     //methodCall
-                                     //lambdaInvocation
+            breakStatement,
+            continueStatement,
+            //methodCall
+            //lambdaInvocation
             declaration,
             assignment
         ).AndSkip( Terms.Char( ';' ) ).Named( "simple-statement" );
