@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Linq;
@@ -222,8 +222,8 @@ public class ExpressionScriptParser
         var complexStatement = OneOf( // Complex statements are statements that contain other statements
             conditionalStatement,
             loopStatement
-            //switchStatement
-            //tryCatchStatement
+        //switchStatement
+        //tryCatchStatement
         ).Named( "complex-statement" );
 
         var simpleStatement = OneOf( // Simple statements are statements that can be terminated with a semicolon
