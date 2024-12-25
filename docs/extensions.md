@@ -2,7 +2,7 @@
 
 ExpressionScript supports extensibility by allowing developers to define **custom expressions** and seamlessly integrate them into the parser. This provides a clean and flexible way to extend the language for specific use cases or additional functionality.
 
-### **Steps to Add a Custom Expression**
+## **Steps to Add a Custom Expression**
 
 1. **Create the Custom Expression**:
    - Define a class inheriting from `Expression` or extending its existing hierarchy.
@@ -17,11 +17,11 @@ ExpressionScript supports extensibility by allowing developers to define **custo
    - The custom expression seamlessly integrates into the expression tree pipeline.
 
 
-### **Example: A Custom `RepeatExpression`**
+## **Example: A Custom `RepeatExpression`**
 
 The `RepeatExpression` executes a block of code a specified number of times, similar to a `for` loop.
 
-#### **1. Define the Custom Expression**
+### **1. Define the Custom Expression**
 
 Here, we define a `RepeatExpression` class that inherits from `Expression`:
 
@@ -42,7 +42,7 @@ public class RepeatExpression : Expression
 }
 ```
 
-#### **2. Create the Parser Extension Plugin**
+### **2. Create the Parser Extension Plugin**
 
 A plugin object includes logic to parse the `repeat` syntax and generate the custom `RepeatExpression`. The extension inherits from `ParserExtension`:
 
@@ -90,7 +90,7 @@ public static class ParserExtensions
 }
 ```
 
-#### **3. Register the Custom Expression in the Parser**
+### **3. Register the Custom Expression in the Parser**
 
 The new syntax is registered as a plugin using `Parser.AddExtension()`:
 
@@ -99,7 +99,7 @@ var parser = new Parser();
 parser.AddExtension(new RepeatParserExtension());
 ```
 
-#### **4. Use the Custom Expression**
+### **4. Use the Custom Expression**
 
 With the parser updated, you can use the `repeat` keyword in your ExpressionScript:
 
@@ -110,7 +110,7 @@ repeat (5) {
 }
 ```
 
-#### **5. Generate the Expression Tree**
+### **5. Generate the Expression Tree**
 
 The generated expression tree for the above script would look like this:
 
@@ -137,9 +137,7 @@ var repeatExpression = Expression.Block(
 );
 ```
 
----
-
-### **Summary**
+## **Summary**
 
 By using `Parser.AddExtension()`, developers can:
 

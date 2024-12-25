@@ -20,9 +20,9 @@ e***X***pression***S***cript (***XS***) is a minimalist scripting language desig
 
 ## Script Examples
 
-## **Variable Declarations and Assignments**
+### **Variable Declarations and Assignments**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var x = 5;
@@ -30,7 +30,7 @@ var y = 3.14f;
 var z = "hello";
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -43,9 +43,9 @@ Expression.Block(
 
 ---
 
-## **Postfix Operations and Compound Assignments**
+### **Postfix Operations and Compound Assignments**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var x = 5;
@@ -54,7 +54,7 @@ x += 10;
 x *= 2;
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -68,9 +68,9 @@ Expression.Block(
 
 ---
 
-## **Conditionals and Blocks**
+### **Conditionals and Blocks**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var result = if (x > 10) 
@@ -83,7 +83,7 @@ else
 };
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -101,9 +101,9 @@ Expression.Block(
 
 ---
 
-## **Null-Coalescing Operator**
+### **Null-Coalescing Operator**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var a = null;
@@ -111,7 +111,7 @@ var b = 10;
 var result = a ?? b;
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -124,9 +124,9 @@ Expression.Block(
 
 ---
 
-## **Loops and Control Flow**
+### **Loops and Control Flow**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var x = 10;
@@ -140,7 +140,7 @@ loop
 }
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 var breakLabel = Expression.Label("BreakLabel");
@@ -158,9 +158,9 @@ Expression.Loop(
 
 ---
 
-## **Method Calls and Method Chaining**
+### **Method Calls and Method Chaining**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var list = new System.Collections.Generic.List<int>();
@@ -174,7 +174,7 @@ var result = list
     .ToList();
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -209,9 +209,9 @@ Expression.Block(
 
 ---
 
-## **Try-Catch**
+### **Try-Catch**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 try 
@@ -224,7 +224,7 @@ catch (DivideByZeroException e)
 }
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
@@ -243,9 +243,9 @@ Expression.Block(
 
 ---
 
-## **Switch Expressions**
+### **Switch Expressions**
 
-### **Script**
+#### **Script**
 
 ```plaintext
 var result = switch (x) 
@@ -256,7 +256,7 @@ var result = switch (x)
 };
 ```
 
-### **Generated Expression Tree**
+#### **Generated Expression Tree**
 
 ```csharp
 Expression.Block(
