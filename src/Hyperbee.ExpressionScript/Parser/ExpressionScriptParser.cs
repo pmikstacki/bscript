@@ -46,10 +46,15 @@ public class ExpressionScriptParser
         }
     }
 
-    // Add Goto
+    // Parser TODO
+    //
+    // Add New
     // Add Return
-    // Add ?? and ??= operators
+    // Add Method calls
+    // Add Lambda expressions
     // Add Extensions
+    // Add Goto
+    // Add ?? and ??= operators
 
     private void InitializeParser()
     {
@@ -222,7 +227,7 @@ public class ExpressionScriptParser
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
 
-        var complexStatement = OneOf( // Complex statements are statements that contain other statements
+        var complexStatement = OneOf( // Complex statements are statements that control scope or flow
             conditionalStatement,
             loopStatement
 
@@ -230,7 +235,7 @@ public class ExpressionScriptParser
         //tryCatchStatement
         ).Named( "complex-statement" );
 
-        var exprStatement = OneOf( // Expr statements are statements that can be terminated with a semicolon
+        var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
             breakStatement,
             continueStatement,
             //methodCall
@@ -242,7 +247,7 @@ public class ExpressionScriptParser
 
         statement.Parser = OneOf(
             complexStatement,
-            exprStatement
+            expressionStatement
         ).Named( "statement" );
 
         // Finalize
