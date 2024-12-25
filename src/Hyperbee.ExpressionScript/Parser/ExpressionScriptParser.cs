@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -18,7 +18,7 @@ public class ExpressionScriptParser
 {
     private Parser<Expression> _xs;
 
-    private readonly List<IParserExtension> _extensions = []; 
+    private readonly List<IParserExtension> _extensions = [];
     private readonly LinkedDictionary<string, ParameterExpression> _variableTable = new(); // TODO: push and pop scopes
 
     private readonly Dictionary<string, MethodInfo> _methodTable;
@@ -45,7 +45,7 @@ public class ExpressionScriptParser
             return _xs.Parse( context );
         }
     }
-    
+
     // Add Goto
     // Add Return
     // Add ?? and ??= operators
@@ -352,15 +352,15 @@ public class ExpressionScriptParser
             {
                 var (test, trueExprs, falseExprs) = parts;
 
-                var ifTrue = trueExprs.Count > 1 
-                    ? Block( trueExprs ) 
+                var ifTrue = trueExprs.Count > 1
+                    ? Block( trueExprs )
                     : trueExprs[0];
 
                 var ifFalse = falseExprs switch
                 {
-                    null => Default( ifTrue?.Type ?? typeof(void) ),
-                    _ => falseExprs.Count > 1 
-                        ? Block( falseExprs ) 
+                    null => Default( ifTrue?.Type ?? typeof( void ) ),
+                    _ => falseExprs.Count > 1
+                        ? Block( falseExprs )
                         : falseExprs[0]
                 };
 
@@ -413,7 +413,7 @@ public class ExpressionScriptParser
             )
             .Then<Expression>( parts =>
             {
-                var (breakLabel, continueLabel) = parts.Item1; 
+                var (breakLabel, continueLabel) = parts.Item1;
                 var exprs = parts.Item2;
 
                 try
