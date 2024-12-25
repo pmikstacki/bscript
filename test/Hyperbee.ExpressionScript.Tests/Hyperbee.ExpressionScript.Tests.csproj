@@ -6,6 +6,7 @@
     <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RootNamespace>Hyperbee.XS.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

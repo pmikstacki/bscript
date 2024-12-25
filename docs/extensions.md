@@ -1,3 +1,8 @@
+---
+layout: default
+title: Extensions
+nav_order: 4
+---
 # Extensions
 
 ExpressionScript supports extensibility by allowing developers to define **custom expressions** and seamlessly integrate them into the parser. This provides a clean and flexible way to extend the language for specific use cases or additional functionality.

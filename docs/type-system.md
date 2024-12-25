@@ -1,4 +1,9 @@
-## Type System
+---
+layout: default
+title: Type System
+nav_order: 3
+---
+# Type System
 
 ### **Primitive Types**
 

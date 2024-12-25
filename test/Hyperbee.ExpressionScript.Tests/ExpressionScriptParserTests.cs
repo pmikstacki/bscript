@@ -1,9 +1,7 @@
-﻿using Hyperbee.ExpressionScript.Parser;
-
+﻿using Hyperbee.XS.Parser;
 using static System.Linq.Expressions.Expression;
 
-// TODO: namespace Hyperbee.XS.Parser; 
-namespace Hyperbee.ExpressionScript.Tests;
+namespace Hyperbee.XS.Tests; 
 
 [TestClass]
 public class ExpressionScriptParserTests

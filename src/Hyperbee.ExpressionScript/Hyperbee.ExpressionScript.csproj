@@ -15,10 +15,11 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>Stillpoint Software, Inc.</Copyright>
     <Title>Hyperbee Expression Script</Title>
-    <Description>ExpressionScript (ES) is a minimalist scripting language for .NET Expression Trees.</Description>
+    <Description>ExpressionScript (XS) is a minimalist scripting language for .NET Expression Trees.</Description>
     <RepositoryUrl>https://github.com/Stillpoint-Software/Hyperbee.ExpressionScript</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReleaseNotes>https://github.com/Stillpoint-Software/Hyperbee.ExpressionScript/releases/latest</PackageReleaseNotes>
+    <RootNamespace>Hyperbee.XS</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

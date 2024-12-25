@@ -4,11 +4,10 @@ using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
 using Hyperbee.Collections.Extensions;
 using Parlot.Fluent;
-
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
-namespace Hyperbee.ExpressionScript.Parser;
+namespace Hyperbee.XS.Parser;
 
 public interface IParserExtension
 {
@@ -87,8 +86,8 @@ public class ExpressionScriptParser
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
-                var op = parts.Item1.ToString();
-                var variable = LookupVariable( parts.Item2 );
+                var (op, ident) = parts;
+                var variable = LookupVariable( ident );
 
                 return op switch
                 {
@@ -102,8 +101,8 @@ public class ExpressionScriptParser
             .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
             .Then<Expression>( parts =>
             {
-                var op = parts.Item2.ToString();
-                var variable = LookupVariable( parts.Item1 );
+                var (ident, op) = parts;
+                var variable = LookupVariable( ident );
 
                 return op switch
                 {
@@ -168,8 +167,8 @@ public class ExpressionScriptParser
             .And( expression )
             .Then<Expression>( parts =>
             {
-                var left = parts.Item1.ToString()!;
-                var right = parts.Item2;
+                var (ident, right) = parts;
+                var left = ident.ToString()!;
 
                 var variable = Variable( right.Type, left );
                 _variableTable.Add( left, variable );
@@ -194,9 +193,8 @@ public class ExpressionScriptParser
             .And( expression )
             .Then<Expression>( parts =>
                 {
-                    var left = LookupVariable( parts.Item1 );
-                    var op = parts.Item2;
-                    var right = parts.Item3;
+                    var (ident,op, right) = parts;
+                    var left = LookupVariable( ident );
 
                     return op switch
                     {
@@ -346,24 +344,19 @@ public class ExpressionScriptParser
             )
             .Then<Expression>( parts =>
             {
-                var test = parts.Item1;
+                var (test, trueExprs, falseExprs) = parts;
 
-                var trueExprs = parts.Item2.ToArray();
-
-                var ifTrue = trueExprs.Length > 1
+                var ifTrue = trueExprs.Count > 1
                     ? Block( trueExprs )
                     : trueExprs[0];
 
-                var falseExprs = parts.Item3.ToArray();
-
-                var ifFalse = falseExprs.Length > 1
+                var ifFalse = falseExprs.Count > 1
                     ? Block( falseExprs )
                     : falseExprs[0];
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
-                var condition = Condition( test, ifTrue!, ifFalse!, type );
-                return condition; //BF looks ok here
+                return Condition( test, ifTrue!, ifFalse!, type );
             } );
 
         return parser;

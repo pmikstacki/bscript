@@ -1,4 +1,9 @@
-﻿# Examples
+﻿---
+layout: default
+title: Syntax
+nav_order: 2
+---
+# Syntax Examples
 
 ## **Variable Declarations and Assignments**
 

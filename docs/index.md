@@ -1,4 +1,9 @@
-# ExpressionScript (ES) Language Specification
+---
+layout: default
+title: Hyperbee ExpressionScript (XS)
+nav_order: 1
+---
+# ExpressionScript (XS) Language Specification
 
 ## Summary of Objectives
 
