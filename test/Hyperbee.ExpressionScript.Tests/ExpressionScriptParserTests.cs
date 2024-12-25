@@ -143,8 +143,6 @@ public class ExpressionScriptParserTests
         var compiled = lambda.Compile();
 
         Assert.IsNotNull( compiled );
-
-        Assert.IsTrue( true );
     }
 
     [TestMethod]
@@ -239,5 +237,28 @@ public class ExpressionScriptParserTests
         var result = compiled();
 
         Assert.AreEqual( "hello", result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithLoop()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse(
+            """
+            var x = 0;
+            loop
+            {
+                x++;
+                break;
+            }
+            x;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 1, result );
     }
 }

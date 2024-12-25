@@ -221,6 +221,7 @@ public class ExpressionScriptParser
         var complexStatement = OneOf( // Complex statements are statements that contain other statements
             conditionalStatement,
             loopStatement
+
         //switchStatement
         //tryCatchStatement
         ).Named( "complex-statement" );
@@ -234,13 +235,11 @@ public class ExpressionScriptParser
             assignment
         ).AndSkip( Terms.Char( ';' ) ).Named( "simple-statement" );
 
+        var statement = OneOf( complexStatement, simpleStatement ).Named( "statement" );
+
         // Finalize
 
-        expression.Parser = OneOf(
-            complexStatement,
-            simpleStatement,
-            binaryExpression
-        );
+        expression.Parser = OneOf( statement, binaryExpression );
 
         _xs = ZeroOrMany( expression )
             .Then<Expression>( expressions => Block(
@@ -328,7 +327,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ),
+                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
                     Terms.Char( '}' )
                 )
             )
@@ -337,7 +336,7 @@ public class ExpressionScriptParser
                     .SkipAnd(
                         Between(
                             Terms.Char( '{' ),
-                            ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ),
+                            ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
                             Terms.Char( '}' )
                         )
                     )
@@ -385,26 +384,35 @@ public class ExpressionScriptParser
 
         // Loops
         var parser = Terms.Text( "loop" )
+            .Then( _ =>
+            {
+                var breakLabel = Label( typeof(void), "Break" );
+                var continueLabel = Label( typeof(void), "Continue" );
+
+                _loopContexts.Push( new LoopContext( breakLabel, continueLabel ) );
+
+                return (breakLabel, continueLabel);
+            } )
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression ),
+                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
                     Terms.Char( '}' )
                 )
             )
             .Then<Expression>( parts =>
             {
-                var breakLabel = Label( typeof( void ), "Break" );
-                var continueLabel = Label( typeof( void ), "Continue" );
-                _loopContexts.Push( new LoopContext( breakLabel, continueLabel ) );
+                var (breakLabel, continueLabel) = parts.Item1; //BF not being hit when 'break;' is present
+                var exprs = parts.Item2;
+
                 try
                 {
-                    var body = Block( parts.Item2 );
+                    var body = Block( exprs );
                     return Loop( body, breakLabel, continueLabel );
                 }
                 finally
                 {
-                    _loopContexts.Pop();
+                    _loopContexts.Pop(); // Ensure context is removed after parsing
                 }
             } );
 
