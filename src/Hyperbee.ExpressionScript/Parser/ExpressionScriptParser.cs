@@ -48,6 +48,8 @@ public class ExpressionScriptParser
 
     // Parser TODO
     //
+    // Add LinkedDictionary scopes and validate nesting complex statements and var declarations
+    // Add TryCatch
     // Add New
     // Add Return
     // Add Method calls
