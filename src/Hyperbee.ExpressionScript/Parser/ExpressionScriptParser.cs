@@ -56,6 +56,7 @@ public class ExpressionScriptParser
     {
         // Deferred parser for recursive expressions
         var expression = Deferred<Expression>();
+        var statement = Deferred<Expression>();
 
         // Literals
 
@@ -159,6 +160,10 @@ public class ExpressionScriptParser
             (Terms.Text( "??" ), Coalesce)
         ).Named( "binary" );
 
+        expression.Parser = OneOf(
+            binaryExpression
+        );
+
         // Variable Declarations
 
         var declaration = Terms.Text( "var" )
@@ -210,8 +215,8 @@ public class ExpressionScriptParser
 
         // Statements
 
-        var conditionalStatement = ConditionalParser( expression ).Named( "conditional" );
-        var loopStatement = LoopParser( expression, out var breakStatement, out var continueStatement );
+        var conditionalStatement = ConditionalParser( expression, statement ).Named( "conditional" );
+        var loopStatement = LoopParser( statement, out var breakStatement, out var continueStatement );
 
         //var switchStatement = SwitchParser( expression );
         //var tryCatchStatement = TryCatchParser( expression, identifier );
@@ -232,19 +237,21 @@ public class ExpressionScriptParser
             //methodCall
             //lambdaInvocation
             declaration,
-            assignment
+            assignment,
+            expression
         ).AndSkip( Terms.Char( ';' ) ).Named( "simple-statement" );
 
-        var statement = OneOf( complexStatement, simpleStatement ).Named( "statement" );
+        statement.Parser = OneOf(
+            complexStatement,
+            simpleStatement
+        ).Named( "statement" );
 
         // Finalize
 
-        expression.Parser = OneOf( statement, binaryExpression );
-
-        _xs = ZeroOrMany( expression )
-            .Then<Expression>( expressions => Block(
+        _xs = ZeroOrMany( statement )
+            .Then<Expression>( statements => Block(
                 _variableTable.EnumerateValues(),
-                expressions
+                statements
             ) );
     }
 
@@ -314,7 +321,7 @@ public class ExpressionScriptParser
         return parser;
     }
 
-    private Parser<Expression> ConditionalParser( Deferred<Expression> expression )
+    private Parser<Expression> ConditionalParser( Deferred<Expression> expression, Deferred<Expression> statement )
     {
         var parser = Terms.Text( "if" )
             .SkipAnd(
@@ -327,7 +334,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
+                    ZeroOrMany( statement ), 
                     Terms.Char( '}' )
                 )
             )
@@ -336,7 +343,7 @@ public class ExpressionScriptParser
                     .SkipAnd(
                         Between(
                             Terms.Char( '{' ),
-                            ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
+                            ZeroOrMany( statement ), 
                             Terms.Char( '}' )
                         )
                     )
@@ -361,7 +368,7 @@ public class ExpressionScriptParser
         return parser;
     }
 
-    private Parser<Expression> LoopParser( Deferred<Expression> expression, out Parser<Expression> breakStatement, out Parser<Expression> continueStatement )
+    private Parser<Expression> LoopParser( Deferred<Expression> statement, out Parser<Expression> breakStatement, out Parser<Expression> continueStatement )
     {
         // Break and Continue
         breakStatement = Terms.Text( "break" )
@@ -396,7 +403,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression.AndSkip( Terms.Char( ';' ) ) ), //BF don't understand the need for ';' here
+                    ZeroOrMany( statement), 
                     Terms.Char( '}' )
                 )
             )
