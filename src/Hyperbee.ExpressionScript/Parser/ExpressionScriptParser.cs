@@ -1,6 +1,7 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using Hyperbee.Collections;
 using Hyperbee.Collections.Extensions;
@@ -39,7 +40,7 @@ public class ExpressionScriptParser
 
     public Expression Parse( string script )
     {
-        using ( _variableTable.Enter( default ) )
+        using ( _variableTable.Enter() )
         {
             var scanner = new Parlot.Scanner( script );
             var context = new ParseContext( scanner );
@@ -79,15 +80,14 @@ public class ExpressionScriptParser
 
         // Identifiers
 
-        var primaryIdentifier = Terms.Identifier()
-            .Then<Expression>( name => _variableTable[name.ToString()!] );
+        var primaryIdentifier = Terms.Identifier().Then<Expression>( LookupVariable );
 
         var prefixedIdentifier = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
                 var op = parts.Item1.ToString();
-                var variable = _variableTable[parts.Item2.ToString()!];
+                var variable = LookupVariable( parts.Item2 );
 
                 return op switch
                 {
@@ -102,7 +102,7 @@ public class ExpressionScriptParser
             .Then<Expression>( parts =>
             {
                 var op = parts.Item2.ToString();
-                var variable = _variableTable[parts.Item1.ToString()!];
+                var variable = LookupVariable( parts.Item1 );
 
                 return op switch
                 {
@@ -167,11 +167,11 @@ public class ExpressionScriptParser
             .And( expression )
             .Then<Expression>( parts =>
             {
-                var left = parts.Item1;
+                var left = parts.Item1.ToString()!;
                 var right = parts.Item2;
 
-                var variable = Variable( right.Type, left.ToString() );
-                _variableTable.Add( left.ToString()!, variable );
+                var variable = Variable( right.Type, left );
+                _variableTable.Add( left, variable );
 
                 return Assign( variable, right );
             }
@@ -193,7 +193,7 @@ public class ExpressionScriptParser
             .And( expression )
             .Then<Expression>( parts =>
                 {
-                    var left = _variableTable[parts.Item1.ToString()!];
+                    var left = LookupVariable( parts.Item1 );
                     var op = parts.Item2;
                     var right = parts.Item3;
 
@@ -245,9 +245,18 @@ public class ExpressionScriptParser
 
         _xs = ZeroOrMany( expression )
             .Then<Expression>( expressions => Block(
-                _variableTable.Items().Select( kvp => kvp.Value ),
+                _variableTable.EnumerateValues(),
                 expressions
             ) );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private ParameterExpression LookupVariable( Parlot.TextSpan ident )
+    {
+        if ( !_variableTable.TryGetValue( ident.ToString()!, out var variable ) )
+            throw new Exception( $"Variable '{ident}' not found." );
+
+        return variable;
     }
 
     private Parser<Expression> MethodCallParser( Deferred<Expression> expression, Parser<Expression> identifier )
