@@ -334,7 +334,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( statement ), 
+                    ZeroOrMany( statement ),
                     Terms.Char( '}' )
                 )
             )
@@ -343,7 +343,7 @@ public class ExpressionScriptParser
                     .SkipAnd(
                         Between(
                             Terms.Char( '{' ),
-                            ZeroOrMany( statement ), 
+                            ZeroOrMany( statement ),
                             Terms.Char( '}' )
                         )
                     )
@@ -403,7 +403,7 @@ public class ExpressionScriptParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( statement), 
+                    ZeroOrMany( statement ),
                     Terms.Char( '}' )
                 )
             )
