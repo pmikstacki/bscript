@@ -338,7 +338,7 @@ public class ExpressionScriptParser
                     Terms.Char( '}' )
                 )
             )
-            .And(
+            .And( ZeroOrOne(
                 Terms.Text( "else" )
                     .SkipAnd(
                         Between(
@@ -347,6 +347,7 @@ public class ExpressionScriptParser
                             Terms.Char( '}' )
                         )
                     )
+                )
             )
             .Then<Expression>( parts =>
             {
@@ -356,9 +357,11 @@ public class ExpressionScriptParser
                     ? Block( trueExprs )
                     : trueExprs[0];
 
-                var ifFalse = falseExprs.Count > 1
-                    ? Block( falseExprs )
-                    : falseExprs[0];
+                var ifFalse = falseExprs == null
+                    ? Default( ifTrue?.Type ?? typeof(void) )
+                    : falseExprs.Count > 1
+                        ? Block( falseExprs )
+                        : falseExprs[0];
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 

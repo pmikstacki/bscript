@@ -240,8 +240,57 @@ public class ExpressionScriptParserTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithConditionalAndNoElse()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse(
+            """
+            var x = "goodbye";
+            if (true)
+            {
+                x = "hello";
+            }
+            x; 
+            """ );
+
+        var lambda = Lambda<Func<string>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "hello", result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithConditionalVariable()
+    {
+        var parser = new ExpressionScriptParser();
+        var expression = parser.Parse(
+            """
+            var x = 10;
+            if ( x == (9 + 1) )
+            {
+                "hello";
+            } 
+            else
+            { 
+                "goodBye";
+            }
+            """ );
+
+        var lambda = Lambda<Func<string>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "hello", result );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithLoop()
     {
+        //BF if conditions in loop are failing parser
+
         var parser = new ExpressionScriptParser();
         var expression = parser.Parse(
             """
@@ -249,7 +298,10 @@ public class ExpressionScriptParserTests
             loop
             {
                 x++;
-                break;
+                if( x == 10 )
+                {
+                    break;
+                }
             }
             x;
             """ );
@@ -259,6 +311,6 @@ public class ExpressionScriptParserTests
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual( 1, result );
+        Assert.AreEqual( 10, result );
     }
 }
