@@ -230,7 +230,7 @@ public class ExpressionScriptParser
         //tryCatchStatement
         ).Named( "complex-statement" );
 
-        var simpleStatement = OneOf( // Simple statements are statements that can be terminated with a semicolon
+        var exprStatement = OneOf( // Expr statements are statements that can be terminated with a semicolon
             breakStatement,
             continueStatement,
             //methodCall
@@ -238,11 +238,11 @@ public class ExpressionScriptParser
             declaration,
             assignment,
             expression
-        ).AndSkip( Terms.Char( ';' ) ).Named( "simple-statement" );
+        ).AndSkip( Terms.Char( ';' ) ).Named( "expr-statement" );
 
         statement.Parser = OneOf(
             complexStatement,
-            simpleStatement
+            exprStatement
         ).Named( "statement" );
 
         // Finalize
