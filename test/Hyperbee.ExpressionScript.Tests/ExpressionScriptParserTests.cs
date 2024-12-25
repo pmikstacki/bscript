@@ -297,7 +297,7 @@ public class ExpressionScriptParserTests
             var x = 0;
             loop
             {
-                x++;
+                x++; // do something
                 if( x == 10 )
                 {
                     break;

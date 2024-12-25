@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -18,8 +18,7 @@ public class ExpressionScriptParser
 {
     private Parser<Expression> _xs;
 
-    //private readonly List<IParserExtension> _extensions = []; // TODO: Add expression extensions
-
+    private readonly List<IParserExtension> _extensions = []; 
     private readonly LinkedDictionary<string, ParameterExpression> _variableTable = new(); // TODO: push and pop scopes
 
     private readonly Dictionary<string, MethodInfo> _methodTable;
@@ -33,7 +32,7 @@ public class ExpressionScriptParser
 
     public void AddExtension( IParserExtension extension )
     {
-        //_extensions.Add( extension );
+        _extensions.Add( extension );
     }
 
     public Expression Parse( string script )
@@ -41,12 +40,12 @@ public class ExpressionScriptParser
         using ( _variableTable.Enter() )
         {
             var scanner = new Parlot.Scanner( script );
-            var context = new ParseContext( scanner );
+            var context = new ParseContext( scanner ) { WhiteSpaceParser = new WhitespaceOrNewLineOrCommentParser() };
 
             return _xs.Parse( context );
         }
     }
-
+    
     // Add Goto
     // Add Return
     // Add ?? and ??= operators
@@ -114,9 +113,9 @@ public class ExpressionScriptParser
             } );
 
         var identifier = OneOf(
-            prefixedIdentifier.Named( "prefix-identifier" ),
-            postfixedIdentifier.Named( "postfix-identifier" ),
-            primaryIdentifier.Named( "primary-identifier" )
+            prefixedIdentifier,
+            postfixedIdentifier,
+            primaryIdentifier
         ).Named( "identifier" );
 
         // Grouped Expressions
@@ -353,15 +352,17 @@ public class ExpressionScriptParser
             {
                 var (test, trueExprs, falseExprs) = parts;
 
-                var ifTrue = trueExprs.Count > 1
-                    ? Block( trueExprs )
+                var ifTrue = trueExprs.Count > 1 
+                    ? Block( trueExprs ) 
                     : trueExprs[0];
 
-                var ifFalse = falseExprs == null
-                    ? Default( ifTrue?.Type ?? typeof( void ) )
-                    : falseExprs.Count > 1
-                        ? Block( falseExprs )
-                        : falseExprs[0];
+                var ifFalse = falseExprs switch
+                {
+                    null => Default( ifTrue?.Type ?? typeof(void) ),
+                    _ => falseExprs.Count > 1 
+                        ? Block( falseExprs ) 
+                        : falseExprs[0]
+                };
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
@@ -412,7 +413,7 @@ public class ExpressionScriptParser
             )
             .Then<Expression>( parts =>
             {
-                var (breakLabel, continueLabel) = parts.Item1; //BF not being hit when 'break;' is present
+                var (breakLabel, continueLabel) = parts.Item1; 
                 var exprs = parts.Item2;
 
                 try
