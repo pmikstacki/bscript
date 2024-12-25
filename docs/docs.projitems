@@ -9,6 +9,10 @@
     <Import_RootNamespace>docs</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)type-system.md" />
+    <None Include="$(MSBuildThisFileDirectory)extensions.md" />
+    <None Include="$(MSBuildThisFileDirectory)examples.md" />
+    <None Include="$(MSBuildThisFileDirectory)grammar.md" />
     <None Include="$(MSBuildThisFileDirectory)index.md" />
     <None Include="$(MSBuildThisFileDirectory).todo.md" />
     <None Include="$(MSBuildThisFileDirectory)_config.yml" />

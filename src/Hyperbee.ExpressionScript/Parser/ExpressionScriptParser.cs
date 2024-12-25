@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 using Hyperbee.Collections;
 using Hyperbee.Collections.Extensions;
 using Parlot.Fluent;
+
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
@@ -64,6 +63,7 @@ public class ExpressionScriptParser
         var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
         var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
+        var doubleLiteral = Terms.Number<double>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
 
         var stringLiteral = Terms.String().Then<Expression>( value => Constant( value.ToString() ) );
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( value => Constant( bool.Parse( value ) ) );
@@ -73,6 +73,7 @@ public class ExpressionScriptParser
             integerLiteral,
             longLiteral,
             floatLiteral,
+            doubleLiteral,
             stringLiteral,
             booleanLiteral,
             nullLiteral
@@ -137,8 +138,8 @@ public class ExpressionScriptParser
         // Unary Expressions
 
         var unaryExpression = primaryExpression.Unary(
-            (Terms.Text( "!" ), Not),
-            (Terms.Text( "-" ), Negate)
+            (Terms.Char( '!' ), Not),
+            (Terms.Char( '-' ), Negate)
         ).Named( "unary" );
 
         // Binary Expressions
@@ -163,7 +164,7 @@ public class ExpressionScriptParser
 
         var declaration = Terms.Text( "var" )
             .SkipAnd( Terms.Identifier() )
-            .AndSkip( Terms.Text( "=" ) )
+            .AndSkip( Terms.Char( '=' ) )
             .And( expression )
             .Then<Expression>( parts =>
             {
