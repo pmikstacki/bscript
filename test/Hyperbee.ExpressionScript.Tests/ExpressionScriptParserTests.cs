@@ -1,7 +1,7 @@
 ﻿using Hyperbee.XS.Parser;
 using static System.Linq.Expressions.Expression;
 
-namespace Hyperbee.XS.Tests; 
+namespace Hyperbee.XS.Tests;
 
 [TestClass]
 public class ExpressionScriptParserTests

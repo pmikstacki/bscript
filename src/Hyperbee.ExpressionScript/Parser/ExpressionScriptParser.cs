@@ -193,7 +193,7 @@ public class ExpressionScriptParser
             .And( expression )
             .Then<Expression>( parts =>
                 {
-                    var (ident,op, right) = parts;
+                    var (ident, op, right) = parts;
                     var left = LookupVariable( ident );
 
                     return op switch
