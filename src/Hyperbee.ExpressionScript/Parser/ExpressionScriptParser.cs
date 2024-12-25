@@ -386,8 +386,8 @@ public class ExpressionScriptParser
         var parser = Terms.Text( "loop" )
             .Then( _ =>
             {
-                var breakLabel = Label( typeof(void), "Break" );
-                var continueLabel = Label( typeof(void), "Continue" );
+                var breakLabel = Label( typeof( void ), "Break" );
+                var continueLabel = Label( typeof( void ), "Continue" );
 
                 _loopContexts.Push( new LoopContext( breakLabel, continueLabel ) );
 
