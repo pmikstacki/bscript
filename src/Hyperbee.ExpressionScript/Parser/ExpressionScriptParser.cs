@@ -358,7 +358,7 @@ public class ExpressionScriptParser
                     : trueExprs[0];
 
                 var ifFalse = falseExprs == null
-                    ? Default( ifTrue?.Type ?? typeof(void) )
+                    ? Default( ifTrue?.Type ?? typeof( void ) )
                     : falseExprs.Count > 1
                         ? Block( falseExprs )
                         : falseExprs[0];
