@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -7,14 +7,14 @@ using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
-namespace Hyperbee.XS.Parser;
+namespace Hyperbee.XS.Parsers;
 
 public interface IParserExtension
 {
     void Extend( Parser<Expression> parser );
 }
 
-public class ExpressionScriptParser
+public class XsParser
 {
     private Parser<Expression> _xs;
 
@@ -22,9 +22,9 @@ public class ExpressionScriptParser
     private readonly LinkedDictionary<string, ParameterExpression> _variableTable = new(); // TODO: push and pop scopes
 
     private readonly Dictionary<string, MethodInfo> _methodTable;
-    private readonly Stack<LoopContext> _loopContexts = new();
+    private readonly Stack<FlowContext> _flowContexts = new();
 
-    public ExpressionScriptParser( Dictionary<string, MethodInfo> methodTable = null )
+    public XsParser( Dictionary<string, MethodInfo> methodTable = null )
     {
         _methodTable = methodTable ?? new Dictionary<string, MethodInfo>();
         InitializeParser();
@@ -40,7 +40,7 @@ public class ExpressionScriptParser
         using ( _variableTable.Enter() )
         {
             var scanner = new Parlot.Scanner( script );
-            var context = new ParseContext( scanner ) { WhiteSpaceParser = new WhitespaceOrNewLineOrCommentParser() };
+            var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
             return _xs.Parse( context );
         }
@@ -49,8 +49,7 @@ public class ExpressionScriptParser
     // Parser TODO
     //
     // Add LinkedDictionary scopes and validate nesting complex statements and var declarations
-    // Add Using statements //BF ME discuss
-    // Add TryCatch
+    // Add Import statements //BF ME discuss - how should we include and resolve types
     // Add New
     // Add Return
     // Add Method calls
@@ -223,18 +222,21 @@ public class ExpressionScriptParser
         // Statements
 
         var conditionalStatement = ConditionalParser( expression, statement );
-        var loopStatement = LoopParser( statement, out var breakStatement, out var continueStatement );
+        var loopStatement = LoopParser( statement );
         var tryCatchStatement = TryCatchParser( statement );
+        var switchStatement = SwitchParser( expression, statement );
 
-        //var switchStatement = SwitchParser( expression );
+        var breakStatement = BreakParser();
+        var continueStatement = ContinueParser();
+
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
 
         var complexStatement = OneOf( // Complex statements are statements that control scope or flow
             conditionalStatement,
             loopStatement,
-            tryCatchStatement
-        //switchStatement
+            tryCatchStatement,
+            switchStatement
         );
 
         var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
@@ -268,6 +270,270 @@ public class ExpressionScriptParser
             throw new Exception( $"Variable '{ident}' not found." );
 
         return variable;
+    }
+
+    private Parser<Expression> BreakParser()
+    {
+        return Terms.Text( "break" )
+            .Then<Expression>( _ =>
+            {
+                if ( _flowContexts.Count == 0 )
+                    throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
+
+                var breakLabel = _flowContexts.Peek().BreakLabel;
+                return Break( breakLabel );
+            } );
+    }
+
+    private Parser<Expression> ContinueParser()
+    {
+        return Terms.Text( "continue" )
+            .Then<Expression>( _ =>
+            {
+                if ( _flowContexts.Count == 0 )
+                    throw new Exception( "Invalid use of 'continue' outside of a loop." );
+
+                var continueLabel = _flowContexts.Peek().ContinueLabel;
+                if ( continueLabel == null )
+                    throw new Exception( "'continue' is not valid in a switch statement." );
+
+                return Continue( continueLabel );
+            } );
+    }
+
+    private Parser<Expression> ConditionalParser( Deferred<Expression> expression, Deferred<Expression> statement )
+    {
+        var parser = Terms.Text( "if" )
+            .SkipAnd(
+                Between(
+                    Terms.Char( '(' ),
+                    expression,
+                    Terms.Char( ')' )
+                )
+            )
+            .And(
+                Between(
+                    Terms.Char( '{' ),
+                    ZeroOrMany( statement ),
+                    Terms.Char( '}' )
+                )
+            )
+            .And( ZeroOrOne(
+                Terms.Text( "else" )
+                    .SkipAnd(
+                        Between(
+                            Terms.Char( '{' ),
+                            ZeroOrMany( statement ),
+                            Terms.Char( '}' )
+                        )
+                    )
+                )
+            )
+            .Then<Expression>( parts =>
+            {
+                var (test, trueExprs, falseExprs) = parts;
+
+                var ifTrue = trueExprs.Count > 1
+                    ? Block( trueExprs )
+                    : trueExprs[0];
+
+                var ifFalse = falseExprs switch
+                {
+                    null => Default( ifTrue?.Type ?? typeof( void ) ),
+                    _ => falseExprs.Count > 1
+                        ? Block( falseExprs )
+                        : falseExprs[0]
+                };
+
+                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
+
+                return Condition( test, ifTrue!, ifFalse!, type );
+            } );
+
+        return parser;
+    }
+
+    private Parser<Expression> LoopParser( Deferred<Expression> statement )
+    {
+        var parser = Terms.Text( "loop" )
+            .Then( _ =>
+            {
+                var breakLabel = Label( typeof( void ), "Break" );
+                var continueLabel = Label( typeof( void ), "Continue" );
+
+                _flowContexts.Push( new FlowContext( breakLabel, continueLabel ) );
+
+                return (breakLabel, continueLabel);
+            } )
+            .And(
+                Between(
+                    Terms.Char( '{' ),
+                    ZeroOrMany( statement ),
+                    Terms.Char( '}' )
+                )
+            )
+            .Then<Expression>( parts =>
+            {
+                var (breakLabel, continueLabel) = parts.Item1;
+                var exprs = parts.Item2;
+
+                try
+                {
+                    var body = Block( exprs );
+                    return Loop( body, breakLabel, continueLabel );
+                }
+                finally
+                {
+                    _flowContexts.Pop(); // Ensure context is removed after parsing
+                }
+            } );
+
+        return parser;
+    }
+
+    private Parser<Expression> SwitchParser( Deferred<Expression> expression, Deferred<Expression> statement )
+    {
+        var caseUntil = Literals.WhiteSpace( includeNewLines: true )
+            .And( 
+                Terms.Text( "case" )
+                .Or( Terms.Text( "default" ) )
+                .Or( Terms.Text( "}" ) 
+            ) );
+
+        var caseParser = Terms.Text( "case" )
+            .SkipAnd( expression )
+            .AndSkip( Terms.Char( ':' ) )
+            .And( XsParsers.ZeroOrManyUntil( statement, caseUntil ) )
+            .Then( parts =>
+            {
+                var (testExpression, statements) = parts;
+
+                var body = statements.Count > 1
+                    ? Block( statements )
+                    : statements.FirstOrDefault() ?? Default( typeof(void) );
+
+                return SwitchCase( body, testExpression );
+            } );
+
+        var defaultParser = Terms.Text( "default" )
+            .SkipAnd( Terms.Char( ':' ) )
+            .SkipAnd( ZeroOrMany( statement ) )
+            .Then( statements =>
+            {
+                var body = statements.Count > 1
+                    ? Block( statements )
+                    : statements.FirstOrDefault() ?? Default( typeof(void) );
+
+                return body;
+            } );
+
+        var parser = Terms.Text( "switch" )
+            .Then( _ =>
+            {
+                var breakLabel = Label( typeof(void), "Break" );
+                _flowContexts.Push( new FlowContext( breakLabel ) );
+
+                return breakLabel;
+            } )
+            .And(
+                Between(
+                    Terms.Char( '(' ),
+                    expression,
+                    Terms.Char( ')' )
+                )
+            )
+            .And(
+                Between(
+                    Terms.Char( '{' ),
+                    ZeroOrMany( caseParser ).And( ZeroOrOne( defaultParser ) ),
+                    Terms.Char( '}' )
+                )
+            )
+            .Then<Expression>( parts =>
+            {
+                var (breakLabel, switchValue, bodyParts) = parts;
+
+                try
+                {
+                    var (cases, defaultBody) = bodyParts;
+
+                    return Block(
+                        Switch( switchValue, defaultBody, cases.ToArray() ),
+                        Label( breakLabel )
+                    );
+                }
+                finally
+                {
+                    _flowContexts.Pop();
+                }
+            } );
+
+        return parser;
+    }
+
+    private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
+    {
+        var parser = Terms.Text( "try" )
+            .SkipAnd(
+                Between(
+                    Terms.Char( '{' ),
+                    ZeroOrMany( statement ),
+                    Terms.Char( '}' )
+                ).Then( Block )
+            )
+            .And(
+                ZeroOrMany(
+                    Terms.Text( "catch" )
+                        .SkipAnd(
+                            Between(
+                                Terms.Char( '(' ),
+                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), //BF ME discuss - need to test optional identifier
+                                Terms.Char( ')' )
+                            )
+                            .Then( parts =>
+                            {
+                                var ( typeName, variableName) = parts;
+                                var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - need to resolve type
+                                var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, variableName.ToString() ) : null;
+
+                                return exceptionVariable;
+                            }
+                        )
+                        .And(
+                            Between(
+                                Terms.Char( '{' ),
+                                ZeroOrMany( statement ),
+                                Terms.Char( '}' )
+                            )
+                        )
+                        .Then( parts =>
+                        {
+                            var ( exceptionVariable, body ) = parts; 
+                            return Catch( exceptionVariable, Block( body ) );
+                        } )
+                    )
+                )
+            )
+            .And(
+                ZeroOrOne(
+                    Terms.Text( "finally" )
+                        .SkipAnd(
+                            Between(
+                                Terms.Char( '{' ),
+                                ZeroOrMany( statement ),
+                                Terms.Char( '}' )
+                            )
+                        )
+                        .Then( Block )
+                    )
+            )
+            .Then<Expression>( parts =>
+            {
+                var ( tryBlock, catchBlocks, finallyBlock) = parts;
+                return TryCatchFinally( tryBlock, finallyBlock, catchBlocks.ToArray() );
+            } );
+
+        return parser;
     }
 
     private Parser<Expression> MethodCallParser( Deferred<Expression> expression, Parser<Expression> identifier )
@@ -326,219 +592,14 @@ public class ExpressionScriptParser
 
         return parser;
     }
-
-    private Parser<Expression> ConditionalParser( Deferred<Expression> expression, Deferred<Expression> statement )
-    {
-        var parser = Terms.Text( "if" )
-            .SkipAnd(
-                Between(
-                    Terms.Char( '(' ),
-                    expression,
-                    Terms.Char( ')' )
-                )
-            )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
-            .And( ZeroOrOne(
-                Terms.Text( "else" )
-                    .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
-                    )
-                )
-            )
-            .Then<Expression>( parts =>
-            {
-                var (test, trueExprs, falseExprs) = parts;
-
-                var ifTrue = trueExprs.Count > 1
-                    ? Block( trueExprs )
-                    : trueExprs[0];
-
-                var ifFalse = falseExprs switch
-                {
-                    null => Default( ifTrue?.Type ?? typeof( void ) ),
-                    _ => falseExprs.Count > 1
-                        ? Block( falseExprs )
-                        : falseExprs[0]
-                };
-
-                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
-
-                return Condition( test, ifTrue!, ifFalse!, type );
-            } );
-
-        return parser;
-    }
-
-    private Parser<Expression> LoopParser( Deferred<Expression> statement, out Parser<Expression> breakStatement, out Parser<Expression> continueStatement )
-    {
-        // Break and Continue
-        breakStatement = Terms.Text( "break" )
-            .Then<Expression>( _ =>
-            {
-                if ( _loopContexts.Count == 0 )
-                    throw new Exception( "Invalid use of 'break' outside of a loop." );
-
-                return Break( _loopContexts.Peek().BreakLabel );
-            } );
-
-        continueStatement = Terms.Text( "continue" )
-            .Then<Expression>( _ =>
-            {
-                if ( _loopContexts.Count == 0 )
-                    throw new Exception( "Invalid use of 'continue' outside of a loop." );
-
-                return Continue( _loopContexts.Peek().ContinueLabel );
-            } );
-
-        // Loops
-        var parser = Terms.Text( "loop" )
-            .Then( _ =>
-            {
-                var breakLabel = Label( typeof( void ), "Break" );
-                var continueLabel = Label( typeof( void ), "Continue" );
-
-                _loopContexts.Push( new LoopContext( breakLabel, continueLabel ) );
-
-                return (breakLabel, continueLabel);
-            } )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
-            .Then<Expression>( parts =>
-            {
-                var (breakLabel, continueLabel) = parts.Item1;
-                var exprs = parts.Item2;
-
-                try
-                {
-                    var body = Block( exprs );
-                    return Loop( body, breakLabel, continueLabel );
-                }
-                finally
-                {
-                    _loopContexts.Pop(); // Ensure context is removed after parsing
-                }
-            } );
-
-        return parser;
-    }
-
-    private Parser<Expression> SwitchParser( Deferred<Expression> expression )
-    {
-        var parser = Terms.Text( "switch" )
-            .SkipAnd(
-                Between(
-                    Terms.Char( '(' ),
-                    expression,
-                    Terms.Char( ')' )
-                )
-            )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( expression ),
-                    Terms.Char( '}' )
-                )
-            )
-            .Then<Expression>( parts =>
-            {
-                // Implement switch parsing logic here
-                return Default( typeof( void ) ); //BF TODO Placeholder
-            } );
-
-        return parser;
-    }
-
-    private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
-    {
-        var parser = Terms.Text( "try" )
-            .SkipAnd(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                ).Then( Block )
-            )
-            .And(
-                ZeroOrMany(
-                    Terms.Text( "catch" )
-                        .SkipAnd(
-                            Between(
-                                Terms.Char( '(' ),
-                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), // Type and Optional variable name
-                                Terms.Char( ')' )
-                            )
-                            .Then( parts =>
-                            {
-                                var exceptionType = Type.GetType( parts.Item1.ToString()! ) ?? typeof( Exception ); //BF need to resolve type
-                                var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, parts.Item2.ToString() ) : null;
-
-                                return exceptionVariable;
-                            }
-                        )
-                        .And(
-                            Between(
-                                Terms.Char( '{' ),
-                                ZeroOrMany( statement ),
-                                Terms.Char( '}' )
-                            )
-                        )
-                        .Then( parts =>
-                        {
-                            var exceptionVariable = parts.Item1;
-                            var body = parts.Item2;
-
-                            return Catch( exceptionVariable, Block( body ) );
-                        } )
-                    )
-                )
-            )
-            .And(
-                ZeroOrOne(
-                    Terms.Text( "finally" )
-                        .SkipAnd(
-                            Between(
-                                Terms.Char( '{' ),
-                                ZeroOrMany( statement ),
-                                Terms.Char( '}' )
-                            )
-                        )
-                        .Then( Block )
-                    )
-            )
-            .Then<Expression>( parts =>
-            {
-                var tryBlock = parts.Item1;
-                var catchBlocks = parts.Item2.ToArray();
-                var finallyBlock = parts.Item3;
-
-                return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
-            } );
-
-        return parser;
-    }
 }
 
-public class LoopContext
+public class FlowContext
 {
     public LabelTarget BreakLabel { get; }
     public LabelTarget ContinueLabel { get; }
 
-    public LoopContext( LabelTarget breakLabel, LabelTarget continueLabel )
+    public FlowContext( LabelTarget breakLabel, LabelTarget continueLabel = null )
     {
         BreakLabel = breakLabel;
         ContinueLabel = continueLabel;

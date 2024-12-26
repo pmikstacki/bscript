@@ -1,7 +1,7 @@
 ﻿using Parlot;
 using Parlot.Fluent;
 
-namespace Hyperbee.XS.Parser;
+namespace Hyperbee.XS.Parsers;
 
 internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
 {
@@ -9,7 +9,7 @@ internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
     {
         var scanner = context.Scanner;
         var cursor = scanner.Cursor;
-
+        
         while ( true )
         {
             if ( scanner.SkipWhiteSpaceOrNewLine() )
@@ -32,3 +32,12 @@ internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
         }
     }
 }
+
+internal static partial class XsParsers
+{
+    public static Parser<TextSpan> WhitespaceOrNewLineOrComment()
+    {
+        return new WhitespaceOrNewLineOrCommentParser();
+    }
+}
+

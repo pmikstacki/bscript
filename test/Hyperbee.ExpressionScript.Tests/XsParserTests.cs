@@ -1,15 +1,15 @@
-﻿using Hyperbee.XS.Parser;
+﻿using Hyperbee.XS.Parsers;
 using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Tests;
 
 [TestClass]
-public class ExpressionScriptParserTests
+public class XsParserTests
 {
     [TestMethod]
     public void Compile_ShouldSucceed_Constant()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "5;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -23,7 +23,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_UnaryNegate()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "-1 + 3;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -37,7 +37,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_UnaryNot()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "!false;" );
 
         var lambda = Lambda<Func<bool>>( expression );
@@ -51,7 +51,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_UnaryNot_Grouping()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "!(false);" );
 
         var lambda = Lambda<Func<bool>>( expression );
@@ -65,7 +65,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryAdd()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "10 + 12;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -79,7 +79,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryAdd_WithMultiple()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "10 + 12 + 14;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -93,7 +93,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryAdd_WithGrouping()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "(10 + 12) * 2;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -107,7 +107,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryAdd_WithMulitpleGrouping()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "(10 + 12) * (1 + 1);" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -121,7 +121,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryLessThan()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "10 < 11;" );
 
         var lambda = Lambda<Func<bool>>( expression );
@@ -135,7 +135,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariable()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10;" );
 
         var lambda = Lambda( expression );
@@ -148,7 +148,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndResult()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10; x + 10;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -162,7 +162,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndAssignmentResult()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10; x = x + 10; x + 22;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -176,7 +176,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAddAssignmentResult()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10; x += 32;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -190,7 +190,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndPostResult()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10; x++;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -204,7 +204,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndPrefixResult()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse( "var x = 10; ++x;" );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -218,7 +218,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditional()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse(
         """
         if (true)
@@ -242,7 +242,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditionalAndNoElse()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse(
             """
             var x = "goodbye";
@@ -264,7 +264,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditionalVariable()
     {
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse(
             """
             var x = 10;
@@ -289,9 +289,7 @@ public class ExpressionScriptParserTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithLoop()
     {
-        //BF if conditions in loop are failing parser
-
-        var parser = new ExpressionScriptParser();
+        var parser = new XsParser();
         var expression = parser.Parse(
             """
             var x = 0;
@@ -313,4 +311,222 @@ public class ExpressionScriptParserTests
 
         Assert.AreEqual( 10, result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithTryCatch()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 0;
+            try
+            {
+                x = 32; // do something
+            }
+            catch( Exception e )
+            {
+                x -= 10;
+            }
+            finally
+            {
+                x+= 10;
+            }
+            x;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchCaseOnly()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 3;
+            var result = 0;
+
+            switch (x)
+            {
+                case 1:
+                    result = 1;
+                    break;
+                case 3:
+                    result = 42;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchDefaultOnly()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 3;
+            var result = 0;
+
+            switch (x)
+            {
+                default:
+                    result = 42;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>(expression);
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual(42, result);
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchCasesAndDefault()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 2;
+            var result = 0;
+
+            switch (x)
+            {
+                case 1:
+                    result = 10;
+                    break;
+                case 2:
+                    result = 20;
+                    break;
+                default:
+                    result = 30;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 20, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchFallthroughToDefault()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 99;
+            var result = 0;
+
+            switch (x)
+            {
+                case 1:
+                    result = 10;
+                    break;
+                case 2:
+                    result = 20;
+                    break;
+                default:
+                    result = 30;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>(expression);
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual(30, result);
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchMultipleCaseLabels()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 2;
+            var result = 0;
+
+            switch (x)
+            {
+                case 1:
+                case 2:
+                    result = 100;
+                    break;
+                default:
+                    result = 0;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>(expression);
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual(100, result);
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithSwitchNestedSwitchStatements()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var x = 1;
+            var y = 2;
+            var result = 0;
+
+            switch (x)
+            {
+                case 1:
+                    switch (y)
+                    {
+                        case 2:
+                            result = 50;
+                            break;
+                        default:
+                            result = 0;
+                            break;
+                    }
+                    break;
+                default:
+                    result = 0;
+                    break;
+            }
+
+            result;
+            """ );
+
+        var lambda = Lambda<Func<int>>(expression);
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual(50, result);
+    }
 }
+
