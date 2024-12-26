@@ -50,14 +50,16 @@ public class XsParser
     //
     // Add LinkedDictionary scopes and validate nesting complex statements and var declarations
     // Add Import statements //BF ME discuss - how should we include and resolve types
+    // Add Extensions
+    // Compiler //BF ME discuss
+    //
     // Add New
-    // Add Return
-    // Add Throw
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
     // Add Member access
+    // Add Return
+    // Add Throw
     // Add Indexer access
-    // Add Extensions
     // Add Goto
     // Add ?? and ??= operators
 
