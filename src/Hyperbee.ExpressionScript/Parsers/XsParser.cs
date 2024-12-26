@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -52,8 +52,11 @@ public class XsParser
     // Add Import statements //BF ME discuss - how should we include and resolve types
     // Add New
     // Add Return
+    // Add Throw
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
+    // Add Member access
+    // Add Indexer access
     // Add Extensions
     // Add Goto
     // Add ?? and ??= operators
