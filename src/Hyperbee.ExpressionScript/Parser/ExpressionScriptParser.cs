@@ -488,7 +488,7 @@ public class ExpressionScriptParser
                                 var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, parts.Item2.ToString() ) : null;
 
                                 return exceptionVariable;
-                            } 
+                            }
                         )
                         .And(
                             Between(
@@ -499,8 +499,8 @@ public class ExpressionScriptParser
                         )
                         .Then( parts =>
                         {
-                            var exceptionVariable = parts.Item1; 
-                            var body = parts.Item2; 
+                            var exceptionVariable = parts.Item1;
+                            var body = parts.Item2;
 
                             return Catch( exceptionVariable, Block( body ) );
                         } )
