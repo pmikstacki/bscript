@@ -49,11 +49,12 @@ public class ExpressionScriptParser
     // Parser TODO
     //
     // Add LinkedDictionary scopes and validate nesting complex statements and var declarations
+    // Add Using statements //BF ME discuss
     // Add TryCatch
     // Add New
     // Add Return
     // Add Method calls
-    // Add Lambda expressions
+    // Add Lambda expressions //BF ME discuss
     // Add Extensions
     // Add Goto
     // Add ?? and ??= operators
@@ -89,7 +90,7 @@ public class ExpressionScriptParser
 
         var primaryIdentifier = Terms.Identifier().Then<Expression>( LookupVariable );
 
-        var prefixedIdentifier = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
+        var prefixIdentifier = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
@@ -104,7 +105,7 @@ public class ExpressionScriptParser
                 };
             } );
 
-        var postfixedIdentifier = Terms.Identifier()
+        var postfixIdentifier = Terms.Identifier()
             .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
             .Then<Expression>( parts =>
             {
@@ -120,8 +121,8 @@ public class ExpressionScriptParser
             } );
 
         var identifier = OneOf(
-            prefixedIdentifier,
-            postfixedIdentifier,
+            prefixIdentifier,
+            postfixIdentifier,
             primaryIdentifier
         ).Named( "identifier" );
 
@@ -221,21 +222,20 @@ public class ExpressionScriptParser
 
         // Statements
 
-        var conditionalStatement = ConditionalParser( expression, statement ).Named( "conditional" );
+        var conditionalStatement = ConditionalParser( expression, statement );
         var loopStatement = LoopParser( statement, out var breakStatement, out var continueStatement );
+        var tryCatchStatement = TryCatchParser( statement );
 
         //var switchStatement = SwitchParser( expression );
-        //var tryCatchStatement = TryCatchParser( expression, identifier );
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
 
         var complexStatement = OneOf( // Complex statements are statements that control scope or flow
             conditionalStatement,
-            loopStatement
-
+            loopStatement,
+            tryCatchStatement
         //switchStatement
-        //tryCatchStatement
-        ).Named( "complex-statement" );
+        );
 
         var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
             breakStatement,
@@ -245,12 +245,12 @@ public class ExpressionScriptParser
             declaration,
             assignment,
             expression
-        ).AndSkip( Terms.Char( ';' ) ).Named( "expr-statement" );
+        ).AndSkip( Terms.Char( ';' ) );
 
         statement.Parser = OneOf(
             complexStatement,
             expressionStatement
-        ).Named( "statement" );
+        );
 
         // Finalize
 
@@ -463,13 +463,13 @@ public class ExpressionScriptParser
         return parser;
     }
 
-    private Parser<Expression> TryCatchParser( Deferred<Expression> expression, Parser<Expression> identifier )
+    private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
     {
         var parser = Terms.Text( "try" )
             .SkipAnd(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( expression ),
+                    ZeroOrMany( statement ),
                     Terms.Char( '}' )
                 ).Then( Block )
             )
@@ -479,49 +479,46 @@ public class ExpressionScriptParser
                         .SkipAnd(
                             Between(
                                 Terms.Char( '(' ),
-                                // Parse exception type and optional variable name
-                                identifier.And(
-                                        Terms.Identifier().AndSkip( Terms.Text( " " ) ).Or( null ) // Optional variable name
-                                    )
-                                    .Then( parts =>
-                                    {
-                                        // Build the exception parameter (or null if not provided)
-                                        var exceptionType = Type.GetType( parts.Item1.ToString() ) ?? typeof( Exception ); //BF we probably need a resolver here to resolve the type
-                                        var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, parts.Item2.ToString() ) : null;
-                                        return exceptionVariable;
-                                    } )
-                                    .Or( null ), // Default to no parameter if the catch has no parentheses
+                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), // Type and Optional variable name
                                 Terms.Char( ')' )
-                            ).Or( null ) // Handle missing parentheses gracefully
+                            )
+                            .Then( parts =>
+                            {
+                                var exceptionType = Type.GetType( parts.Item1.ToString()! ) ?? typeof( Exception ); //BF need to resolve type
+                                var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, parts.Item2.ToString() ) : null;
+
+                                return exceptionVariable;
+                            } 
                         )
                         .And(
                             Between(
                                 Terms.Char( '{' ),
-                                ZeroOrMany( expression ), // Parse the body of the catch block
+                                ZeroOrMany( statement ),
                                 Terms.Char( '}' )
                             )
                         )
                         .Then( parts =>
                         {
-                            var exceptionVariable = parts.Item1; // Exception variable (if any)
-                            var body = parts.Item2; // Catch block body
+                            var exceptionVariable = parts.Item1; 
+                            var body = parts.Item2; 
 
-                            // Return a CatchBlock
                             return Catch( exceptionVariable, Block( body ) );
                         } )
+                    )
                 )
             )
             .And(
-                Terms.Text( "finally" )
-                    .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( expression ),
-                            Terms.Char( '}' )
+                ZeroOrOne(
+                    Terms.Text( "finally" )
+                        .SkipAnd(
+                            Between(
+                                Terms.Char( '{' ),
+                                ZeroOrMany( statement ),
+                                Terms.Char( '}' )
+                            )
                         )
+                        .Then( Block )
                     )
-                    .Then( Block )
-                    .Or( null ) // Fallback to null if no finally block exists
             )
             .Then<Expression>( parts =>
             {
