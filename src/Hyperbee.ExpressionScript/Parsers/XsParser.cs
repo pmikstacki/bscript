@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -394,10 +394,10 @@ public class XsParser
     private Parser<Expression> SwitchParser( Deferred<Expression> expression, Deferred<Expression> statement )
     {
         var caseUntil = Literals.WhiteSpace( includeNewLines: true )
-            .And( 
+            .And(
                 Terms.Text( "case" )
                 .Or( Terms.Text( "default" ) )
-                .Or( Terms.Text( "}" ) 
+                .Or( Terms.Text( "}" )
             ) );
 
         var caseParser = Terms.Text( "case" )
@@ -410,7 +410,7 @@ public class XsParser
 
                 var body = statements.Count > 1
                     ? Block( statements )
-                    : statements.FirstOrDefault() ?? Default( typeof(void) );
+                    : statements.FirstOrDefault() ?? Default( typeof( void ) );
 
                 return SwitchCase( body, testExpression );
             } );
@@ -422,7 +422,7 @@ public class XsParser
             {
                 var body = statements.Count > 1
                     ? Block( statements )
-                    : statements.FirstOrDefault() ?? Default( typeof(void) );
+                    : statements.FirstOrDefault() ?? Default( typeof( void ) );
 
                 return body;
             } );
@@ -430,7 +430,7 @@ public class XsParser
         var parser = Terms.Text( "switch" )
             .Then( _ =>
             {
-                var breakLabel = Label( typeof(void), "Break" );
+                var breakLabel = Label( typeof( void ), "Break" );
                 _flowContexts.Push( new FlowContext( breakLabel ) );
 
                 return breakLabel;
@@ -492,7 +492,7 @@ public class XsParser
                             )
                             .Then( parts =>
                             {
-                                var ( typeName, variableName) = parts;
+                                var (typeName, variableName) = parts;
                                 var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - need to resolve type
                                 var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, variableName.ToString() ) : null;
 
@@ -508,7 +508,7 @@ public class XsParser
                         )
                         .Then( parts =>
                         {
-                            var ( exceptionVariable, body ) = parts; 
+                            var (exceptionVariable, body) = parts;
                             return Catch( exceptionVariable, Block( body ) );
                         } )
                     )
@@ -529,7 +529,7 @@ public class XsParser
             )
             .Then<Expression>( parts =>
             {
-                var ( tryBlock, catchBlocks, finallyBlock) = parts;
+                var (tryBlock, catchBlocks, finallyBlock) = parts;
                 return TryCatchFinally( tryBlock, finallyBlock, catchBlocks.ToArray() );
             } );
 

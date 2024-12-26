@@ -9,7 +9,7 @@ internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
     {
         var scanner = context.Scanner;
         var cursor = scanner.Cursor;
-        
+
         while ( true )
         {
             if ( scanner.SkipWhiteSpaceOrNewLine() )

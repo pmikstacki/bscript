@@ -3,7 +3,7 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.Parsers;
 
-internal class ZeroOrManyUntilParser<T,U> : Parser<IReadOnlyList<T>>
+internal class ZeroOrManyUntilParser<T, U> : Parser<IReadOnlyList<T>>
 {
     private readonly Parser<T> _parser;
     private readonly Parser<U> _untilParser;
@@ -18,7 +18,7 @@ internal class ZeroOrManyUntilParser<T,U> : Parser<IReadOnlyList<T>>
     {
         context.EnterParser( this );
 
-        var results = default(List<T>);
+        var results = default( List<T> );
         var current = context.Scanner.Cursor.Position;
 
         var first = true;
@@ -51,7 +51,7 @@ internal class ZeroOrManyUntilParser<T,U> : Parser<IReadOnlyList<T>>
                 results ??= [];
                 results.Add( parsed.Value );
 
-                current = context.Scanner.Cursor.Position; 
+                current = context.Scanner.Cursor.Position;
             }
             else
             {
