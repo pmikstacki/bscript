@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -15,16 +15,16 @@ public interface IParserExtension
 
 public class XsParser
 {
-    private Parser<Expression> _xs;
-    private readonly List<IParserExtension> _extensions = [];
+    private readonly Parser<Expression> _xs;
     private readonly Dictionary<string, MethodInfo> _methodTable;
+    private readonly List<IParserExtension> _extensions = [];
 
     private Scope Scope { get; } = new();
 
     public XsParser( Dictionary<string, MethodInfo> methodTable = null )
     {
         _methodTable = methodTable ?? new Dictionary<string, MethodInfo>();
-        InitializeParser();
+        _xs = CreateParser();
     }
 
     public void AddExtension( IParserExtension extension )
@@ -54,22 +54,110 @@ public class XsParser
     // Add Throw
     // Add Indexer access
 
-    private void InitializeParser()
+    private Parser<Expression> CreateParser()
     {
-        // Deferred parser for recursive expressions
-        var expression = Deferred<Expression>();
+        // Expressions
+
+        var expression = ExpressionParser();
+
+        // Statements
+
         var statement = Deferred<Expression>();
 
+        var conditionalStatement = ConditionalParser( expression, statement );
+        var loopStatement = LoopParser( statement );
+        var tryCatchStatement = TryCatchParser( statement );
+        var switchStatement = SwitchParser( expression, statement );
+
+        var declaration = DeclarationParser( expression );
+        var assignment = AssignmentParser( expression );
+
+        var breakStatement = BreakParser();
+        var continueStatement = ContinueParser();
+        var gotoStatement = GotoParser();
+        var labelStatement = LabelParser();
+
+        //var methodCall = MethodCallParser( expression, identifier );
+        //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
+
+        var complexStatement = OneOf( // Complex statements are statements that control scope or flow
+            conditionalStatement,
+            loopStatement,
+            tryCatchStatement,
+            switchStatement
+        );
+
+        var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
+            breakStatement,
+            continueStatement,
+            gotoStatement,
+            //methodCall
+            //lambdaInvocation
+            declaration,
+            assignment,
+            expression
+        ).AndSkip( Terms.Char( ';' ) );
+
+        statement.Parser = OneOf(
+            complexStatement,
+            labelStatement,
+            expressionStatement
+        );
+
+        // Finalize
+
+        return Between(
+                Always().Then<Expression>( _ =>
+                {
+                    Scope.Push( new Frame() );
+                    return null;
+                } ),
+                ZeroOrMany( statement ).Then<Expression>( statements =>
+                    Block(
+                        Scope.Variables.EnumerateValues(),
+                        statements
+                    )
+                ), 
+                Always<Expression>().Then<Expression>( _ =>
+                {
+                    Scope.Pop();
+                    return null;
+                } )
+            );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    {
+        return ConvertToSingleExpression( expressions, typeof( void ) );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions, Type defaultType )
+    {
+        return expressions?.Count switch
+        {
+            null or 0 => defaultType == null ? null : Default( defaultType ),
+            1 => expressions.First(),
+            _ => Block( expressions )
+        };
+    }
+
+    // Expression Parser
+
+    private Parser<Expression> ExpressionParser()
+    {
+        var expression = Deferred<Expression>();
+
         // Literals
+        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
+        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
+        var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( static value => Constant( value ) );
+        var doubleLiteral = Terms.Number<double>( NumberOptions.Float ).Then<Expression>( static value => Constant( value ) );
 
-        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
-        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( value => Constant( value ) );
-        var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
-        var doubleLiteral = Terms.Number<double>( NumberOptions.Float ).Then<Expression>( value => Constant( value ) );
-
-        var stringLiteral = Terms.String().Then<Expression>( value => Constant( value.ToString() ) );
-        var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( value => Constant( bool.Parse( value ) ) );
-        var nullLiteral = Terms.Text( "null" ).Then<Expression>( _ => Constant( null ) );
+        var stringLiteral = Terms.String().Then<Expression>( static value => Constant( value.ToString() ) );
+        var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( static value => Constant( bool.Parse( value ) ) );
+        var nullLiteral = Terms.Text( "null" ).Then<Expression>( static _ => Constant( null ) );
 
         var literal = OneOf(
             integerLiteral,
@@ -162,40 +250,24 @@ public class XsParser
             (Terms.Text( "??" ), Coalesce)
         ).Named( "binary" );
 
-        expression.Parser = OneOf(
+        return expression.Parser = OneOf(
             binaryExpression
         );
+    }
 
-        // Variable Declarations
+    // Variable Parsers
 
-        var declaration = Terms.Text( "var" )
-            .SkipAnd( Terms.Identifier() )
-            .AndSkip( Terms.Char( '=' ) )
-            .And( expression )
-            .Then<Expression>( parts =>
-            {
-                var (ident, right) = parts;
-                var left = ident.ToString()!;
-
-                var variable = Variable( right.Type, left );
-                Scope.Variables.Add( left, variable );
-
-                return Assign( variable, right );
-            }
-        ).Named( "declaration" );
-
-        // Assignments
-
-        var assignment =
-            Terms.Identifier()
+    private Parser<Expression> AssignmentParser( Parser<Expression> expression )
+    {
+        return Terms.Identifier()
             .And(
                 SkipWhiteSpace(
                     Terms.Text( "=" )
-                    .Or( Terms.Text( "+=" ) )
-                    .Or( Terms.Text( "-=" ) )
-                    .Or( Terms.Text( "*=" ) )
-                    .Or( Terms.Text( "/=" ) )
-                    .Or( Terms.Text( "??=" ) )
+                        .Or( Terms.Text( "+=" ) )
+                        .Or( Terms.Text( "-=" ) )
+                        .Or( Terms.Text( "*=" ) )
+                        .Or( Terms.Text( "/=" ) )
+                        .Or( Terms.Text( "??=" ) )
                 )
             )
             .And( expression )
@@ -215,85 +287,30 @@ public class XsParser
                         _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
                     };
                 }
-            ).Named( "assignment" );
-
-        // Statements
-
-        var conditionalStatement = ConditionalParser( expression, statement );
-        var loopStatement = LoopParser( statement );
-        var tryCatchStatement = TryCatchParser( statement );
-        var switchStatement = SwitchParser( expression, statement );
-
-        var breakStatement = BreakParser();
-        var continueStatement = ContinueParser();
-        var gotoStatement = GotoParser();
-        var labelStatement = LabelParser();
-
-        //var methodCall = MethodCallParser( expression, identifier );
-        //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
-
-        var complexStatement = OneOf( // Complex statements are statements that control scope or flow
-            conditionalStatement,
-            loopStatement,
-            tryCatchStatement,
-            switchStatement
-        );
-
-        var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
-            breakStatement,
-            continueStatement,
-            gotoStatement,
-            //methodCall
-            //lambdaInvocation
-            declaration,
-            assignment,
-            expression
-        ).AndSkip( Terms.Char( ';' ) );
-
-        statement.Parser = OneOf(
-            complexStatement,
-            labelStatement,
-            expressionStatement
-        );
-
-        // Finalize
-
-        _xs = Between(
-                Always().Then<Expression>( _ =>
-                {
-                    Scope.Push( new Frame() );
-                    return null;
-                } ),
-                ZeroOrMany( statement ).Then<Expression>( statements =>
-                    Block(
-                        Scope.Variables.EnumerateValues(),
-                        statements
-                    )
-                ),
-                Always<Expression>().Then<Expression>( _ =>
-                {
-                    Scope.Pop();
-                    return null;
-                } )
             );
     }
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    private Parser<Expression> DeclarationParser( Parser<Expression> expression )
     {
-        return ConvertToSingleExpression( expressions, typeof( void ) );
+        return Terms.Text( "var" )
+            .SkipAnd( Terms.Identifier() )
+            .AndSkip( Terms.Char( '=' ) )
+            .And( expression )
+            .Then<Expression>( parts =>
+                {
+                    var (ident, right) = parts;
+                    var left = ident.ToString()!;
+
+                    var variable = Variable( right.Type, left );
+                    Scope.Variables.Add( left, variable );
+
+                    return Assign( variable, right );
+                }
+            );
     }
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions, Type defaultType )
-    {
-        return expressions?.Count switch
-        {
-            null or 0 => defaultType == null ? null : Default( defaultType ),
-            1 => expressions.First(),
-            _ => Block( expressions )
-        };
-    }
+
+    // Statement Parsers
 
     private Parser<Expression> BreakParser()
     {
@@ -346,7 +363,7 @@ public class XsParser
             } );
     }
 
-    private Parser<Expression> ConditionalParser( Deferred<Expression> expression, Deferred<Expression> statement )
+    private Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         var parser = Terms.Text( "if" )
             .SkipAnd(
@@ -374,7 +391,7 @@ public class XsParser
                     )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
                 var (test, trueExprs, falseExprs) = parts;
 
@@ -427,7 +444,7 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> SwitchParser( Deferred<Expression> expression, Deferred<Expression> statement )
+    private Parser<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         var caseUntil = Literals.WhiteSpace( includeNewLines: true )
             .And(
@@ -440,7 +457,7 @@ public class XsParser
             .SkipAnd( expression )
             .AndSkip( Terms.Char( ':' ) )
             .And( XsParsers.ZeroOrManyUntil( statement, caseUntil ) )
-            .Then( parts =>
+            .Then( static parts =>
             {
                 var (testExpression, statements) = parts;
                 var body = ConvertToSingleExpression( statements );
@@ -451,7 +468,7 @@ public class XsParser
         var defaultParser = Terms.Text( "default" )
             .SkipAnd( Terms.Char( ':' ) )
             .SkipAnd( ZeroOrMany( statement ) )
-            .Then( statements =>
+            .Then( static statements =>
             {
                 var body = ConvertToSingleExpression( statements );
                 return body;
@@ -520,11 +537,11 @@ public class XsParser
                                 Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), //BF ME discuss - need to test optional identifier
                                 Terms.Char( ')' )
                             )
-                            .Then( parts =>
+                            .Then( static parts =>
                             {
                                 var (typeName, variableName) = parts;
                                 var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - type resolution
-                                var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, variableName.ToString() ) : null;
+                                var exceptionVariable = variableName != null ? Parameter( exceptionType, variableName.ToString() ) : null;
 
                                 return exceptionVariable;
                             }
@@ -536,7 +553,7 @@ public class XsParser
                                 Terms.Char( '}' )
                             )
                         )
-                        .Then( parts =>
+                        .Then( static parts =>
                         {
                             var (exceptionVariable, body) = parts;
                             return Catch( exceptionVariable, Block( body ) );
@@ -557,7 +574,7 @@ public class XsParser
                         .Then( Block )
                     )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
                 var (tryBlock, catchBlocks, finallyBlock) = parts;
                 return TryCatchFinally( tryBlock, finallyBlock, catchBlocks.ToArray() );
@@ -566,7 +583,7 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> MethodCallParser( Deferred<Expression> expression, Parser<Expression> identifier )
+    private Parser<Expression> MethodCallParser( Parser<Expression> expression, Parser<Expression> identifier )
     {
         var arguments = Separated( Terms.Char( ',' ), expression )
             .Then( parts => parts ?? Array.Empty<Expression>() );
@@ -596,7 +613,7 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> LambdaInvokeParser( Deferred<Expression> expression, Parser<Expression> identifier )
+    private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression, Parser<Expression> identifier )
     {
         var arguments = Separated( Terms.Char( ',' ), expression )
             .Then( parts => parts ?? Array.Empty<Expression>() );
@@ -609,10 +626,9 @@ public class XsParser
                     Terms.Char( ')' )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
-                var lambdaExpression = parts.Item1;
-                var invocationArguments = parts.Item2; // Arguments 
+                var (lambdaExpression, invocationArguments) = parts;
 
                 return Invoke(
                     lambdaExpression,
