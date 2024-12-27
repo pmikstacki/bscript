@@ -110,7 +110,7 @@ public class XsParser
                 Always().Then<Expression>( _ =>
                 {
                     Scope.Push( new Frame() );
-                    return null;
+                    return default;
                 } ),
                 ZeroOrMany( statement ).Then<Expression>( statements =>
                     Block(
@@ -121,10 +121,12 @@ public class XsParser
                 Always<Expression>().Then<Expression>( _ =>
                 {
                     Scope.Pop();
-                    return null;
+                    return default;
                 } )
             );
     }
+
+    // Helpers
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
@@ -150,6 +152,7 @@ public class XsParser
         var expression = Deferred<Expression>();
 
         // Literals
+
         var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
         var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
         var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( static value => Constant( value ) );
