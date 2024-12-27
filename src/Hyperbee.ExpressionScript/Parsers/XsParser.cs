@@ -57,11 +57,10 @@ public class XsParser
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
     // Add Member access
-    // Add Return
+    // Add Return //BF ME discuss - synthesize method and visitor requirement
     // Add Throw
     // Add Indexer access
     // Add Goto
-    // Add ?? and ??= operators
 
     private void InitializeParser()
     {
@@ -204,6 +203,7 @@ public class XsParser
                     .Or( Terms.Text( "-=" ) )
                     .Or( Terms.Text( "*=" ) )
                     .Or( Terms.Text( "/=" ) )
+                    .Or( Terms.Text( "??=" ) )
                 )
             )
             .And( expression )
@@ -219,6 +219,7 @@ public class XsParser
                         "-=" => SubtractAssign( left, right ),
                         "*=" => MultiplyAssign( left, right ),
                         "/=" => DivideAssign( left, right ),
+                        "??=" => Assign( left, Coalesce( left, right ) ),
                         _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
                     };
                 }
