@@ -278,6 +278,23 @@ public class XsParser
         return variable;
     }
 
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    {
+        return ConvertToSingleExpression( expressions, typeof(void ) );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions, Type defaultType )
+    {
+        return expressions?.Count switch
+        {
+            null or 0 => defaultType == null ? null : Default( defaultType ),
+            1 => expressions.First(),
+            _ => Block( expressions )
+        };
+    }
+    
     private Parser<Expression> BreakParser()
     {
         return Terms.Text( "break" )
@@ -339,17 +356,17 @@ public class XsParser
             {
                 var (test, trueExprs, falseExprs) = parts;
 
-                var ifTrue = trueExprs.Count > 1
-                    ? Block( trueExprs )
-                    : trueExprs[0];
+                var ifTrue = ConvertToSingleExpression( trueExprs, defaultType: null );
+                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof(void) );
 
-                var ifFalse = falseExprs switch
-                {
-                    null => Default( ifTrue?.Type ?? typeof( void ) ),
-                    _ => falseExprs.Count > 1
-                        ? Block( falseExprs )
-                        : falseExprs[0]
-                };
+
+                //var ifFalse = falseExprs switch
+                //{
+                //    null => Default( ifTrue?.Type ?? typeof(void) ),
+                //    _ => falseExprs.Count > 1
+                //        ? Block( falseExprs )
+                //        : falseExprs[0]
+                //};
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
@@ -413,10 +430,7 @@ public class XsParser
             .Then( parts =>
             {
                 var (testExpression, statements) = parts;
-
-                var body = statements.Count > 1
-                    ? Block( statements )
-                    : statements.FirstOrDefault() ?? Default( typeof( void ) );
+                var body = ConvertToSingleExpression( statements );
 
                 return SwitchCase( body, testExpression );
             } );
@@ -426,10 +440,7 @@ public class XsParser
             .SkipAnd( ZeroOrMany( statement ) )
             .Then( statements =>
             {
-                var body = statements.Count > 1
-                    ? Block( statements )
-                    : statements.FirstOrDefault() ?? Default( typeof( void ) );
-
+                var body = ConvertToSingleExpression( statements );
                 return body;
             } );
 
@@ -499,7 +510,7 @@ public class XsParser
                             .Then( parts =>
                             {
                                 var (typeName, variableName) = parts;
-                                var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - need to resolve type
+                                var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - type resolution
                                 var exceptionVariable = parts.Item2 != null ? Parameter( exceptionType, variableName.ToString() ) : null;
 
                                 return exceptionVariable;
