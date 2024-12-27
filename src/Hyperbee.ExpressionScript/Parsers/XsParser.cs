@@ -281,7 +281,7 @@ public class XsParser
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
     {
-        return ConvertToSingleExpression( expressions, typeof(void ) );
+        return ConvertToSingleExpression( expressions, typeof( void ) );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -294,7 +294,7 @@ public class XsParser
             _ => Block( expressions )
         };
     }
-    
+
     private Parser<Expression> BreakParser()
     {
         return Terms.Text( "break" )
@@ -357,7 +357,7 @@ public class XsParser
                 var (test, trueExprs, falseExprs) = parts;
 
                 var ifTrue = ConvertToSingleExpression( trueExprs, defaultType: null );
-                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof(void) );
+                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof( void ) );
 
 
                 //var ifFalse = falseExprs switch
