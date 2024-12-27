@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -269,7 +269,7 @@ public class XsParser
                         Scope.Variables.EnumerateValues(),
                         statements
                     )
-                ), 
+                ),
                 Always<Expression>().Then<Expression>( _ =>
                 {
                     Scope.Pop();
@@ -338,7 +338,7 @@ public class XsParser
     {
         return Terms.Identifier()
             .AndSkip( Terms.Char( ':' ) )
-            .AndSkip( Literals.WhiteSpace( includeNewLines: true) )
+            .AndSkip( Literals.WhiteSpace( includeNewLines: true ) )
             .Then<Expression>( labelName =>
             {
                 var label = Scope.Frame.GetOrCreateLabel( labelName.ToString() );
@@ -379,7 +379,7 @@ public class XsParser
                 var (test, trueExprs, falseExprs) = parts;
 
                 var ifTrue = ConvertToSingleExpression( trueExprs );
-                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof(void) );
+                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof( void ) );
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
