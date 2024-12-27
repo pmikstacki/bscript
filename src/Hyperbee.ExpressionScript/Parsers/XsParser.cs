@@ -1,8 +1,7 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
-using Hyperbee.Collections.Extensions;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -17,12 +16,10 @@ public interface IParserExtension
 public class XsParser
 {
     private Parser<Expression> _xs;
-
     private readonly List<IParserExtension> _extensions = [];
-    private readonly LinkedDictionary<string, ParameterExpression> _variableTable = new(); // TODO: push and pop scopes
-
     private readonly Dictionary<string, MethodInfo> _methodTable;
-    private readonly Stack<FlowContext> _flowContexts = new();
+
+    private Scope Scope { get; } = new();
 
     public XsParser( Dictionary<string, MethodInfo> methodTable = null )
     {
@@ -37,21 +34,17 @@ public class XsParser
 
     public Expression Parse( string script )
     {
-        using ( _variableTable.Enter() )
-        {
-            var scanner = new Parlot.Scanner( script );
-            var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        var scanner = new Parlot.Scanner( script );
+        var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
-            return _xs.Parse( context );
-        }
+        return _xs.Parse( context );
     }
 
     // Parser TODO
     //
-    // Add LinkedDictionary scopes and validate nesting complex statements and var declarations
     // Add Import statements //BF ME discuss - how should we include and resolve types
     // Add Extensions
-    // Compiler //BF ME discuss
+    // Compile //BF ME discuss
     //
     // Add New
     // Add Method calls
@@ -60,7 +53,6 @@ public class XsParser
     // Add Return //BF ME discuss - synthesize method and visitor requirement
     // Add Throw
     // Add Indexer access
-    // Add Goto
 
     private void InitializeParser()
     {
@@ -91,14 +83,14 @@ public class XsParser
 
         // Identifiers
 
-        var primaryIdentifier = Terms.Identifier().Then<Expression>( LookupVariable );
+        var primaryIdentifier = Terms.Identifier().Then<Expression>( Scope.LookupVariable );
 
         var prefixIdentifier = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
                 var (op, ident) = parts;
-                var variable = LookupVariable( ident );
+                var variable = Scope.LookupVariable( ident );
 
                 return op switch
                 {
@@ -113,7 +105,7 @@ public class XsParser
             .Then<Expression>( parts =>
             {
                 var (ident, op) = parts;
-                var variable = LookupVariable( ident );
+                var variable = Scope.LookupVariable( ident );
 
                 return op switch
                 {
@@ -186,7 +178,7 @@ public class XsParser
                 var left = ident.ToString()!;
 
                 var variable = Variable( right.Type, left );
-                _variableTable.Add( left, variable );
+                Scope.Variables.Add( left, variable );
 
                 return Assign( variable, right );
             }
@@ -210,7 +202,7 @@ public class XsParser
             .Then<Expression>( parts =>
                 {
                     var (ident, op, right) = parts;
-                    var left = LookupVariable( ident );
+                    var left = Scope.LookupVariable( ident );
 
                     return op switch
                     {
@@ -234,6 +226,8 @@ public class XsParser
 
         var breakStatement = BreakParser();
         var continueStatement = ContinueParser();
+        var gotoStatement = GotoParser();
+        var labelStatement = LabelParser();
 
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
@@ -248,6 +242,7 @@ public class XsParser
         var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
             breakStatement,
             continueStatement,
+            gotoStatement,
             //methodCall
             //lambdaInvocation
             declaration,
@@ -257,25 +252,30 @@ public class XsParser
 
         statement.Parser = OneOf(
             complexStatement,
+            labelStatement,
             expressionStatement
         );
 
         // Finalize
 
-        _xs = ZeroOrMany( statement )
-            .Then<Expression>( statements => Block(
-                _variableTable.EnumerateValues(),
-                statements
-            ) );
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private ParameterExpression LookupVariable( Parlot.TextSpan ident )
-    {
-        if ( !_variableTable.TryGetValue( ident.ToString()!, out var variable ) )
-            throw new Exception( $"Variable '{ident}' not found." );
-
-        return variable;
+        _xs = Between(
+                Always().Then<Expression>( _ =>
+                {
+                    Scope.Push( new Frame() );
+                    return null;
+                } ),
+                ZeroOrMany( statement ).Then<Expression>( statements =>
+                    Block(
+                        Scope.Variables.EnumerateValues(),
+                        statements
+                    )
+                ), 
+                Always<Expression>().Then<Expression>( _ =>
+                {
+                    Scope.Pop();
+                    return null;
+                } )
+            );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -300,10 +300,11 @@ public class XsParser
         return Terms.Text( "break" )
             .Then<Expression>( _ =>
             {
-                if ( _flowContexts.Count == 0 )
+                var breakLabel = Scope.Frame.BreakLabel;
+
+                if ( breakLabel == null )
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
 
-                var breakLabel = _flowContexts.Peek().BreakLabel;
                 return Break( breakLabel );
             } );
     }
@@ -313,14 +314,35 @@ public class XsParser
         return Terms.Text( "continue" )
             .Then<Expression>( _ =>
             {
-                if ( _flowContexts.Count == 0 )
+                var continueLabel = Scope.Frame.ContinueLabel;
+
+                if ( continueLabel == null )
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
 
-                var continueLabel = _flowContexts.Peek().ContinueLabel;
-                if ( continueLabel == null )
-                    throw new Exception( "'continue' is not valid in a switch statement." );
-
                 return Continue( continueLabel );
+            } );
+    }
+
+    private Parser<Expression> GotoParser()
+    {
+        return Terms.Text( "goto" )
+            .SkipAnd( Terms.Identifier() )
+            .Then<Expression>( labelName =>
+            {
+                var label = Scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                return Goto( label );
+            } );
+    }
+
+    private Parser<Expression> LabelParser()
+    {
+        return Terms.Identifier()
+            .AndSkip( Terms.Char( ':' ) )
+            .AndSkip( Literals.WhiteSpace( includeNewLines: true) )
+            .Then<Expression>( labelName =>
+            {
+                var label = Scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                return Label( label );
             } );
     }
 
@@ -356,17 +378,8 @@ public class XsParser
             {
                 var (test, trueExprs, falseExprs) = parts;
 
-                var ifTrue = ConvertToSingleExpression( trueExprs, defaultType: null );
-                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof( void ) );
-
-
-                //var ifFalse = falseExprs switch
-                //{
-                //    null => Default( ifTrue?.Type ?? typeof(void) ),
-                //    _ => falseExprs.Count > 1
-                //        ? Block( falseExprs )
-                //        : falseExprs[0]
-                //};
+                var ifTrue = ConvertToSingleExpression( trueExprs );
+                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof(void) );
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
@@ -384,7 +397,7 @@ public class XsParser
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                _flowContexts.Push( new FlowContext( breakLabel, continueLabel ) );
+                Scope.Push( new Frame( breakLabel, continueLabel ) );
 
                 return (breakLabel, continueLabel);
             } )
@@ -407,7 +420,7 @@ public class XsParser
                 }
                 finally
                 {
-                    _flowContexts.Pop(); // Ensure context is removed after parsing
+                    Scope.Pop();
                 }
             } );
 
@@ -448,7 +461,7 @@ public class XsParser
             .Then( _ =>
             {
                 var breakLabel = Label( typeof( void ), "Break" );
-                _flowContexts.Push( new FlowContext( breakLabel ) );
+                Scope.Push( new Frame( breakLabel ) );
 
                 return breakLabel;
             } )
@@ -481,7 +494,7 @@ public class XsParser
                 }
                 finally
                 {
-                    _flowContexts.Pop();
+                    Scope.Pop();
                 }
             } );
 
@@ -611,15 +624,58 @@ public class XsParser
     }
 }
 
-public class FlowContext
+internal class Scope
+{
+    private readonly Stack<Frame> _frames = new();
+
+    public LinkedDictionary<string, ParameterExpression> Variables = new();
+    public Frame Frame => _frames.Peek();
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public void Push( Frame frame )
+    {
+        _frames.Push( frame );
+        Variables.Push();
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public void Pop()
+    {
+        _frames.Pop();
+        Variables.Pop();
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public ParameterExpression LookupVariable( Parlot.TextSpan ident )
+    {
+        if ( !Variables.TryGetValue( ident.ToString()!, out var variable ) )
+            throw new Exception( $"Variable '{ident}' not found." );
+
+        return variable;
+    }
+}
+
+internal class Frame
 {
     public LabelTarget BreakLabel { get; }
     public LabelTarget ContinueLabel { get; }
+    public Dictionary<string, LabelTarget> Labels { get; } = new();
 
-    public FlowContext( LabelTarget breakLabel, LabelTarget continueLabel = null )
+    public Frame( LabelTarget breakLabel = null, LabelTarget continueLabel = null )
     {
         BreakLabel = breakLabel;
         ContinueLabel = continueLabel;
     }
-}
 
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public LabelTarget GetOrCreateLabel( string labelName )
+    {
+        if ( Labels.TryGetValue( labelName, out var label ) )
+            return label;
+
+        label = Label( labelName );
+        Labels[labelName] = label;
+
+        return label;
+    }
+}
