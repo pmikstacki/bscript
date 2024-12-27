@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -117,7 +117,7 @@ public class XsParser
                         Scope.Variables.EnumerateValues(),
                         statements
                     )
-                ), 
+                ),
                 Always<Expression>().Then<Expression>( _ =>
                 {
                     Scope.Pop();
