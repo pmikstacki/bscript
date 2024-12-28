@@ -50,7 +50,6 @@ public class XsParser
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
     // Add Member access
-    // Add Return //BF ME discuss - synthesize method and visitor requirement
     // Add Throw
     // Add Indexer access
 
@@ -76,6 +75,7 @@ public class XsParser
         var continueStatement = ContinueParser();
         var gotoStatement = GotoParser();
         var labelStatement = LabelParser();
+        var returnStatement = ReturnParser( expression );
 
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
@@ -91,9 +91,10 @@ public class XsParser
             breakStatement,
             continueStatement,
             gotoStatement,
+            returnStatement,
             //methodCall
             //lambdaInvocation
-            declaration,
+            declaration, // must come after statements
             assignment,
             expression
         ).AndSkip( Terms.Char( ';' ) );
@@ -109,14 +110,11 @@ public class XsParser
         return Between(
                 Always().Then<Expression>( _ =>
                 {
-                    Scope.Push( new Frame() );
+                    Scope.Push( FrameType.Method );
                     return default;
                 } ),
-                ZeroOrMany( statement ).Then<Expression>( statements =>
-                    Block(
-                        Scope.Variables.EnumerateValues(),
-                        statements
-                    )
+                ZeroOrMany( statement ).Then( statements => 
+                    ConvertToFinalExpression( statements, Scope ) 
                 ),
                 Always<Expression>().Then<Expression>( _ =>
                 {
@@ -142,6 +140,26 @@ public class XsParser
             null or 0 => defaultType == null ? null : Default( defaultType ),
             1 => expressions.First(),
             _ => Block( expressions )
+        };
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, Scope scope )
+    {
+        var returnLabel = scope.Frame.ReturnLabel;
+        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
+
+        return returnLabel switch
+        {
+            null => Block( scope.Variables.EnumerateValues(), expressions ),
+
+            _ when returnLabel.Type != finalType
+                => throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." ),
+
+            _ => Block(
+                scope.Variables.EnumerateValues(),
+                expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] )
+            )
         };
     }
 
@@ -366,6 +384,21 @@ public class XsParser
             } );
     }
 
+    private Parser<Expression> ReturnParser( Parser<Expression> expression )
+    {
+        return Terms.Text( "return" )
+            .SkipAnd( ZeroOrOne( expression ) )
+            .Then<Expression>( returnValue =>
+            {
+                var returnType = returnValue?.Type ?? typeof(void);
+                var returnLabel = Scope.Frame.GetOrCreateReturnLabel( returnType );
+
+                return returnType == typeof(void)
+                    ? Return( returnLabel )
+                    : Return( returnLabel, returnValue, returnType );
+            } );
+    }
+
     private Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         var parser = Terms.Text( "if" )
@@ -417,7 +450,7 @@ public class XsParser
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                Scope.Push( new Frame( breakLabel, continueLabel ) );
+                Scope.Push( FrameType.Child, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
@@ -481,7 +514,7 @@ public class XsParser
             .Then( _ =>
             {
                 var breakLabel = Label( typeof( void ), "Break" );
-                Scope.Push( new Frame( breakLabel ) );
+                Scope.Push( FrameType.Child, breakLabel );
 
                 return breakLabel;
             } )
@@ -651,8 +684,11 @@ internal class Scope
     public Frame Frame => _frames.Peek();
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public void Push( Frame frame )
+    public void Push( FrameType frameType, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
     {
+        var parent = _frames.Count > 0 ? _frames.Peek() : null;
+        var frame = new Frame( frameType, parent, breakLabel, continueLabel );
+
         _frames.Push( frame );
         Variables.Push();
     }
@@ -674,19 +710,31 @@ internal class Scope
     }
 }
 
+internal enum FrameType
+{
+    Method,
+    Child
+}
+
 internal class Frame
 {
+    public FrameType FrameType { get; }
+    public Frame Parent { get; }
+
     public LabelTarget BreakLabel { get; }
     public LabelTarget ContinueLabel { get; }
+    public LabelTarget ReturnLabel { get; private set; }
+
     public Dictionary<string, LabelTarget> Labels { get; } = new();
 
-    public Frame( LabelTarget breakLabel = null, LabelTarget continueLabel = null )
+    public Frame( FrameType frameType, Frame parent = null, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
     {
+        FrameType = frameType;
+        Parent = parent;
         BreakLabel = breakLabel;
         ContinueLabel = continueLabel;
     }
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public LabelTarget GetOrCreateLabel( string labelName )
     {
         if ( Labels.TryGetValue( labelName, out var label ) )
@@ -696,5 +744,32 @@ internal class Frame
         Labels[labelName] = label;
 
         return label;
+    }
+
+    public LabelTarget GetOrCreateReturnLabel( Type returnType )
+    {
+        var currentFrame = this;
+
+        while ( currentFrame != null )
+        {
+            if ( currentFrame.FrameType == FrameType.Method )
+            {
+                if ( currentFrame.ReturnLabel == null )
+                {
+                    currentFrame.ReturnLabel = Label( returnType, "ReturnLabel" );
+                }
+                else if ( currentFrame.ReturnLabel.Type != returnType )
+                {
+                    throw new InvalidOperationException(
+                        $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
+                }
+
+                return currentFrame.ReturnLabel;
+            }
+
+            currentFrame = currentFrame.Parent;
+        }
+
+        throw new InvalidOperationException( "No enclosing method frame to handle return." );
     }
 }
