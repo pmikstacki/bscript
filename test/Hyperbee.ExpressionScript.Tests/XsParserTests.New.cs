@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
 using Hyperbee.XS.Parsers;
 
 namespace Hyperbee.XS.Tests;
@@ -19,7 +20,8 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewExpression()
     {
-        var parser = new XsParser();
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
         var expression = parser.Parse(
             """
             new Hyperbee.XS.Tests.SimpleClass(42);

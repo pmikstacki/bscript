@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
@@ -19,7 +21,15 @@ public class XsParser
     private readonly Dictionary<string, MethodInfo> _methodTable;
     private readonly List<IParserExtension> _extensions = [];
 
+    private TypeResolver Resolver { get; } = new();
     private Scope Scope { get; } = new();
+
+    public IReadOnlyCollection<Assembly> References
+    {
+        get => Resolver.References;
+        init => Resolver.AddReferences( value );
+    }
+
 
     public XsParser( Dictionary<string, MethodInfo> methodTable = null )
     {
@@ -27,10 +37,9 @@ public class XsParser
         _xs = CreateParser();
     }
 
-    public void AddExtension( IParserExtension extension )
-    {
-        _extensions.Add( extension );
-    }
+    public void AddExtension( IParserExtension extension ) => _extensions.Add( extension );
+    public void AddReference( Assembly assembly ) => Resolver.AddReference( assembly );
+    public void AddReferences( IReadOnlyCollection<Assembly> assemblies ) => Resolver.AddReferences( assemblies );
 
     public Expression Parse( string script )
     {
@@ -642,7 +651,7 @@ public class XsParser
                 var (namespaces, typeName) = parts;
 
                 var fullTypeName = string.Join( ".", namespaces.Append( typeName ) );
-                var type = FindType( fullTypeName );
+                var type = Resolver.ResolveType( fullTypeName );
 
                 if ( type == null )
                     throw new InvalidOperationException( $"Unknown type: {fullTypeName}." );
@@ -675,13 +684,6 @@ public class XsParser
             } );
 
         return parser;
-
-        static Type FindType( string typeName ) //BF ME discuss - type resolution
-        {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany( assembly => assembly.GetTypes() )
-                .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
-        }
     }
 
     private Parser<Expression> MethodCallParser( Parser<Expression> expression, Parser<Expression> identifier )
@@ -836,5 +838,33 @@ internal class Frame
         }
 
         throw new InvalidOperationException( "No enclosing method frame to handle return." );
+    }
+}
+
+internal class TypeResolver
+{
+    private readonly List<Assembly> _references = [];
+    private readonly ConcurrentDictionary<string, Type> _typeCache = new();
+    
+    public IReadOnlyCollection<Assembly> References => _references;
+
+    public void AddReference( Assembly assembly )
+    {
+        _references.Add( assembly );
+    }
+
+    public void AddReferences( IReadOnlyCollection<Assembly> assemblies )
+    {
+        _references.AddRange( assemblies );
+    }
+
+    public Type ResolveType( string typeName )
+    {
+        return _typeCache.GetOrAdd( typeName, _ =>
+        {
+            return _references
+                .SelectMany( assembly => assembly.GetTypes() )
+                .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
+        } );
     }
 }
