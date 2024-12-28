@@ -845,7 +845,7 @@ internal class TypeResolver
 {
     private readonly List<Assembly> _references = [];
     private readonly ConcurrentDictionary<string, Type> _typeCache = new();
-    
+
     public IReadOnlyCollection<Assembly> References => _references;
 
     public void AddReference( Assembly assembly )
