@@ -192,12 +192,13 @@ public class XsParserTryCatchTests
                 }
                 catch(InvalidOperationException e)
                 {
+                    x = 32;
                     throw;
                 }
             }
             catch(InvalidOperationException)
             {
-                x = 42;
+                x += 10;
             }
             x;
             """

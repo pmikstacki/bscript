@@ -655,17 +655,16 @@ public class XsParser
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof( void );
-
-                var tryBlock = Block( tryType, tryParts! );
+                var tryType = tryParts?[^1].Type ?? typeof(void);
+                
+                var tryBlock = ConvertToSingleExpression( tryParts, tryType );
+                var finallyBlock = ConvertToSingleExpression( finallyParts );
 
                 var catchBlocks = catchParts.Select( part =>
                 {
                     var (exceptionVariable, catchBody) = part;
                     return Catch( exceptionVariable, Block( tryType, catchBody ) );
                 } ).ToArray();
-
-                var finallyBlock = ConvertToSingleExpression( finallyParts );
 
                 return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
             } );
