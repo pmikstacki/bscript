@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -97,8 +97,8 @@ public class XsParser
             continueStatement,
             gotoStatement,
             returnStatement
-            //methodCall
-            //lambdaInvocation
+        //methodCall
+        //lambdaInvocation
         ).AndSkip( Terms.Char( ';' ) );
 
         var expressionStatement = OneOf( // Expression statements are lower precedence and semicolon terminated
