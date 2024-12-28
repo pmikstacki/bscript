@@ -639,7 +639,7 @@ public class XsParser
             .And( Terms.Identifier() )
             .Then( parts =>
             {
-                var ( namespaces, typeName) = parts;
+                var (namespaces, typeName) = parts;
 
                 var fullTypeName = string.Join( ".", namespaces.Append( typeName ) );
                 var type = FindType( fullTypeName );
@@ -653,7 +653,7 @@ public class XsParser
         var argumentsParser = Separated( Terms.Char( ',' ), ExpressionParser() )
             .Then( arguments => arguments ?? Array.Empty<Expression>() );
 
-        var parser =  Terms.Text( "new" )
+        var parser = Terms.Text( "new" )
             .SkipAnd( typeNameParser )
             .And(
                 Between(
@@ -667,7 +667,7 @@ public class XsParser
                 var (type, arguments) = parts;
 
                 var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
-                
+
                 if ( constructor == null )
                     throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
 
