@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -11,7 +11,6 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Throw
 // Add Method calls
 // Add Lambda expressions
 // Add Member access
@@ -138,15 +137,17 @@ public class XsParser
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
     {
-        return ConvertToSingleExpression( expressions, typeof( void ) );
+        return ConvertToSingleExpression( typeof( void ), expressions );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions, Type defaultType )
+    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
     {
+        type ??= typeof( void );
+
         return expressions?.Count switch
         {
-            null or 0 => defaultType == null ? null : Default( defaultType ),
+            null or 0 => Default( type ),
             1 => expressions.First(),
             _ => Block( expressions )
         };
@@ -301,6 +302,14 @@ public class XsParser
             newExpression,
             binaryExpression
         );
+    }
+
+    // Helper Parsers
+
+    private Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
+    {
+        return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
+            .Then( arguments => arguments ?? Array.Empty<Expression>() );
     }
 
     // Variable Parsers
@@ -475,7 +484,7 @@ public class XsParser
                 var (test, trueExprs, falseExprs) = parts;
 
                 var ifTrue = ConvertToSingleExpression( trueExprs );
-                var ifFalse = ConvertToSingleExpression( falseExprs, defaultType: ifTrue?.Type ?? typeof( void ) );
+                var ifFalse = ConvertToSingleExpression( ifTrue?.Type, falseExprs );
 
                 var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
 
@@ -655,9 +664,9 @@ public class XsParser
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof( void );
-
-                var tryBlock = ConvertToSingleExpression( tryParts, tryType );
+                var tryType = tryParts?[^1].Type ?? typeof(void);
+                
+                var tryBlock = ConvertToSingleExpression( tryType, tryParts );
                 var finallyBlock = ConvertToSingleExpression( finallyParts );
 
                 var catchBlocks = catchParts.Select( part =>
@@ -686,15 +695,12 @@ public class XsParser
                 return type;
             } );
 
-        var argumentsParser = ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( arguments => arguments ?? Array.Empty<Expression>() );
-
         var parser = Terms.Text( "new" )
             .SkipAnd( typeNameParser )
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    argumentsParser,
+                    ArgumentsParser( expression ),
                     Terms.Char( ')' )
                 )
             )
@@ -715,14 +721,11 @@ public class XsParser
 
     private Parser<Expression> MethodCallParser( Parser<Expression> expression, Parser<Expression> identifier )
     {
-        var arguments = Separated( Terms.Char( ',' ), expression )
-            .Then( parts => parts ?? Array.Empty<Expression>() );
-
         var parser = identifier
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    arguments,
+                    ArgumentsParser( expression ),
                     Terms.Char( ')' )
                 )
             )
@@ -745,14 +748,11 @@ public class XsParser
 
     private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression, Parser<Expression> identifier )
     {
-        var arguments = Separated( Terms.Char( ',' ), expression )
-            .Then( parts => parts ?? Array.Empty<Expression>() );
-
         var parser = identifier
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    arguments,
+                    ArgumentsParser( expression ),
                     Terms.Char( ')' )
                 )
             )
