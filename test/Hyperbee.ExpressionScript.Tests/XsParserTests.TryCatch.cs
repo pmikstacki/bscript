@@ -25,11 +25,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -51,11 +51,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -87,7 +87,7 @@ public class XsParserTryCatchTests
 
         Assert.AreEqual( 42, result );
     }
-    
+
     [TestMethod]
     public void Compile_ShouldCatchException()
     {
@@ -107,11 +107,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -137,11 +137,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -170,11 +170,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -203,11 +203,11 @@ public class XsParserTryCatchTests
             """
         );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 }
 

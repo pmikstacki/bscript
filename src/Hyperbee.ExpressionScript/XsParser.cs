@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -431,7 +431,7 @@ public class XsParser
             .SkipAnd( ZeroOrOne( expression ) )
             .Then<Expression>( exceptionExpression =>
             {
-                if ( exceptionExpression != null && !typeof(Exception).IsAssignableFrom( exceptionExpression.Type ) )
+                if ( exceptionExpression != null && !typeof( Exception ).IsAssignableFrom( exceptionExpression.Type ) )
                 {
                     throw new InvalidOperationException(
                         $"Invalid throw argument: Expected an exception type, but found {exceptionExpression.Type}." );
@@ -613,7 +613,7 @@ public class XsParser
                         .SkipAnd(
                             Between(
                                 Terms.Char( '(' ),
-                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), 
+                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ),
                                 Terms.Char( ')' )
                             )
                             .Then( parts =>
@@ -655,7 +655,7 @@ public class XsParser
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof(void);
+                var tryType = tryParts?[^1].Type ?? typeof( void );
 
                 var tryBlock = Block( tryType, tryParts! );
 
