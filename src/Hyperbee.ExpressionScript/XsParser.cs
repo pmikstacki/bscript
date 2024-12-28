@@ -1,19 +1,25 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Hyperbee.Collections;
+
+using Hyperbee.XS.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
-namespace Hyperbee.XS.Parsers;
+namespace Hyperbee.XS;
 
-public interface IParserExtension
-{
-    void Extend( Parser<Expression> parser );
-}
+// Parser TODO
+//
+// Add Throw
+// Add Method calls
+// Add Lambda expressions
+// Add Member access
+// Add Indexer access
+// Add Array access
+//
+// Add Extensions
+// Compile //BF ME discuss
 
 public class XsParser
 {
@@ -22,7 +28,13 @@ public class XsParser
     private readonly List<IParserExtension> _extensions = [];
 
     private TypeResolver Resolver { get; } = new();
-    private Scope Scope { get; } = new();
+    private ParserScope Scope { get; } = new();
+
+    public IReadOnlyCollection<IParserExtension> Extensions
+    {
+        get => _extensions;
+        init => _extensions.AddRange( value );
+    }
 
     public IReadOnlyCollection<Assembly> References
     {
@@ -30,16 +42,11 @@ public class XsParser
         init => Resolver.AddReferences( value );
     }
 
-
     public XsParser( Dictionary<string, MethodInfo> methodTable = null )
     {
         _methodTable = methodTable ?? new Dictionary<string, MethodInfo>();
         _xs = CreateParser();
     }
-
-    public void AddExtension( IParserExtension extension ) => _extensions.Add( extension );
-    public void AddReference( Assembly assembly ) => Resolver.AddReference( assembly );
-    public void AddReferences( IReadOnlyCollection<Assembly> assemblies ) => Resolver.AddReferences( assemblies );
 
     public Expression Parse( string script )
     {
@@ -48,19 +55,6 @@ public class XsParser
 
         return _xs.Parse( context );
     }
-
-    // Parser TODO
-    //
-    // Add Import statements //BF ME discuss - how should we include and resolve types
-    // Add Extensions
-    // Compile //BF ME discuss
-    //
-    // Add Throw
-    // Add Method calls
-    // Add Lambda expressions //BF ME discuss
-    // Add Member access
-    // Add Indexer access
-    // Add Array access
 
     private Parser<Expression> CreateParser()
     {
@@ -97,22 +91,26 @@ public class XsParser
             switchStatement
         );
 
-        var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
+        var singleLineStatement = OneOf( // Single-line statements are semicolon terminated
             newStatement,
             breakStatement,
             continueStatement,
             gotoStatement,
-            returnStatement,
+            returnStatement
             //methodCall
             //lambdaInvocation
-            declaration, // must come after statements
+        ).AndSkip( Terms.Char( ';' ) );
+
+        var expressionStatement = OneOf( // Expression statements are lower precedence and semicolon terminated
+            declaration,
             assignment,
             expression
         ).AndSkip( Terms.Char( ';' ) );
 
         statement.Parser = OneOf(
             complexStatement,
-            labelStatement,
+            labelStatement, // colon terminated
+            singleLineStatement,
             expressionStatement
         );
 
@@ -155,7 +153,7 @@ public class XsParser
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, Scope scope )
+    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParserScope scope )
     {
         var returnLabel = scope.Frame.ReturnLabel;
         var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
@@ -743,128 +741,3 @@ public class XsParser
     }
 }
 
-internal class Scope
-{
-    private readonly Stack<Frame> _frames = new();
-
-    public LinkedDictionary<string, ParameterExpression> Variables = new();
-    public Frame Frame => _frames.Peek();
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public void Push( FrameType frameType, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
-    {
-        var parent = _frames.Count > 0 ? _frames.Peek() : null;
-        var frame = new Frame( frameType, parent, breakLabel, continueLabel );
-
-        _frames.Push( frame );
-        Variables.Push();
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public void Pop()
-    {
-        _frames.Pop();
-        Variables.Pop();
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public ParameterExpression LookupVariable( Parlot.TextSpan ident )
-    {
-        if ( !Variables.TryGetValue( ident.ToString()!, out var variable ) )
-            throw new Exception( $"Variable '{ident}' not found." );
-
-        return variable;
-    }
-}
-
-internal enum FrameType
-{
-    Method,
-    Child
-}
-
-internal class Frame
-{
-    public FrameType FrameType { get; }
-    public Frame Parent { get; }
-
-    public LabelTarget BreakLabel { get; }
-    public LabelTarget ContinueLabel { get; }
-    public LabelTarget ReturnLabel { get; private set; }
-
-    public Dictionary<string, LabelTarget> Labels { get; } = new();
-
-    public Frame( FrameType frameType, Frame parent = null, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
-    {
-        FrameType = frameType;
-        Parent = parent;
-        BreakLabel = breakLabel;
-        ContinueLabel = continueLabel;
-    }
-
-    public LabelTarget GetOrCreateLabel( string labelName )
-    {
-        if ( Labels.TryGetValue( labelName, out var label ) )
-            return label;
-
-        label = Label( labelName );
-        Labels[labelName] = label;
-
-        return label;
-    }
-
-    public LabelTarget GetOrCreateReturnLabel( Type returnType )
-    {
-        var currentFrame = this;
-
-        while ( currentFrame != null )
-        {
-            if ( currentFrame.FrameType == FrameType.Method )
-            {
-                if ( currentFrame.ReturnLabel == null )
-                {
-                    currentFrame.ReturnLabel = Label( returnType, "ReturnLabel" );
-                }
-                else if ( currentFrame.ReturnLabel.Type != returnType )
-                {
-                    throw new InvalidOperationException(
-                        $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
-                }
-
-                return currentFrame.ReturnLabel;
-            }
-
-            currentFrame = currentFrame.Parent;
-        }
-
-        throw new InvalidOperationException( "No enclosing method frame to handle return." );
-    }
-}
-
-internal class TypeResolver
-{
-    private readonly List<Assembly> _references = [];
-    private readonly ConcurrentDictionary<string, Type> _typeCache = new();
-
-    public IReadOnlyCollection<Assembly> References => _references;
-
-    public void AddReference( Assembly assembly )
-    {
-        _references.Add( assembly );
-    }
-
-    public void AddReferences( IReadOnlyCollection<Assembly> assemblies )
-    {
-        _references.AddRange( assemblies );
-    }
-
-    public Type ResolveType( string typeName )
-    {
-        return _typeCache.GetOrAdd( typeName, _ =>
-        {
-            return _references
-                .SelectMany( assembly => assembly.GetTypes() )
-                .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
-        } );
-    }
-}
