@@ -80,10 +80,10 @@ public class XsParser
         var returnStatement = ReturnParser( expression );
         var throwStatement = ThrowParser( expression );
 
-        //var methodCall = MethodCallParser( expression, identifier );
-        //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
+        var methodCall = MethodCallParser( expression ); //BF placeholder code
+        var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder code
 
-        var complexStatement = OneOf( // Complex statements are statements that control scope or flow
+        var complexStatement = OneOf( // Complex statements control scope or flow
             conditionalStatement,
             loopStatement,
             tryCatchStatement,
@@ -95,12 +95,12 @@ public class XsParser
             continueStatement,
             gotoStatement,
             returnStatement,
-            throwStatement
-        //methodCall
-        //lambdaInvocation
+            throwStatement,
+            methodCall,
+            lambdaInvocation
         ).AndSkip( Terms.Char( ';' ) );
 
-        var expressionStatement = OneOf( // Expression statements are lower precedence and semicolon terminated
+        var expressionStatement = OneOf( // Expression statements have the lowest precedence
             declaration,
             assignment,
             expression
@@ -719,9 +719,14 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> MethodCallParser( Parser<Expression> expression, Parser<Expression> identifier )
+    private Parser<Expression> MethodCallParser( Parser<Expression> expression )
     {
-        var parser = identifier
+        //BF ME - placeholder code - need to correctly resolve targets
+
+        var parser = ZeroOrOne(
+                Terms.Identifier().AndSkip( Terms.Text(".") )
+            )
+            .And( Terms.Identifier() )
             .And(
                 Between(
                     Terms.Char( '(' ),
@@ -731,11 +736,10 @@ public class XsParser
             )
             .Then<Expression>( parts =>
             {
-                var targetExpression = parts.Item1 as ParameterExpression;
-                var methodArguments = parts.Item2;
-                var methodName = targetExpression!.Name!;
+                var (targetName, methodName, methodArguments) = parts;
+                var targetExpression = Scope.LookupVariable( targetName );
 
-                if ( !_methodTable.TryGetValue( methodName, out var methodInfo ) )
+                if ( !_methodTable.TryGetValue( methodName.ToString()!, out var methodInfo ) )
                     throw new Exception( $"Method '{methodName}' not found." );
 
                 return methodInfo.IsStatic
@@ -746,9 +750,11 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression, Parser<Expression> identifier )
+    private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression )
     {
-        var parser = identifier
+        //BF ME - placeholder code - need to correctly resolve targets
+
+        var parser = Terms.Identifier()
             .And(
                 Between(
                     Terms.Char( '(' ),
@@ -756,12 +762,13 @@ public class XsParser
                     Terms.Char( ')' )
                 )
             )
-            .Then<Expression>( static parts =>
+            .Then<Expression>( parts =>
             {
-                var (lambdaExpression, invocationArguments) = parts;
+                var (targetName, invocationArguments) = parts;
+                var targetExpression = Scope.LookupVariable( targetName );
 
                 return Invoke(
-                    lambdaExpression,
+                    targetExpression,
                     invocationArguments
                 );
             } );
