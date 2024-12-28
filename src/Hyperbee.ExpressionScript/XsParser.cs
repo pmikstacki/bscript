@@ -655,8 +655,8 @@ public class XsParser
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof(void);
-                
+                var tryType = tryParts?[^1].Type ?? typeof( void );
+
                 var tryBlock = ConvertToSingleExpression( tryParts, tryType );
                 var finallyBlock = ConvertToSingleExpression( finallyParts );
 
