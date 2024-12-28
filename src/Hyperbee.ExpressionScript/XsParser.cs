@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -664,8 +664,8 @@ public class XsParser
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof(void);
-                
+                var tryType = tryParts?[^1].Type ?? typeof( void );
+
                 var tryBlock = ConvertToSingleExpression( tryType, tryParts );
                 var finallyBlock = ConvertToSingleExpression( finallyParts );
 
