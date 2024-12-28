@@ -5,7 +5,7 @@ namespace Hyperbee.XS;
 
 internal class TypeResolver
 {
-    private readonly List<Assembly> _references = [];
+    private readonly List<Assembly> _references = [typeof(string).Assembly];
     private readonly ConcurrentDictionary<string, Type> _typeCache = new();
 
     public IReadOnlyCollection<Assembly> References => _references;

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -74,12 +74,12 @@ public class XsParser
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
 
-        var newStatement = NewParser();
         var breakStatement = BreakParser();
         var continueStatement = ContinueParser();
         var gotoStatement = GotoParser();
         var labelStatement = LabelParser();
         var returnStatement = ReturnParser( expression );
+        var throwStatement = ThrowParser( expression );
 
         //var methodCall = MethodCallParser( expression, identifier );
         //var lambdaInvocation = LambdaInvokeParser( expression, identifier );
@@ -92,11 +92,11 @@ public class XsParser
         );
 
         var singleLineStatement = OneOf( // Single-line statements are semicolon terminated
-            newStatement,
             breakStatement,
             continueStatement,
             gotoStatement,
-            returnStatement
+            returnStatement,
+            throwStatement
         //methodCall
         //lambdaInvocation
         ).AndSkip( Terms.Char( ';' ) );
@@ -293,7 +293,12 @@ public class XsParser
             (Terms.Text( "??" ), Coalesce)
         ).Named( "binary" );
 
+        // New Expression
+
+        var newExpression = NewParser( expression );
+
         return expression.Parser = OneOf(
+            newExpression,
             binaryExpression
         );
     }
@@ -419,6 +424,23 @@ public class XsParser
                     : Return( returnLabel, returnValue, returnType );
             } );
     }
+
+    private Parser<Expression> ThrowParser( Parser<Expression> expression )
+    {
+        return Terms.Text( "throw" )
+            .SkipAnd( ZeroOrOne( expression ) )
+            .Then<Expression>( exceptionExpression =>
+            {
+                if ( exceptionExpression != null && !typeof(Exception).IsAssignableFrom( exceptionExpression.Type ) )
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid throw argument: Expected an exception type, but found {exceptionExpression.Type}." );
+                }
+
+                return Throw( exceptionExpression );
+            } );
+    }
+
 
     private Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
@@ -583,7 +605,7 @@ public class XsParser
                     Terms.Char( '{' ),
                     ZeroOrMany( statement ),
                     Terms.Char( '}' )
-                ).Then( Block )
+                )
             )
             .And(
                 ZeroOrMany(
@@ -591,16 +613,20 @@ public class XsParser
                         .SkipAnd(
                             Between(
                                 Terms.Char( '(' ),
-                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), //BF ME discuss - need to test optional identifier
+                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ), 
                                 Terms.Char( ')' )
                             )
-                            .Then( static parts =>
+                            .Then( parts =>
                             {
                                 var (typeName, variableName) = parts;
-                                var exceptionType = Type.GetType( typeName.ToString()! ) ?? typeof( Exception ); //BF ME discuss - type resolution
-                                var exceptionVariable = variableName != null ? Parameter( exceptionType, variableName.ToString() ) : null;
+                                var type = Resolver.ResolveType( typeName.ToString()! );
 
-                                return exceptionVariable;
+                                if ( type == null )
+                                    throw new InvalidOperationException( $"Unknown type: {typeName}." );
+
+                                var name = variableName.Length == 0 ? null : variableName.ToString();
+
+                                return Parameter( type, name );
                             }
                         )
                         .And(
@@ -610,11 +636,6 @@ public class XsParser
                                 Terms.Char( '}' )
                             )
                         )
-                        .Then( static parts =>
-                        {
-                            var (exceptionVariable, body) = parts;
-                            return Catch( exceptionVariable, Block( body ) );
-                        } )
                     )
                 )
             )
@@ -628,36 +649,45 @@ public class XsParser
                                 Terms.Char( '}' )
                             )
                         )
-                        .Then( Block )
                     )
             )
             .Then<Expression>( static parts =>
             {
-                var (tryBlock, catchBlocks, finallyBlock) = parts;
-                return TryCatchFinally( tryBlock, finallyBlock, catchBlocks.ToArray() );
+                var (tryParts, catchParts, finallyParts) = parts;
+
+                var tryType = tryParts?[^1].Type ?? typeof(void);
+
+                var tryBlock = Block( tryType, tryParts! );
+
+                var catchBlocks = catchParts.Select( part =>
+                {
+                    var (exceptionVariable, catchBody) = part;
+                    return Catch( exceptionVariable, Block( tryType, catchBody ) );
+                } ).ToArray();
+
+                var finallyBlock = ConvertToSingleExpression( finallyParts );
+
+                return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
             } );
 
         return parser;
     }
 
-    private Parser<Expression> NewParser()
+    private Parser<Expression> NewParser( Parser<Expression> expression )
     {
-        var typeNameParser = ZeroOrMany( Terms.Identifier().AndSkip( Terms.Text( "." ) ) )
-            .And( Terms.Identifier() )
+        var typeNameParser = Separated( Terms.Char( '.' ), Terms.Identifier() )
             .Then( parts =>
             {
-                var (namespaces, typeName) = parts;
-
-                var fullTypeName = string.Join( ".", namespaces.Append( typeName ) );
-                var type = Resolver.ResolveType( fullTypeName );
+                var typeName = string.Join( ".", parts );
+                var type = Resolver.ResolveType( typeName );
 
                 if ( type == null )
-                    throw new InvalidOperationException( $"Unknown type: {fullTypeName}." );
+                    throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
                 return type;
             } );
 
-        var argumentsParser = Separated( Terms.Char( ',' ), ExpressionParser() )
+        var argumentsParser = ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
             .Then( arguments => arguments ?? Array.Empty<Expression>() );
 
         var parser = Terms.Text( "new" )
