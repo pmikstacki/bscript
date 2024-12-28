@@ -89,4 +89,3 @@ public class XsParserVariableTests
         Assert.AreEqual( 11, result );
     }
 }
-

@@ -46,7 +46,6 @@ public class XsParser
     // Add Extensions
     // Compile //BF ME discuss
     //
-    // Add declaration literal suffixes (e.g. 1N, 1L, 1F, 1D)
     // Add New
     // Add Throw
     // Add Method calls
@@ -173,20 +172,33 @@ public class XsParser
 
         // Literals
 
-        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
-        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign ).Then<Expression>( static value => Constant( value ) );
-        var floatLiteral = Terms.Number<float>( NumberOptions.Float ).Then<Expression>( static value => Constant( value ) );
-        var doubleLiteral = Terms.Number<double>( NumberOptions.Float ).Then<Expression>( static value => Constant( value ) );
+        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign )
+            .AndSkip( ZeroOrOne( Terms.Text( "N", caseInsensitive: true ) ) )
+            .Then<Expression>( static value => Constant( value ) );
+
+        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign )
+            .AndSkip( Terms.Text( "L", caseInsensitive: true ) )
+            .Then<Expression>( static value => Constant( value ) );
+
+        var floatLiteral = Terms.Number<float>( NumberOptions.Float )
+            .AndSkip( Terms.Text( "F", caseInsensitive: true ) )
+            .Then<Expression>( static value => Constant( value ) );
+
+        var doubleLiteral = Terms.Number<double>( NumberOptions.Float )
+            .AndSkip( Terms.Text( "D", caseInsensitive: true ) )
+            .Then<Expression>( static value => Constant( value ) );
+
+        var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) )
+            .Then<Expression>( static value => Constant( bool.Parse( value ) ) );
 
         var stringLiteral = Terms.String().Then<Expression>( static value => Constant( value.ToString() ) );
-        var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) ).Then<Expression>( static value => Constant( bool.Parse( value ) ) );
         var nullLiteral = Terms.Text( "null" ).Then<Expression>( static _ => Constant( null ) );
 
         var literal = OneOf(
-            integerLiteral,
             longLiteral,
-            floatLiteral,
             doubleLiteral,
+            floatLiteral,
+            integerLiteral,
             stringLiteral,
             booleanLiteral,
             nullLiteral
