@@ -46,12 +46,14 @@ public class XsParser
     // Add Extensions
     // Compile //BF ME discuss
     //
+    // Add declaration literal suffixes (e.g. 1N, 1L, 1F, 1D)
     // Add New
+    // Add Throw
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
     // Add Member access
-    // Add Throw
     // Add Indexer access
+    // Add Array access
 
     private Parser<Expression> CreateParser()
     {
