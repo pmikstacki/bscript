@@ -20,7 +20,7 @@ public class XsParserReturnTests
             return;
             """ );
 
-        var lambda = Lambda<Action>(expression);
+        var lambda = Lambda<Action>( expression );
         var compiled = lambda.Compile();
 
         // Assert no exceptions occur
@@ -41,11 +41,11 @@ public class XsParserReturnTests
             10; // This is the last evaluated expression
             """ );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -64,11 +64,11 @@ public class XsParserReturnTests
                 x = 20; // Type mismatch: void return and int assignment
                 """ );
 
-            Assert.Fail("Expected an exception for mismatched return types.");
+            Assert.Fail( "Expected an exception for mismatched return types." );
         }
-        catch (InvalidOperationException ex)
+        catch ( InvalidOperationException ex )
         {
-            StringAssert.Contains(ex.Message, "Mismatched return types");
+            StringAssert.Contains( ex.Message, "Mismatched return types" );
         }
     }
 
@@ -88,11 +88,11 @@ public class XsParserReturnTests
                 return; // Mismatched: void vs int
                 """ );
 
-            Assert.Fail("Expected an exception for mismatched return types.");
+            Assert.Fail( "Expected an exception for mismatched return types." );
         }
-        catch (InvalidOperationException ex)
+        catch ( InvalidOperationException ex )
         {
-            StringAssert.Contains(ex.Message, "Mismatched return types");
+            StringAssert.Contains( ex.Message, "Mismatched return types" );
         }
     }
 
@@ -113,11 +113,11 @@ public class XsParserReturnTests
             }
             """ );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -135,11 +135,11 @@ public class XsParserReturnTests
             return result;
             """ );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -161,11 +161,11 @@ public class XsParserReturnTests
             return x;
             """ );
 
-        var lambda = Lambda<Func<int>>(expression);
+        var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual(42, result);
+        Assert.AreEqual( 42, result );
     }
 
     [TestMethod]
@@ -187,7 +187,7 @@ public class XsParserReturnTests
             return;
             """ );
 
-        var lambda = Lambda<Action>(expression);
+        var lambda = Lambda<Action>( expression );
         var compiled = lambda.Compile();
 
         // Assert no exceptions occur

@@ -113,8 +113,8 @@ public class XsParser
                     Scope.Push( FrameType.Method );
                     return default;
                 } ),
-                ZeroOrMany( statement ).Then( statements => 
-                    ConvertToFinalExpression( statements, Scope ) 
+                ZeroOrMany( statement ).Then( statements =>
+                    ConvertToFinalExpression( statements, Scope )
                 ),
                 Always<Expression>().Then<Expression>( _ =>
                 {
@@ -390,10 +390,10 @@ public class XsParser
             .SkipAnd( ZeroOrOne( expression ) )
             .Then<Expression>( returnValue =>
             {
-                var returnType = returnValue?.Type ?? typeof(void);
+                var returnType = returnValue?.Type ?? typeof( void );
                 var returnLabel = Scope.Frame.GetOrCreateReturnLabel( returnType );
 
-                return returnType == typeof(void)
+                return returnType == typeof( void )
                     ? Return( returnLabel )
                     : Return( returnLabel, returnValue, returnType );
             } );
