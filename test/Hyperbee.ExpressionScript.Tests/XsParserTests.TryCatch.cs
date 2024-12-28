@@ -36,4 +36,3 @@ public class XsParserTryCatchTests
         Assert.AreEqual( 42, result );
     }
 }
-

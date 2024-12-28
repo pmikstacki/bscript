@@ -46,7 +46,6 @@ public class XsParser
     // Add Extensions
     // Compile //BF ME discuss
     //
-    // Add New
     // Add Throw
     // Add Method calls
     // Add Lambda expressions //BF ME discuss
@@ -72,6 +71,7 @@ public class XsParser
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
 
+        var newStatement = NewParser();
         var breakStatement = BreakParser();
         var continueStatement = ContinueParser();
         var gotoStatement = GotoParser();
@@ -89,6 +89,7 @@ public class XsParser
         );
 
         var expressionStatement = OneOf( // Expression statements are single-line statements that are semicolon terminated
+            newStatement,
             breakStatement,
             continueStatement,
             gotoStatement,
@@ -343,7 +344,6 @@ public class XsParser
                 }
             );
     }
-
 
     // Statement Parsers
 
@@ -631,6 +631,57 @@ public class XsParser
             } );
 
         return parser;
+    }
+
+    private Parser<Expression> NewParser()
+    {
+        var typeNameParser = ZeroOrMany( Terms.Identifier().AndSkip( Terms.Text( "." ) ) )
+            .And( Terms.Identifier() )
+            .Then( parts =>
+            {
+                var ( namespaces, typeName) = parts;
+
+                var fullTypeName = string.Join( ".", namespaces.Append( typeName ) );
+                var type = FindType( fullTypeName );
+
+                if ( type == null )
+                    throw new InvalidOperationException( $"Unknown type: {fullTypeName}." );
+
+                return type;
+            } );
+
+        var argumentsParser = Separated( Terms.Char( ',' ), ExpressionParser() )
+            .Then( arguments => arguments ?? Array.Empty<Expression>() );
+
+        var parser =  Terms.Text( "new" )
+            .SkipAnd( typeNameParser )
+            .And(
+                Between(
+                    Terms.Char( '(' ),
+                    argumentsParser,
+                    Terms.Char( ')' )
+                )
+            )
+            .Then<Expression>( parts =>
+            {
+                var (type, arguments) = parts;
+
+                var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
+                
+                if ( constructor == null )
+                    throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
+
+                return New( constructor, arguments );
+            } );
+
+        return parser;
+
+        static Type FindType( string typeName ) //BF ME discuss - type resolution
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany( assembly => assembly.GetTypes() )
+                .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
+        }
     }
 
     private Parser<Expression> MethodCallParser( Parser<Expression> expression, Parser<Expression> identifier )
