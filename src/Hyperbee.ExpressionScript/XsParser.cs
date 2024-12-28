@@ -724,7 +724,7 @@ public class XsParser
         //BF ME - placeholder code - need to correctly resolve targets
 
         var parser = ZeroOrOne(
-                Terms.Identifier().AndSkip( Terms.Text(".") )
+                Terms.Identifier().AndSkip( Terms.Text( "." ) )
             )
             .And( Terms.Identifier() )
             .And(
