@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Hyperbee.XS;
 
-internal class TypeResolver
+public class TypeResolver
 {
     private readonly List<Assembly> _references = [typeof( string ).Assembly];
     private readonly ConcurrentDictionary<string, Type> _typeCache = new();

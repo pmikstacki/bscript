@@ -5,7 +5,7 @@ using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS;
 
-internal class ParserScope
+public class ParseScope
 {
     private readonly Stack<Frame> _frames = new();
 
@@ -39,13 +39,13 @@ internal class ParserScope
     }
 }
 
-internal enum FrameType
+public enum FrameType
 {
     Method,
     Child
 }
 
-internal class Frame
+public class Frame
 {
     public FrameType FrameType { get; }
     public Frame Parent { get; }
@@ -81,22 +81,23 @@ internal class Frame
 
         while ( currentFrame != null )
         {
-            if ( currentFrame.FrameType == FrameType.Method )
+            if ( currentFrame.FrameType != FrameType.Method )
             {
-                if ( currentFrame.ReturnLabel == null )
-                {
-                    currentFrame.ReturnLabel = Label( returnType, "ReturnLabel" );
-                }
-                else if ( currentFrame.ReturnLabel.Type != returnType )
-                {
-                    throw new InvalidOperationException(
-                        $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
-                }
-
-                return currentFrame.ReturnLabel;
+                currentFrame = currentFrame.Parent;
+                continue;
             }
 
-            currentFrame = currentFrame.Parent;
+            if ( currentFrame.ReturnLabel == null )
+            {
+                currentFrame.ReturnLabel = Label( returnType, "ReturnLabel" );
+            }
+            else if ( currentFrame.ReturnLabel.Type != returnType )
+            {
+                throw new InvalidOperationException(
+                    $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
+            }
+
+            return currentFrame.ReturnLabel;
         }
 
         throw new InvalidOperationException( "No enclosing method frame to handle return." );

@@ -9,98 +9,116 @@ nav_order: 5
 
 ```abnf
 ; Root Rule: A script is a sequence of statements
-script              = statement *( ";" statement ) [ ";" ]
+script              = *statement
 
 ; Statements
-statement           = var-declaration
-                    / assignment
-                    / expression
-                    / block
+statement           = complex-statement
+                    / single-line-statement
+                    / expression-statement
+                    / label-statement
+
+complex-statement   = conditional
                     / loop
                     / try-catch
+                    / switch
 
-var-declaration     = "var" identifier "=" expression
+single-line-statement = break-statement
+                      / continue-statement
+                      / goto-statement
+                      / return-statement
+                      / throw-statement
 
+expression-statement = declaration
+                     / assignment
+                     / expression
+
+label-statement     = identifier ":"
+
+; Methods (Not Yet Implemented)
+method              = "def" identifier "(" [ parameter-list ] ")" block
+
+; Declarations
+declaration         = "var" identifier "=" expression
+
+; Assignments
 assignment          = identifier assignment-operator expression
-assignment-operator = "=" / "+=" / "-=" / "*=" / "/="
+assignment-operator = "=" / "+=" / "-=" / "*=" / "/=" / "??="
 
+; Expressions
 expression          = literal
                     / identifier
                     / unary-expression
                     / binary-expression
-                    / postfix-expression
-                    / lambda
+                    / grouped-expression
+                    / new-expression
+                    / lambda-expression
                     / method-call
-                    / object-instantiation
-                    / conditional
-                    / switch-expression
-                    / block
 
-block               = "{" *( statement ";" ) [ statement ] "}"
+grouped-expression  = "(" expression ")"
 
 ; Literals
 literal             = integer-literal / float-literal / double-literal
-                    / long-literal / short-literal / decimal-literal
-                    / string-literal / "null" / "true" / "false"
+                    / long-literal / string-literal / boolean-literal / "null"
 
-integer-literal     = DIGIT1 *( DIGIT ) ["n"]
-float-literal       = DIGIT1 *( DIGIT ) "." *( DIGIT ) "f"
-double-literal      = DIGIT1 *( DIGIT ) "." *( DIGIT ) "d"
-long-literal        = DIGIT1 *( DIGIT ) "l"
-short-literal       = DIGIT1 *( DIGIT ) "s"
-decimal-literal     = DIGIT1 *( DIGIT ) "." *( DIGIT ) "m"
-string-literal      = DQUOTE *( %x20-21 / %x23-7E ) DQUOTE
+integer-literal     = DIGIT1 *(DIGIT) ["N"]
+float-literal       = DIGIT1 *(DIGIT) "." *(DIGIT) "F"
+double-literal      = DIGIT1 *(DIGIT) "." *(DIGIT) "D"
+long-literal        = DIGIT1 *(DIGIT) "L"
+string-literal      = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
+boolean-literal     = "true" / "false"
 
-; Unary and Postfix Expressions
-unary-expression    = operator expression
-operator            = "-" / "!"
-
-postfix-expression  = identifier ( "++" / "--" )
+; Unary Expressions
+unary-expression    = ("!" / "-") primary-expression
 
 ; Binary Expressions
-binary-expression   = expression operator expression
-operator            = "+" / "-" / "*" / "/" / "%"
-                    / "==" / "!=" / ">" / "<" / ">=" / "<="
-                    / "??"
-                    / "&&" / "||"
+binary-expression   = primary-expression binary-operator primary-expression
+binary-operator     = "*" / "/" / "+" / "-" / "==" / "!="
+                    / "<" / ">" / "<=" / ">=" / "&&" / "||" / "??"
 
-; Conditionals
+; Primary Expressions
+primary-expression  = literal
+                    / identifier
+                    / grouped-expression
+
+; New Expression
+new-expression      = "new" typename "(" [ argument-list ] ")"
+
+; Lambda Expressions (Not Yet Implemented)
+lambda-expression   = "(" [ parameter-list ] ")" "=>" expression
+parameter-list      = identifier *( "," identifier )
+
+; Method Calls (Not Yet Implemented)
+method-call         = identifier "(" [ argument-list ] ")"
+
+; Control Flow
 conditional         = "if" "(" expression ")" block [ "else" block ]
-
-; Switch Expression
-switch-expression   = "switch" "(" expression ")" "{" case-list "}"
-case-list           = *( case-statement )
-case-statement      = "case" expression ":" expression ";"
-                    / "default" ":" expression ";"
-
-; Loops
 loop                = "loop" block
 break-statement     = "break"
 continue-statement  = "continue"
+goto-statement      = "goto" identifier
+return-statement    = "return" [expression]
+throw-statement     = "throw" [expression]
 
-; Try-Catch
-try-catch           = "try" block catch-block
-catch-block         = "catch" "(" typename identifier ")" block
+; Try-Catch-Finally
+try-catch           = "try" block *(catch-clause) ["finally" block]
+catch-clause        = "catch" "(" typename [identifier] ")" block
 
-; Object Instantiation
-object-instantiation = "new" typename "(" [ argument-list ] ")"
+; Switch
+switch              = "switch" "(" expression ")" "{" *case-statement [default-statement] "}"
+case-statement      = "case" expression ":" *statement
+default-statement   = "default" ":" *statement
 
-; Lambdas
-lambda              = "(" [ parameter-list ] ")" "=>" expression
-parameter-list      = identifier *( "," identifier )
-
-; Method Calls
-method-call         = identifier "." identifier "(" [ argument-list ] ")"
-                    / method-call "." identifier "(" [ argument-list ] ")"
-
-argument-list       = expression *( "," expression )
+; Blocks
+block               = "{" *statement "}"
 
 ; Identifiers and Typenames
-identifier          = ALPHA *( ALPHA / DIGIT / "_" )
-typename            = identifier *( "." identifier ) [ generic-args ]
-generic-args        = "<" typename *( "," typename ) ">"
+identifier          = ALPHA *(ALPHA / DIGIT / "_")
+typename            = identifier *( "." identifier )
 
-; Misc
+; Arguments
+argument-list       = expression *( "," expression )
+
+; Miscellaneous
 DIGIT               = %x30-39
 DIGIT1              = %x31-39
 ALPHA               = %x41-5A / %x61-7A

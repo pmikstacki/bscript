@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using Hyperbee.XS.Parsers;
+using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -11,7 +12,7 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Method calls
+// Add Method calls and chaining
 // Add Lambda expressions
 // Add Member access
 // Add Indexer access
@@ -27,7 +28,7 @@ public class XsParser
     private readonly List<IParserExtension> _extensions = [];
 
     private TypeResolver Resolver { get; } = new();
-    private ParserScope Scope { get; } = new();
+    private ParseScope Scope { get; } = new();
 
     public IReadOnlyCollection<IParserExtension> Extensions
     {
@@ -49,7 +50,7 @@ public class XsParser
 
     public Expression Parse( string script )
     {
-        var scanner = new Parlot.Scanner( script );
+        var scanner = new Scanner( script );
         var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
         return _xs.Parse( context );
@@ -83,11 +84,17 @@ public class XsParser
         var methodCall = MethodCallParser( expression ); //BF placeholder code
         var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder code
 
+        GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
+
+        var complexStatementExtensions = OneOf( complexExtensions );
+        var singleStatementExtensions = OneOf( singleExtensions );  
+
         var complexStatement = OneOf( // Complex statements control scope or flow
             conditionalStatement,
             loopStatement,
             tryCatchStatement,
-            switchStatement
+            switchStatement,
+            complexStatementExtensions
         );
 
         var singleLineStatement = OneOf( // Single-line statements are semicolon terminated
@@ -97,7 +104,8 @@ public class XsParser
             returnStatement,
             throwStatement,
             methodCall,
-            lambdaInvocation
+            lambdaInvocation,
+            singleStatementExtensions
         ).AndSkip( Terms.Char( ';' ) );
 
         var expressionStatement = OneOf( // Expression statements have the lowest precedence
@@ -119,6 +127,7 @@ public class XsParser
                 Always().Then<Expression>( _ =>
                 {
                     Scope.Push( FrameType.Method );
+
                     return default;
                 } ),
                 ZeroOrMany( statement ).Then( statements =>
@@ -153,8 +162,7 @@ public class XsParser
         };
     }
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParserScope scope )
+    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
     {
         var returnLabel = scope.Frame.ReturnLabel;
         var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
@@ -171,6 +179,21 @@ public class XsParser
                 expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] )
             )
         };
+    }
+
+    private void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    {
+        var xsContext = new XsContext( Resolver, Scope, expression, statement );
+
+        complexExtensions = _extensions
+            .Where( x => x.Type == ExtensionType.ComplexStatement )
+            .Select( x => x.Parser( xsContext ) )
+            .ToArray();
+
+        singleExtensions = _extensions
+            .Where( x => x.Type == ExtensionType.SingleStatement )
+            .Select( x => x.Parser( xsContext ) )
+            .ToArray();  
     }
 
     // Expression Parser

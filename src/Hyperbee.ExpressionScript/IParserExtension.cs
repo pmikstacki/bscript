@@ -3,7 +3,16 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS;
 
+public record XsContext( TypeResolver Resolver, ParseScope Scope, Parser<Expression> ExpressionParser, Deferred<Expression> StatementParser );
+
+public enum ExtensionType
+{
+    ComplexStatement,
+    SingleStatement
+}
+
 public interface IParserExtension
 {
-    void Extend( Parser<Expression> parser );
+    ExtensionType Type { get; }
+    Parser<Expression> Parser( XsContext xsContext );
 }

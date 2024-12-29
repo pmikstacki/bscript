@@ -21,10 +21,7 @@ public class XsParserNewExpressionTests
     {
         var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
 
-        var expression = parser.Parse(
-            """
-            new Hyperbee.XS.Tests.SimpleClass(42);
-            """ );
+        var expression = parser.Parse( "new Hyperbee.XS.Tests.SimpleClass(42);" );
 
         var lambda = Expression.Lambda<Func<SimpleClass>>( expression );
         var compiled = lambda.Compile();

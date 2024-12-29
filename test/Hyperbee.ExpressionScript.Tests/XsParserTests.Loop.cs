@@ -14,7 +14,7 @@ public class XsParserLoopTests
             var x = 0;
             loop
             {
-                x++; // do something
+                x++; 
                 if( x == 10 )
                 {
                     break;
