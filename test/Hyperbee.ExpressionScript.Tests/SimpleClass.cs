@@ -3,7 +3,7 @@
 public class SimpleClass
 {
     public int Value { get; }
-    
+
     public int ReturnValue() => Value;
     public int AddNumbers( int x, int y ) => x + y;
 

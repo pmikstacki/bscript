@@ -49,7 +49,7 @@ internal class TypeIdentifierParser : Parser<Expression>
                 return true;
             }
 
-            var (p,x) = stack.Pop();
+            var (p, x) = stack.Pop();
             cursor.ResetPosition( x );
         }
 

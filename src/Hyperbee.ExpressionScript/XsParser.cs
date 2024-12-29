@@ -251,7 +251,7 @@ public class XsParser
         // Identifiers
 
         var valueIdentifier = XsParsers.ValueIdentifier( Scope, ReservedKeywords );
-        var typeIdentifier = XsParsers.TypeIdentifier( Resolver ); 
+        var typeIdentifier = XsParsers.TypeIdentifier( Resolver );
 
         var identifier = OneOf(
             valueIdentifier,
