@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -18,7 +18,6 @@ namespace Hyperbee.XS;
 // Add Indexer access
 // Add Array access
 //
-// Add Extensions
 // Compile //BF ME discuss
 
 public class XsParser
@@ -86,18 +85,15 @@ public class XsParser
 
         GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
 
-        var complexStatementExtensions = OneOf( complexExtensions );
-        var singleStatementExtensions = OneOf( singleExtensions );  
-
-        var complexStatement = OneOf( // Complex statements control scope or flow
+        var complexStatement = OneOf( // Complex scope or flow
             conditionalStatement,
             loopStatement,
             tryCatchStatement,
             switchStatement,
-            complexStatementExtensions
+            OneOf( complexExtensions )
         );
 
-        var singleLineStatement = OneOf( // Single-line statements are semicolon terminated
+        var singleLineStatement = OneOf( // Single-line semicolon terminated
             breakStatement,
             continueStatement,
             gotoStatement,
@@ -105,10 +101,10 @@ public class XsParser
             throwStatement,
             methodCall,
             lambdaInvocation,
-            singleStatementExtensions
+            OneOf( singleExtensions )
         ).AndSkip( Terms.Char( ';' ) );
 
-        var expressionStatement = OneOf( // Expression statements have the lowest precedence
+        var expressionStatement = OneOf( // Expressions and Assignments 
             declaration,
             assignment,
             expression
@@ -127,7 +123,6 @@ public class XsParser
                 Always().Then<Expression>( _ =>
                 {
                     Scope.Push( FrameType.Method );
-
                     return default;
                 } ),
                 ZeroOrMany( statement ).Then( statements =>
@@ -193,7 +188,7 @@ public class XsParser
         singleExtensions = _extensions
             .Where( x => x.Type == ExtensionType.SingleStatement )
             .Select( x => x.Parser( xsContext ) )
-            .ToArray();  
+            .ToArray();
     }
 
     // Expression Parser
@@ -329,7 +324,7 @@ public class XsParser
 
     // Helper Parsers
 
-    private Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
+    private static Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
             .Then( arguments => arguments ?? Array.Empty<Expression>() );
