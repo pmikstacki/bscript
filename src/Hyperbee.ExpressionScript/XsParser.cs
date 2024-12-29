@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-
 using Hyperbee.XS.Parsers;
 using Parlot;
 using Parlot.Fluent;
@@ -23,11 +22,30 @@ namespace Hyperbee.XS;
 public class XsParser
 {
     private readonly Parser<Expression> _xs;
-    private readonly Dictionary<string, MethodInfo> _methodTable;
     private readonly List<IParserExtension> _extensions = [];
 
     private TypeResolver Resolver { get; } = new();
     private ParseScope Scope { get; } = new();
+
+    private static readonly HashSet<string> ReservedKeywords =
+    [
+        "var",
+        "if",
+        "else",
+        "while",
+        "for",
+        "return",
+        "break",
+        "continue",
+        "try",
+        "catch",
+        "finally",
+        "switch",
+        "case",
+        "default",
+        "new",
+        "throw"
+    ];
 
     public IReadOnlyCollection<IParserExtension> Extensions
     {
@@ -41,9 +59,8 @@ public class XsParser
         init => Resolver.AddReferences( value );
     }
 
-    public XsParser( Dictionary<string, MethodInfo> methodTable = null )
+    public XsParser()
     {
-        _methodTable = methodTable ?? new Dictionary<string, MethodInfo>();
         _xs = CreateParser();
     }
 
@@ -80,7 +97,7 @@ public class XsParser
         var returnStatement = ReturnParser( expression );
         var throwStatement = ThrowParser( expression );
 
-        var methodCall = MethodCallParser( expression ); //BF placeholder code
+        //var methodCall = MethodCallParser( expression ); //BF placeholder code
         var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder code
 
         GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
@@ -99,8 +116,6 @@ public class XsParser
             gotoStatement,
             returnStatement,
             throwStatement,
-            methodCall,
-            lambdaInvocation,
             OneOf( singleExtensions )
         ).AndSkip( Terms.Char( ';' ) );
 
@@ -114,6 +129,8 @@ public class XsParser
             complexStatement,
             labelStatement, // colon terminated
             singleLineStatement,
+            //methodCall,
+            lambdaInvocation,
             expressionStatement
         );
 
@@ -233,42 +250,12 @@ public class XsParser
 
         // Identifiers
 
-        var primaryIdentifier = Terms.Identifier().Then<Expression>( Scope.LookupVariable );
-
-        var prefixIdentifier = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
-            .And( Terms.Identifier() )
-            .Then<Expression>( parts =>
-            {
-                var (op, ident) = parts;
-                var variable = Scope.LookupVariable( ident );
-
-                return op switch
-                {
-                    "++" => PreIncrementAssign( variable ),
-                    "--" => PreDecrementAssign( variable ),
-                    _ => throw new InvalidOperationException( $"Unsupported prefix operator: {op}." )
-                };
-            } );
-
-        var postfixIdentifier = Terms.Identifier()
-            .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
-            .Then<Expression>( parts =>
-            {
-                var (ident, op) = parts;
-                var variable = Scope.LookupVariable( ident );
-
-                return op switch
-                {
-                    "++" => PostIncrementAssign( variable ),
-                    "--" => PostDecrementAssign( variable ),
-                    _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
-                };
-            } );
+        var valueIdentifier = XsParsers.ValueIdentifier( Scope, ReservedKeywords );
+        var typeIdentifier = XsParsers.TypeIdentifier( Resolver ); 
 
         var identifier = OneOf(
-            prefixIdentifier,
-            postfixIdentifier,
-            primaryIdentifier
+            valueIdentifier,
+            typeIdentifier
         ).Named( "identifier" );
 
         // Grouped Expressions
@@ -287,9 +274,44 @@ public class XsParser
             groupedExpression
         ).Named( "primary" );
 
+        // Prefix and Postfix Expressions
+
+        var prefixExpression = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
+            .And( primaryExpression )
+            .Then<Expression>( parts =>
+            {
+                var (op, variable) = parts;
+
+                return op switch
+                {
+                    "++" => PreIncrementAssign( variable ),
+                    "--" => PreDecrementAssign( variable ),
+                    _ => throw new InvalidOperationException( $"Unsupported prefix operator: {op}." )
+                };
+            } );
+
+        var postfixExpression = primaryExpression
+            .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
+            .Then<Expression>( parts =>
+            {
+                var (variable, op) = parts;
+
+                return op switch
+                {
+                    "++" => PostIncrementAssign( variable ),
+                    "--" => PostDecrementAssign( variable ),
+                    _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
+                };
+            } );
+
+
         // Unary Expressions
 
-        var unaryExpression = primaryExpression.Unary(
+        var unaryExpression = OneOf(
+            prefixExpression,
+            postfixExpression,
+            primaryExpression
+        ).Unary(
             (Terms.Char( '!' ), Not),
             (Terms.Char( '-' ), Negate)
         ).Named( "unary" );
@@ -315,8 +337,10 @@ public class XsParser
         // New Expression
 
         var newExpression = NewParser( expression );
+        var methodCall = MethodCallParser( identifier, primaryExpression );
 
         return expression.Parser = OneOf(
+            methodCall,
             newExpression,
             binaryExpression
         );
@@ -737,28 +761,35 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> MethodCallParser( Parser<Expression> expression )
+    private Parser<Expression> MethodCallParser( Parser<Expression> identifier, Parser<Expression> expression )
     {
-        //BF ME - placeholder code - need to correctly resolve targets
-
-        var parser = ZeroOrOne(
-                Terms.Identifier().AndSkip( Terms.Text( "." ) )
-            )
-            .And( Terms.Identifier() )
-            .And(
-                Between(
-                    Terms.Char( '(' ),
-                    ArgumentsParser( expression ),
-                    Terms.Char( ')' )
-                )
+        var parser = identifier
+                .AndSkip( Terms.Text( "." ) )
+                .And( Terms.Identifier() )
+                .And(
+                    Between(
+                        Terms.Char( '(' ),
+                        ArgumentsParser( expression ),
+                        Terms.Char( ')' )
+                    )
             )
             .Then<Expression>( parts =>
             {
-                var (targetName, methodName, methodArguments) = parts;
-                var targetExpression = Scope.LookupVariable( targetName );
+                const BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
-                if ( !_methodTable.TryGetValue( methodName.ToString()!, out var methodInfo ) )
-                    throw new Exception( $"Method '{methodName}' not found." );
+                var (targetExpression, methodName, methodArguments) = parts;
+
+                var type = targetExpression switch
+                {
+                    ConstantExpression ce => (Type) ce.Value,
+                    ParameterExpression pe => pe.Type,
+                    _ => throw new InvalidOperationException( "Invalid target expression." )
+                };
+
+                var methodInfo = type!.GetMethod( methodName.ToString()!, bindingAttr ); //BF ME - need to resolve using arg types
+
+                if ( methodInfo == null )
+                    throw new MissingMethodException( $"Method '{methodName}' not found." );
 
                 return methodInfo.IsStatic
                     ? Call( methodInfo, methodArguments.ToArray() )

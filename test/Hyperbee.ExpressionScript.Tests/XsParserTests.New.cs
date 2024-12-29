@@ -3,16 +3,6 @@ using System.Reflection;
 
 namespace Hyperbee.XS.Tests;
 
-public class SimpleClass
-{
-    public int Value { get; }
-
-    public SimpleClass( int value )
-    {
-        Value = value;
-    }
-}
-
 [TestClass]
 public class XsParserNewExpressionTests
 {

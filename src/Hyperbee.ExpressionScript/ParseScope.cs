@@ -30,12 +30,24 @@ public class ParseScope
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool HasVariable( Parlot.TextSpan ident )
+    {
+        return Variables.ContainsKey( ident.ToString()! );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public ParameterExpression LookupVariable( Parlot.TextSpan ident )
     {
         if ( !Variables.TryGetValue( ident.ToString()!, out var variable ) )
             throw new Exception( $"Variable '{ident}' not found." );
 
         return variable;
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool TryLookupVariable( Parlot.TextSpan ident, out ParameterExpression variable )
+    {
+        return Variables.TryGetValue( ident.ToString()!, out variable );
     }
 }
 
