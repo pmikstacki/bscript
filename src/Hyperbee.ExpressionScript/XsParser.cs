@@ -81,13 +81,13 @@ public class XsParser
 
     private Parser<Expression> CreateParser()
     {
+        var statement = Deferred<Expression>();
+
         // Expressions
 
-        var expression = ExpressionParser();
+        var expression = ExpressionParser( statement );
 
         // Statements
-
-        var statement = Deferred<Expression>();
 
         var conditionalStatement = ConditionalParser( expression, statement );
         var loopStatement = LoopParser( statement );
@@ -114,7 +114,7 @@ public class XsParser
             loopStatement,
             tryCatchStatement,
             switchStatement,
-            lambdaStatement,
+            //lambdaStatement,
             OneOf( complexExtensions )
         );
 
@@ -216,7 +216,7 @@ public class XsParser
 
     // Expression Parser
 
-    private Parser<Expression> ExpressionParser()
+    private Parser<Expression> ExpressionParser( Deferred<Expression> statement )
     {
         var expression = Deferred<Expression>();
 
@@ -274,10 +274,21 @@ public class XsParser
 
         // Primary Expressions
 
-        var primaryExpression = OneOf(
+        var baseExpression = OneOf(
             literal,
             identifier,
             groupedExpression
+        ).Named( "base" );
+
+        var methodCall = MethodCallParser( identifier, baseExpression );
+        var lambdaExpression = LambdaParser( baseExpression, statement );
+        var lambdaInvocation = LambdaInvokeParser( expression ); 
+
+        var primaryExpression = OneOf(
+            baseExpression,
+            lambdaExpression,
+            methodCall,
+            lambdaInvocation
         ).Named( "primary" );
 
         // Prefix and Postfix Expressions
@@ -344,12 +355,7 @@ public class XsParser
 
         var newExpression = NewParser( expression );
 
-        var methodCall = MethodCallParser( identifier, primaryExpression );
-        var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder
-
         return expression.Parser = OneOf(
-            methodCall,
-            lambdaInvocation,
             newExpression,
             binaryExpression
         );
@@ -659,7 +665,6 @@ public class XsParser
 
     private Parser<Expression> LambdaParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-
         var parser =
             Between(
                 Terms.Char( '(' ),
@@ -682,9 +687,13 @@ public class XsParser
             {
                 var (parameters, body) = parts;
 
-                return (parameters == null || parameters.Count == 0)
-                    ? Lambda( ConvertToSingleExpression( body ) )
-                    : Lambda( ConvertToSingleExpression( body ), parameters.Select( p => Parameter( p.Type, "test" ) ) );  // OfType<ParameterExpression>()
+                var type = body.Count == 0 ? typeof( void ) : body[^1].Type;
+
+                var lambda = (parameters == null || parameters.Count == 0)
+                    ? Lambda( ConvertToSingleExpression( type, body ) )
+                    : Lambda( ConvertToSingleExpression( type, body ), parameters.Select( p => Parameter( p.Type, "test" ) ) );
+
+                return lambda;
             } ).Named( "Lambda" );
 
         return parser;
