@@ -102,7 +102,7 @@ public class XsParser
 
         GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
 
-        var complexStatement = OneOf( 
+        var complexStatement = OneOf(
             conditionalStatement,
             loopStatement,
             tryCatchStatement,
@@ -110,7 +110,7 @@ public class XsParser
             OneOf( complexExtensions )
         );
 
-        var singleLineStatement = OneOf( 
+        var singleLineStatement = OneOf(
             breakStatement,
             continueStatement,
             gotoStatement,
@@ -119,7 +119,7 @@ public class XsParser
             OneOf( singleExtensions )
         ).AndSkip( Terms.Char( ';' ) );
 
-        var expressionStatement = OneOf( 
+        var expressionStatement = OneOf(
             declaration,
             assignment,
             expression
@@ -335,7 +335,7 @@ public class XsParser
         // New Expression
 
         var newExpression = NewParser( expression );
-        
+
         var methodCall = MethodCallParser( identifier, primaryExpression );
         var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder
 
