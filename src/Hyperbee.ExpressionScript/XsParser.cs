@@ -69,6 +69,12 @@ public class XsParser
     {
         var scanner = new Scanner( script );
         var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        //context.OnEnterParser = ( obj, p ) => { 
+        //    Console.WriteLine( "Enter: {0}, {1}", obj, p );
+        //};
+        //context.OnExitParser = ( obj, p ) => {
+        //    Console.WriteLine( "Exit: {0}, {1}", obj, p );
+        //};
 
         return _xs.Parse( context );
     }
@@ -87,6 +93,7 @@ public class XsParser
         var loopStatement = LoopParser( statement );
         var tryCatchStatement = TryCatchParser( statement );
         var switchStatement = SwitchParser( expression, statement );
+        var lambdaStatement = LambdaParser( expression, statement );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
@@ -107,6 +114,7 @@ public class XsParser
             loopStatement,
             tryCatchStatement,
             switchStatement,
+            lambdaStatement,
             OneOf( complexExtensions )
         );
 
@@ -645,6 +653,39 @@ public class XsParser
                     Scope.Pop();
                 }
             } );
+
+        return parser;
+    }
+
+    private Parser<Expression> LambdaParser( Parser<Expression> expression, Deferred<Expression> statement )
+    {
+
+        var parser =
+            Between(
+                Terms.Char( '(' ),
+                ZeroOrMany(
+                    expression.AndSkip( ZeroOrOne( Terms.Char( ',' ) ) ) 
+                ),
+                Terms.Char( ')' ) )
+            .AndSkip( Terms.Text( "=>" ) )
+            .And( 
+                ZeroOrMany( statement )
+                .Or(
+                    Between(
+                        Terms.Char( '{' ),
+                        ZeroOrMany( statement ),
+                        Terms.Char( '}' )
+                    )
+                )
+            )
+            .Then<Expression>( static parts => 
+            {
+                var (parameters, body) = parts;
+
+                return (parameters == null || parameters.Count == 0)
+                    ? Lambda( ConvertToSingleExpression( body ) )
+                    : Lambda( ConvertToSingleExpression( body ), parameters.Select( p => Parameter( p.Type, "test" ) ) );  // OfType<ParameterExpression>()
+            } ).Named( "Lambda" );
 
         return parser;
     }
