@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Hyperbee.Collections;
 using static System.Linq.Expressions.Expression;
 
-namespace Hyperbee.XS;
+namespace Hyperbee.XS.System;
 
 public class ParseScope
 {

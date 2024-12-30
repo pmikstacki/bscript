@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Parlot.Fluent;
 
-namespace Hyperbee.XS;
+namespace Hyperbee.XS.System;
 
 public record XsContext( TypeResolver Resolver, ParseScope Scope, Parser<Expression> ExpressionParser, Deferred<Expression> StatementParser );
 
@@ -11,7 +11,7 @@ public enum ExtensionType
     SingleStatement
 }
 
-public interface IParserExtension
+public interface IParseExtension
 {
     ExtensionType Type { get; }
     Parser<Expression> Parser( XsContext xsContext );

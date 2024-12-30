@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.Parsers;
+using Hyperbee.XS.System;
 using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
@@ -20,12 +21,12 @@ namespace Hyperbee.XS;
 public class XsParser
 {
     private readonly Parser<Expression> _xs;
-    private readonly List<IParserExtension> _extensions = [];
+    private readonly List<IParseExtension> _extensions = [];
 
     private TypeResolver Resolver { get; } = new();
     private ParseScope Scope { get; } = new();
 
-    public IReadOnlyCollection<IParserExtension> Extensions
+    public IReadOnlyCollection<IParseExtension> Extensions
     {
         get => _extensions;
         init => _extensions.AddRange( value );

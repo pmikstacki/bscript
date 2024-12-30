@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Hyperbee.XS;
+namespace Hyperbee.XS.System;
 
 public class TypeResolver
 {
