@@ -251,7 +251,7 @@ public class XsParser
 
         // Primary Expressions
 
-        var baseExpression = OneOf(
+        var baseExpression = OneOf( //BF ME - discuss - I think base and primary need to be combined
             literal,
             identifier,
             groupedExpression
