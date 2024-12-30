@@ -289,9 +289,9 @@ public class XsParser
 
         // Prefix and Postfix Expressions
 
-        var prefixExpression = OneOf( 
-                Terms.Text( "++" ), 
-                Terms.Text( "--" ) 
+        var prefixExpression = OneOf(
+                Terms.Text( "++" ),
+                Terms.Text( "--" )
             )
             .And( primaryExpression )
             .Then<Expression>( parts =>
@@ -307,11 +307,11 @@ public class XsParser
             } );
 
         var postfixExpression = primaryExpression
-            .And( 
-                OneOf( 
-                    Terms.Text( "++" ), 
-                    Terms.Text( "--" ) 
-                ) 
+            .And(
+                OneOf(
+                    Terms.Text( "++" ),
+                    Terms.Text( "--" )
+                )
             )
             .Then<Expression>( parts =>
             {
