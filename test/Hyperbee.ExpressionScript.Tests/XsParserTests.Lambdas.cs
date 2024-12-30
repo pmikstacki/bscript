@@ -9,7 +9,7 @@ public class XsParserLambdaTests
     public void Compile_ShouldSucceed_WithLambdaResult()
     {
         var parser = new XsParser();
-        var expression = parser.Parse( 
+        var expression = parser.Parse(
             """
             var myLambda = () => 1; 
             myLambda();

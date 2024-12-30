@@ -664,11 +664,11 @@ public class XsParser
             Between(
                 Terms.Char( '(' ),
                 ZeroOrMany(
-                    expression.AndSkip( ZeroOrOne( Terms.Char( ',' ) ) ) 
+                    expression.AndSkip( ZeroOrOne( Terms.Char( ',' ) ) )
                 ),
                 Terms.Char( ')' ) )
             .AndSkip( Terms.Text( "=>" ) )
-            .And( 
+            .And(
                 ZeroOrMany( statement )
                 .Or(
                     Between(
@@ -678,7 +678,7 @@ public class XsParser
                     )
                 )
             )
-            .Then<Expression>( static parts => 
+            .Then<Expression>( static parts =>
             {
                 var (parameters, body) = parts;
 
