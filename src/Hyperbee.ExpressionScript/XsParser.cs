@@ -282,7 +282,7 @@ public class XsParser
 
         var methodCall = MethodCallParser( identifier, baseExpression );
         var lambdaExpression = LambdaParser( baseExpression, statement );
-        var lambdaInvocation = LambdaInvokeParser( expression ); 
+        var lambdaInvocation = LambdaInvokeParser( expression );
 
         var primaryExpression = OneOf(
             baseExpression,
