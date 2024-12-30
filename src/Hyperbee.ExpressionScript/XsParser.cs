@@ -66,7 +66,7 @@ public class XsParser
     {
         var scanner = new Scanner( script );
         var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
-        
+
         //context.OnEnterParser = ( obj, p ) => { 
         //    Console.WriteLine( "Enter: {0}, {1}", obj, p );
         //};
