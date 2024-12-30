@@ -827,8 +827,6 @@ public class XsParser
             )
             .Then<Expression>( parts =>
             {
-                const BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
-
                 var (targetExpression, methodName, methodArguments) = parts;
 
                 var type = targetExpression switch
@@ -838,7 +836,7 @@ public class XsParser
                     _ => throw new InvalidOperationException( "Invalid target expression." )
                 };
 
-                var methodInfo = type!.GetMethod( methodName.ToString()!, bindingAttr ); //BF ME - need to resolve using arg types
+                var methodInfo = TypeResolver.FindMethod( type, methodName.ToString()!, methodArguments );
 
                 if ( methodInfo == null )
                     throw new MissingMethodException( $"Method '{methodName}' not found." );
