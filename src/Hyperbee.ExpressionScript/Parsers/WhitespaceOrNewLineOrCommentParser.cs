@@ -7,20 +7,21 @@ internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
 {
     public override bool Parse( ParseContext context, ref ParseResult<TextSpan> result )
     {
+        context.EnterParser( this );
+
         var scanner = context.Scanner;
         var cursor = scanner.Cursor;
 
         while ( true )
         {
             if ( scanner.SkipWhiteSpaceOrNewLine() )
-            {
                 continue;
-            }
 
             // Check for trailing comments
 
             if ( !cursor.Match( '/' ) || cursor.PeekNext() != '/' )
             {
+                context.ExitParser( this );
                 return false;
             }
 

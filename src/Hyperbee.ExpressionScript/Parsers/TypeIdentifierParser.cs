@@ -15,6 +15,8 @@ internal class TypeIdentifierParser : Parser<Expression>
 
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
+        context.EnterParser( this );
+
         var scanner = context.Scanner;
         var cursor = scanner.Cursor;
 
@@ -30,9 +32,7 @@ internal class TypeIdentifierParser : Parser<Expression>
             position = cursor.Position;
 
             if ( !scanner.ReadChar( '.' ) )
-            {
                 break;
-            }
 
             scanner.SkipWhiteSpaceOrNewLine();
         }
@@ -46,6 +46,7 @@ internal class TypeIdentifierParser : Parser<Expression>
             if ( resolvedType != null )
             {
                 result.Set( start.Offset, cursor.Position.Offset, Expression.Constant( resolvedType ) );
+                context.ExitParser( this );
                 return true;
             }
 
@@ -54,6 +55,7 @@ internal class TypeIdentifierParser : Parser<Expression>
         }
 
         cursor.ResetPosition( start );
+        context.ExitParser( this );
         return false;
     }
 }

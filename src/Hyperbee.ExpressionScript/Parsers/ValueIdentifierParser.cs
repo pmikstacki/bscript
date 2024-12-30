@@ -17,6 +17,8 @@ internal class ValueIdentifierParser : Parser<Expression>
 
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
+        context.EnterParser( this );
+
         var scanner = context.Scanner;
         var cursor = scanner.Cursor;
 
@@ -29,11 +31,13 @@ internal class ValueIdentifierParser : Parser<Expression>
             if ( _scope.TryLookupVariable( identifier.ToString(), out var variable ) )
             {
                 result.Set( start.Offset, cursor.Position.Offset, variable );
+                context.ExitParser( this );
                 return true;
             }
         }
 
         cursor.ResetPosition( start );
+        context.ExitParser( this );
         return false;
     }
 }

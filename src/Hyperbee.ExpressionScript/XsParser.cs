@@ -12,13 +12,10 @@ namespace Hyperbee.XS;
 // Parser TODO
 //
 // Add Method calls and chaining
-// Add Lambda expressions
 // Add Member access
 // Add Indexer access
 // Add Array access
 // Add Async Await
-//
-// Compile //BF ME discuss
 
 public class XsParser
 {
@@ -69,6 +66,7 @@ public class XsParser
     {
         var scanner = new Scanner( script );
         var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        
         //context.OnEnterParser = ( obj, p ) => { 
         //    Console.WriteLine( "Enter: {0}, {1}", obj, p );
         //};
@@ -114,7 +112,6 @@ public class XsParser
             loopStatement,
             tryCatchStatement,
             switchStatement,
-            //lambdaStatement,
             OneOf( complexExtensions )
         );
 
@@ -674,8 +671,8 @@ public class XsParser
                 Terms.Char( ')' ) )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
-                ZeroOrMany( statement )
-                .Or(
+                OneOf(
+                    ListOfOne( statement ),
                     Between(
                         Terms.Char( '{' ),
                         ZeroOrMany( statement ),
@@ -689,14 +686,18 @@ public class XsParser
 
                 var type = body.Count == 0 ? typeof( void ) : body[^1].Type;
 
-                var lambda = (parameters == null || parameters.Count == 0)
+                return (parameters == null || parameters.Count == 0)
                     ? Lambda( ConvertToSingleExpression( type, body ) )
                     : Lambda( ConvertToSingleExpression( type, body ), parameters.Select( p => Parameter( p.Type, "test" ) ) );
 
-                return lambda;
             } ).Named( "Lambda" );
 
         return parser;
+
+        static Parser<IReadOnlyList<Expression>> ListOfOne( Deferred<Expression> statement )
+        {
+            return OneOf( statement ).Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } );
+        }
     }
 
     private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
@@ -852,8 +853,6 @@ public class XsParser
 
     private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression )
     {
-        //BF ME - placeholder code - need to correctly resolve targets
-
         var parser = Terms.Identifier()
             .And(
                 Between(
