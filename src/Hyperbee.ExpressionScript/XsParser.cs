@@ -91,7 +91,6 @@ public class XsParser
         var loopStatement = LoopParser( statement );
         var tryCatchStatement = TryCatchParser( statement );
         var switchStatement = SwitchParser( expression, statement );
-        var lambdaStatement = LambdaParser( expression, statement );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
@@ -279,18 +278,21 @@ public class XsParser
 
         var methodCall = MethodCallParser( identifier, baseExpression );
         var lambdaExpression = LambdaParser( baseExpression, statement );
-        var lambdaInvocation = LambdaInvokeParser( expression );
+        var lambdaInvocation = LambdaInvokeParser( baseExpression );
 
         var primaryExpression = OneOf(
-            baseExpression,
-            lambdaExpression,
             methodCall,
-            lambdaInvocation
+            lambdaInvocation,
+            lambdaExpression,
+            baseExpression
         ).Named( "primary" );
 
         // Prefix and Postfix Expressions
 
-        var prefixExpression = OneOf( Terms.Text( "++" ), Terms.Text( "--" ) )
+        var prefixExpression = OneOf( 
+                Terms.Text( "++" ), 
+                Terms.Text( "--" ) 
+            )
             .And( primaryExpression )
             .Then<Expression>( parts =>
             {
@@ -305,7 +307,12 @@ public class XsParser
             } );
 
         var postfixExpression = primaryExpression
-            .And( OneOf( Terms.Text( "++" ), Terms.Text( "--" ) ) )
+            .And( 
+                OneOf( 
+                    Terms.Text( "++" ), 
+                    Terms.Text( "--" ) 
+                ) 
+            )
             .Then<Expression>( parts =>
             {
                 var (variable, op) = parts;
@@ -677,7 +684,7 @@ public class XsParser
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    ListOfOne( statement ),
+                    ListOfOne( expression ),
                     Between(
                         Terms.Char( '{' ),
                         ZeroOrMany( statement ),

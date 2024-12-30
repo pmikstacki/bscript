@@ -11,7 +11,7 @@ public class XsParserLambdaTests
         var parser = new XsParser();
         var expression = parser.Parse(
             """
-            var myLambda = () => 1; 
+            var myLambda = () => 1;
             myLambda();
             """ );
 
