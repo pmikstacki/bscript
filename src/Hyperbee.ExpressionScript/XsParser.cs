@@ -360,10 +360,15 @@ public class XsParser
 
     // Helper Parsers
 
-    private static Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
+    private static Parser<IReadOnlyList<Expression>> Arguments( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
             .Then( arguments => arguments ?? Array.Empty<Expression>() );
+    }
+
+    static Parser<IReadOnlyList<Expression>> ListOfOne( Parser<Expression> expression )
+    {
+        return OneOf( expression ).Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } );
     }
 
     // Variable Parsers
@@ -693,11 +698,6 @@ public class XsParser
             } ).Named( "Lambda" );
 
         return parser;
-
-        static Parser<IReadOnlyList<Expression>> ListOfOne( Deferred<Expression> statement )
-        {
-            return OneOf( statement ).Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } );
-        }
     }
 
     private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
@@ -794,7 +794,7 @@ public class XsParser
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    ArgumentsParser( expression ),
+                    Arguments( expression ),
                     Terms.Char( ')' )
                 )
             )
@@ -821,7 +821,7 @@ public class XsParser
                 .And(
                     Between(
                         Terms.Char( '(' ),
-                        ArgumentsParser( expression ),
+                        Arguments( expression ),
                         Terms.Char( ')' )
                     )
             )
@@ -857,7 +857,7 @@ public class XsParser
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    ArgumentsParser( expression ),
+                    Arguments( expression ),
                     Terms.Char( ')' )
                 )
             )
