@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Hyperbee.Collections;
 using Parlot;
 using Parlot.Fluent;
 
@@ -6,11 +7,11 @@ namespace Hyperbee.XS.Parsers;
 
 internal class ValueIdentifierParser : Parser<Expression>
 {
-    private readonly ParseScope _scope;
+    private readonly LinkedDictionary<string, ParameterExpression> _variables;
 
-    public ValueIdentifierParser( ParseScope scope )
+    public ValueIdentifierParser( LinkedDictionary<string, ParameterExpression> variables )
     {
-        _scope = scope;
+        _variables = variables;
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
@@ -25,7 +26,7 @@ internal class ValueIdentifierParser : Parser<Expression>
 
         if ( scanner.ReadIdentifier( out var identifier ) )
         {
-            if ( _scope.TryLookupVariable( identifier.ToString(), out var variable ) )
+            if ( _variables.TryGetValue( identifier.ToString(), out var variable ) )
             {
                 result.Set( start.Offset, cursor.Position.Offset, variable );
                 context.ExitParser( this );
@@ -41,9 +42,9 @@ internal class ValueIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> ValueIdentifier( ParseScope scope )
+    public static Parser<Expression> ValueIdentifier( LinkedDictionary<string, ParameterExpression> variables )
     {
-        return new ValueIdentifierParser( scope );
+        return new ValueIdentifierParser( variables );
     }
 }
 

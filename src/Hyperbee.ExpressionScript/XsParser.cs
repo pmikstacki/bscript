@@ -232,7 +232,7 @@ public class XsParser
 
         // Identifiers
 
-        var valueIdentifier = XsParsers.ValueIdentifier( Scope );
+        var valueIdentifier = XsParsers.ValueIdentifier( Scope.Variables );
         var typeIdentifier = XsParsers.TypeIdentifier( Resolver );
 
         var identifier = OneOf(
