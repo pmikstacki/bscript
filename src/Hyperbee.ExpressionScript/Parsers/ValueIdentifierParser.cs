@@ -7,12 +7,10 @@ namespace Hyperbee.XS.Parsers;
 internal class ValueIdentifierParser : Parser<Expression>
 {
     private readonly ParseScope _scope;
-    private readonly HashSet<string> _reservedKeywords;
 
-    public ValueIdentifierParser( ParseScope scope, HashSet<string> reservedKeywords )
+    public ValueIdentifierParser( ParseScope scope )
     {
         _scope = scope;
-        _reservedKeywords = reservedKeywords;
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
@@ -25,9 +23,8 @@ internal class ValueIdentifierParser : Parser<Expression>
         var start = cursor.Position;
         scanner.SkipWhiteSpaceOrNewLine();
 
-        if ( scanner.ReadIdentifier( out var identifier ) && !_reservedKeywords.Contains( identifier.ToString() ) )
+        if ( scanner.ReadIdentifier( out var identifier ) )
         {
-
             if ( _scope.TryLookupVariable( identifier.ToString(), out var variable ) )
             {
                 result.Set( start.Offset, cursor.Position.Offset, variable );
@@ -44,9 +41,9 @@ internal class ValueIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> ValueIdentifier( ParseScope scope, HashSet<string> reservedKeywords )
+    public static Parser<Expression> ValueIdentifier( ParseScope scope )
     {
-        return new ValueIdentifierParser( scope, reservedKeywords );
+        return new ValueIdentifierParser( scope );
     }
 }
 

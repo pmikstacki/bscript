@@ -25,26 +25,6 @@ public class XsParser
     private TypeResolver Resolver { get; } = new();
     private ParseScope Scope { get; } = new();
 
-    private static readonly HashSet<string> ReservedKeywords =
-    [
-        "var",
-        "if",
-        "else",
-        "while",
-        "for",
-        "return",
-        "break",
-        "continue",
-        "try",
-        "catch",
-        "finally",
-        "switch",
-        "case",
-        "default",
-        "new",
-        "throw"
-    ];
-
     public IReadOnlyCollection<IParserExtension> Extensions
     {
         get => _extensions;
@@ -252,7 +232,7 @@ public class XsParser
 
         // Identifiers
 
-        var valueIdentifier = XsParsers.ValueIdentifier( Scope, ReservedKeywords );
+        var valueIdentifier = XsParsers.ValueIdentifier( Scope );
         var typeIdentifier = XsParsers.TypeIdentifier( Resolver );
 
         var identifier = OneOf(
