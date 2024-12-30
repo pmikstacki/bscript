@@ -16,6 +16,7 @@ namespace Hyperbee.XS;
 // Add Member access
 // Add Indexer access
 // Add Array access
+// Add Async Await
 //
 // Compile //BF ME discuss
 
@@ -97,12 +98,11 @@ public class XsParser
         var returnStatement = ReturnParser( expression );
         var throwStatement = ThrowParser( expression );
 
-        //var methodCall = MethodCallParser( expression ); //BF placeholder code
-        var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder code
+        // Compose Statements
 
         GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
 
-        var complexStatement = OneOf( // Complex scope or flow
+        var complexStatement = OneOf( 
             conditionalStatement,
             loopStatement,
             tryCatchStatement,
@@ -110,7 +110,7 @@ public class XsParser
             OneOf( complexExtensions )
         );
 
-        var singleLineStatement = OneOf( // Single-line semicolon terminated
+        var singleLineStatement = OneOf( 
             breakStatement,
             continueStatement,
             gotoStatement,
@@ -119,7 +119,7 @@ public class XsParser
             OneOf( singleExtensions )
         ).AndSkip( Terms.Char( ';' ) );
 
-        var expressionStatement = OneOf( // Expressions and Assignments 
+        var expressionStatement = OneOf( 
             declaration,
             assignment,
             expression
@@ -129,8 +129,6 @@ public class XsParser
             complexStatement,
             labelStatement, // colon terminated
             singleLineStatement,
-            //methodCall,
-            lambdaInvocation,
             expressionStatement
         );
 
@@ -337,10 +335,13 @@ public class XsParser
         // New Expression
 
         var newExpression = NewParser( expression );
+        
         var methodCall = MethodCallParser( identifier, primaryExpression );
+        var lambdaInvocation = LambdaInvokeParser( expression ); //BF placeholder
 
         return expression.Parser = OneOf(
             methodCall,
+            lambdaInvocation,
             newExpression,
             binaryExpression
         );
