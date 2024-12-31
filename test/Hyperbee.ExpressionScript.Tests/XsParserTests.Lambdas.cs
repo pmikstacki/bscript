@@ -1,4 +1,5 @@
-﻿using static System.Linq.Expressions.Expression;
+﻿using System.Reflection;
+using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Tests;
 
@@ -6,7 +7,7 @@ namespace Hyperbee.XS.Tests;
 public class XsParserLambdaTests
 {
     [TestMethod]
-    public void Compile_ShouldSucceed_WithLambdaResult()
+    public void Compile_ShouldSucceed_WithResult()
     {
         var parser = new XsParser();
         var expression = parser.Parse(
@@ -24,7 +25,7 @@ public class XsParserLambdaTests
     }
 
     [TestMethod]
-    public void Compile_ShouldSucceed_WithLambdaArgumentAndResult()
+    public void Compile_ShouldSucceed_WithArgumentAndResult()
     {
         var parser = new XsParser();
         var expression = parser.Parse(
@@ -42,7 +43,7 @@ public class XsParserLambdaTests
     }
 
     [TestMethod]
-    public void Compile_ShouldSucceed_WithLambdaStatementArgumentAndResult()
+    public void Compile_ShouldSucceed_WitStatementArgument()
     {
         var parser = new XsParser();
         var expression = parser.Parse(
@@ -57,5 +58,25 @@ public class XsParserLambdaTests
         var result = compiled();
 
         Assert.AreEqual( 13, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithReferenceArgument()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            var myLambda = ( Hyperbee.XS.Tests.SimpleClass x ) => { return x.Value; };
+            var myClass = new Hyperbee.XS.Tests.SimpleClass(42);
+            myLambda( myClass );
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
     }
 }

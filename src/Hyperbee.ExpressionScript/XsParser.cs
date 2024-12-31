@@ -337,7 +337,7 @@ public class XsParser
         // Other Expressions
 
         var newExpression = NewParser( expression );
-        var lambdaExpression = LambdaParser( primaryExpression, statement );
+        var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
 
         return expression.Parser = OneOf(
             newExpression,
@@ -648,12 +648,12 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> LambdaParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> expression, Deferred<Expression> statement )
     {
         var parameters = ZeroOrOne(
                 Separated(
                     Terms.Char( ',' ),
-                    Terms.Identifier().And( Terms.Identifier() )  // TODO: Add identifier
+                    identifier.And( Terms.Identifier() )  // TODO: Add identifier
                 )
             )
             .Then( ( ctx, parts ) =>
