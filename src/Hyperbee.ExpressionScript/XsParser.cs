@@ -251,7 +251,7 @@ public class XsParser
 
         // Primary Expressions
 
-        var primaryExpression = Deferred<Expression>(); 
+        var primaryExpression = Deferred<Expression>();
 
         var methodCall = MethodCallParser( identifier, primaryExpression );
         var lambdaExpression = LambdaParser( primaryExpression, statement );
