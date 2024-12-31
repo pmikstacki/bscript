@@ -687,38 +687,37 @@ public class XsParser
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    XsParsers.ListOfOne( expression ),
+                    expression,
                     Between(
                         Terms.Char( '{' ),
                         ZeroOrMany( statement ),
                         Terms.Char( '}' )
                     )
+                    .Then<Expression>( body =>
+                    {
+                        var returnLabel = Scope.Frame.ReturnLabel;
+                        return Block( body.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
+                    } )
                 )
             )
             .Then<Expression>( parts =>
             {
                 var (parameters, body) = parts;
-
-                var type = body.Count == 0 ? typeof( void ) : body[^1].Type;
-
                 if ( parameters.Length == 0 )
                 {
-                    return Lambda( ConvertToSingleExpression( type, body ) );
+                    return Lambda( body );
                 }
                 else
                 {
                     try
                     {
-                        return Lambda( ConvertToSingleExpression( type, body ), parameters );
+                        return Lambda( body, parameters );
                     }
                     finally
                     {
                         Scope.Pop();
                     }
                 }
-
-
-
             } ).Named( "Lambda" );
 
         return parser;
