@@ -651,7 +651,7 @@ public class XsParser
         var parser =
             Between(
                 Terms.Char( '(' ),
-                Arguments( expression ), 
+                Arguments( expression ),
                 Terms.Char( ')' ) )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
@@ -672,7 +672,7 @@ public class XsParser
 
                 return (parameters == null || parameters.Count == 0)
                     ? Lambda( ConvertToSingleExpression( type, body ) )
-                    : Lambda( ConvertToSingleExpression( type, body ), parameters.Select( (p,i) => Parameter( p.Type, $"p{i}" ) ) );
+                    : Lambda( ConvertToSingleExpression( type, body ), parameters.Select( ( p, i ) => Parameter( p.Type, $"p{i}" ) ) );
 
             } ).Named( "Lambda" );
 
