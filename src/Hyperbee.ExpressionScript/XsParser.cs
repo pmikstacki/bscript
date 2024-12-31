@@ -251,21 +251,19 @@ public class XsParser
 
         // Primary Expressions
 
-        var baseExpression = OneOf( //BF ME - discuss - I think base and primary need to be combined
-            literal,
-            identifier,
-            groupedExpression
-        ).Named( "base" );
+        var primaryExpression = Deferred<Expression>(); 
 
-        var methodCall = MethodCallParser( identifier, baseExpression );
-        var lambdaExpression = LambdaParser( baseExpression, statement );
-        var lambdaInvocation = LambdaInvokeParser( baseExpression );
+        var methodCall = MethodCallParser( identifier, primaryExpression );
+        var lambdaExpression = LambdaParser( primaryExpression, statement );
+        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
 
-        var primaryExpression = OneOf(
+        primaryExpression.Parser = OneOf(
             methodCall,
             lambdaInvocation,
             lambdaExpression,
-            baseExpression
+            literal,
+            identifier,
+            groupedExpression
         ).Named( "primary" );
 
         // Prefix and Postfix Expressions
