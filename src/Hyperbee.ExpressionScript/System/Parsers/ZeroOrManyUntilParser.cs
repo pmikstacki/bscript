@@ -1,7 +1,7 @@
 ﻿using Parlot;
 using Parlot.Fluent;
 
-namespace Hyperbee.XS.Parsers;
+namespace Hyperbee.XS.System.Parsers;
 
 internal class ZeroOrManyUntilParser<T, U> : Parser<IReadOnlyList<T>>
 {

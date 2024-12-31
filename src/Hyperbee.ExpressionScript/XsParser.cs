@@ -1,8 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Hyperbee.XS.Parsers;
 using Hyperbee.XS.System;
+using Hyperbee.XS.System.Parsers;
 using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
@@ -352,11 +352,6 @@ public class XsParser
             .Then( arguments => arguments ?? Array.Empty<Expression>() );
     }
 
-    static Parser<IReadOnlyList<Expression>> ListOfOne( Parser<Expression> expression )
-    {
-        return OneOf( expression ).Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } );
-    }
-
     // Variable Parsers
 
     private Parser<Expression> AssignmentParser( Parser<Expression> expression )
@@ -663,7 +658,7 @@ public class XsParser
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    ListOfOne( expression ),
+                    XsParsers.ListOfOne( expression ),
                     Between(
                         Terms.Char( '{' ),
                         ZeroOrMany( statement ),

@@ -1,9 +1,8 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS.System;
 using Parlot;
 using Parlot.Fluent;
 
-namespace Hyperbee.XS.Parsers;
+namespace Hyperbee.XS.System.Parsers;
 
 internal class TypeIdentifierParser : Parser<Expression>
 {
@@ -68,4 +67,3 @@ internal static partial class XsParsers
         return new TypeIdentifierParser( resolver );
     }
 }
-

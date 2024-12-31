@@ -3,7 +3,7 @@ using Hyperbee.Collections;
 using Parlot;
 using Parlot.Fluent;
 
-namespace Hyperbee.XS.Parsers;
+namespace Hyperbee.XS.System.Parsers;
 
 internal class ValueIdentifierParser : Parser<Expression>
 {
