@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -254,14 +254,12 @@ public class XsParser
         var primaryExpression = Deferred<Expression>();
 
         var methodCall = MethodCallParser( identifier, primaryExpression );
-        var lambdaExpression = LambdaParser( primaryExpression, statement );
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
         var property = PropertyParser( identifier, primaryExpression );
 
         primaryExpression.Parser = OneOf(
             methodCall,
             lambdaInvocation,
-            lambdaExpression,
             property,
             literal,
             identifier,
@@ -336,12 +334,14 @@ public class XsParser
             (Terms.Text( "??" ), Coalesce)
         ).Named( "binary" );
 
-        // New Expression
+        // Other Expressions
 
         var newExpression = NewParser( expression );
+        var lambdaExpression = LambdaParser( primaryExpression, statement );
 
         return expression.Parser = OneOf(
             newExpression,
+            lambdaExpression,
             binaryExpression
         );
     }
@@ -650,10 +650,39 @@ public class XsParser
 
     private Parser<Expression> LambdaParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
+        var parameters = ZeroOrOne(
+                Separated(
+                    Terms.Char( ',' ),
+                    Terms.Identifier().And( Terms.Identifier() )  // TODO: Add identifier
+                )
+            )
+            .Then( ( ctx, parts ) =>
+            {
+                if ( parts == null )
+                    return [];
+
+                Scope.Push( FrameType.Method );
+
+                return parts.Select( p =>
+                {
+                    var (typeName, name) = p;
+
+                    var type = Resolver.ResolveType( typeName.ToString() )
+                        ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
+
+                    var parameter = Parameter( type, name.ToString() );
+
+                    Scope.Variables.Add( name.ToString()!, parameter );
+
+                    return parameter;
+
+                } ).ToArray();
+            } );
+
         var parser =
             Between(
                 Terms.Char( '(' ),
-                Arguments( expression ),
+                parameters,
                 Terms.Char( ')' ) )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
@@ -666,15 +695,29 @@ public class XsParser
                     )
                 )
             )
-            .Then<Expression>( static parts =>
+            .Then<Expression>( parts =>
             {
                 var (parameters, body) = parts;
 
                 var type = body.Count == 0 ? typeof( void ) : body[^1].Type;
 
-                return (parameters == null || parameters.Count == 0)
-                    ? Lambda( ConvertToSingleExpression( type, body ) )
-                    : Lambda( ConvertToSingleExpression( type, body ), parameters.Select( ( p, i ) => Parameter( p.Type, $"p{i}" ) ) );
+                if ( parameters.Length == 0 )
+                {
+                    return Lambda( ConvertToSingleExpression( type, body ) );
+                }
+                else
+                {
+                    try
+                    {
+                        return Lambda( ConvertToSingleExpression( type, body ), parameters );
+                    }
+                    finally
+                    {
+                        Scope.Pop();
+                    }
+                }
+
+
 
             } ).Named( "Lambda" );
 

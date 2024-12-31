@@ -25,10 +25,40 @@ public class TypeResolver
     {
         return _typeCache.GetOrAdd( typeName, _ =>
         {
+            var type = GetTypeFromKeyword( typeName );
+            if ( type != null )
+                return type;
+
             return _references
                 .SelectMany( assembly => assembly.GetTypes() )
                 .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
         } );
+
+        static Type GetTypeFromKeyword( string typeName )
+        {
+            // Mapping of C# keywords to their corresponding types
+            return typeName switch
+            {
+                "int" => typeof( int ),
+                "double" => typeof( double ),
+                "string" => typeof( string ),
+                "bool" => typeof( bool ),
+                "float" => typeof( float ),
+                "decimal" => typeof( decimal ),
+                "object" => typeof( object ),
+                "byte" => typeof( byte ),
+                "char" => typeof( char ),
+                "short" => typeof( short ),
+                "long" => typeof( long ),
+                "uint" => typeof( uint ),
+                "ushort" => typeof( ushort ),
+                "ulong" => typeof( ulong ),
+                "sbyte" => typeof( sbyte ),
+                "void" => typeof( void ),
+                _ => null, // Return null for unknown types
+            };
+        }
+
     }
 
     public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> arguments, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )

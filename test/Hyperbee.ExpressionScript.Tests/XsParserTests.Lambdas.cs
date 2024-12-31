@@ -22,4 +22,22 @@ public class XsParserLambdaTests
 
         Assert.AreEqual( 1, result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithLambdaArgumentAndResult()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse(
+            """
+            var myLambda = ( int x ) => x;
+            myLambda( 10 );
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result );
+    }
 }
