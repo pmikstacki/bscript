@@ -39,7 +39,7 @@ internal class TypeIdentifierParser : Parser<Expression>
 
         while ( stack.Count > 0 )
         {
-            var segments = stack.Select( x => x.Segment ).Reverse();
+            var segments = stack.Select( loc => loc.Segment ).Reverse(); //TODO: Improve this
             var typeName = string.Join( ".", segments );
             var resolvedType = _resolver.ResolveType( typeName );
 
@@ -50,8 +50,7 @@ internal class TypeIdentifierParser : Parser<Expression>
                 return true;
             }
 
-            var (p, x) = stack.Pop();
-            cursor.ResetPosition( x );
+            cursor.ResetPosition( stack.Pop().Position );
         }
 
         cursor.ResetPosition( start );
