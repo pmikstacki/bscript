@@ -1,8 +1,9 @@
-﻿# e***X***pression***S***cript (***XS***) Language :rocket:
+﻿# e***X***pression***S***cript (***XS***) :rocket:
 
-## 1. Summary of Objectives
+e***X***pression***S***cript (***XS***) is a minimalist scripting language designed to
+simplify c# Expression Trees.
 
-e***X***pression***S***cript (***XS***) is a minimalist scripting language designed to:
+## Summary of Objectives
 
 1. **Map directly to `System.Linq.Expressions`**:
    - Every construct in ES aligns conceptually and functionally with `System.Linq.Expressions` APIs.
@@ -272,4 +273,17 @@ Expression.Block(
     )
 );
 ```
+
+## Credits
+
+Special thanks to:
+
+- [Parlot](https://github.com/sebastienros/parlot) for the performant .NET parser combinator. :heart:
+- [Fast Expression Compiler](https://github.com/dadhi/FastExpressionCompiler) for improved performance. :rocket:
+- [Just The Docs](https://github.com/just-the-docs/just-the-docs) for the documentation theme.
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](https://github.com/Stillpoint-Software/.github/blob/main/.github/CONTRIBUTING.md) 
+for more details.
 
