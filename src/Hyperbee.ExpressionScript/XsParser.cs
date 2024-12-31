@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -256,11 +256,13 @@ public class XsParser
         var methodCall = MethodCallParser( identifier, primaryExpression );
         var lambdaExpression = LambdaParser( primaryExpression, statement );
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
+        var property = PropertyParser( identifier, primaryExpression );
 
         primaryExpression.Parser = OneOf(
             methodCall,
             lambdaInvocation,
             lambdaExpression,
+            property,
             literal,
             identifier,
             groupedExpression
@@ -787,6 +789,26 @@ public class XsParser
                     throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
 
                 return New( constructor, arguments );
+            } );
+
+        return parser;
+    }
+
+    private Parser<Expression> PropertyParser( Parser<Expression> identifier, Parser<Expression> expression )
+    {
+        var parser = identifier
+            .AndSkip( Terms.Text( "." ) )
+            .And( Terms.Identifier() )
+            .Then<Expression>( parts =>
+            {
+                var (targetExpression, propertyName) = parts;
+
+                return targetExpression switch
+                {
+                    ConstantExpression ce => Property( ce, propertyName.ToString()! ),
+                    ParameterExpression pe => Property( pe, pe.Type, propertyName.ToString()! ),
+                    _ => throw new InvalidOperationException( "Invalid target expression." ),
+                };
             } );
 
         return parser;
