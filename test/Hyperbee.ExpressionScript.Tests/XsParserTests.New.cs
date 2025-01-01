@@ -28,7 +28,7 @@ public class XsParserNewExpressionTests
 
         var expression = parser.Parse(
             """
-            new Hyperbee.XS.Tests.SimpleClass(42).Value;
+            (new Hyperbee.XS.Tests.SimpleClass(42)).Value;
             """ );
 
         var lambda = Expression.Lambda<Func<int>>( expression );

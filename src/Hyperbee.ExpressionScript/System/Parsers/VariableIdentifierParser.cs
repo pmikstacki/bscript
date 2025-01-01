@@ -5,11 +5,11 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
 
-internal class ValueIdentifierParser : Parser<Expression>
+internal class VariableIdentifierParser : Parser<Expression>
 {
     private readonly LinkedDictionary<string, ParameterExpression> _variables;
 
-    public ValueIdentifierParser( LinkedDictionary<string, ParameterExpression> variables )
+    public VariableIdentifierParser( LinkedDictionary<string, ParameterExpression> variables )
     {
         _variables = variables;
     }
@@ -42,9 +42,9 @@ internal class ValueIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> ValueIdentifier( LinkedDictionary<string, ParameterExpression> variables )
+    public static Parser<Expression> VariableIdentifier( LinkedDictionary<string, ParameterExpression> variables )
     {
-        return new ValueIdentifierParser( variables );
+        return new VariableIdentifierParser( variables );
     }
 }
 

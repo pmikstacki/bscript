@@ -233,11 +233,11 @@ public class XsParser
 
         // Identifiers
 
-        var valueIdentifier = XsParsers.ValueIdentifier( Scope.Variables );
+        var varIdentifier = XsParsers.VariableIdentifier( Scope.Variables );
         var typeIdentifier = XsParsers.TypeIdentifier( Resolver );
 
         var identifier = OneOf(
-            valueIdentifier,
+            varIdentifier,
             typeIdentifier
         ).Named( "identifier" );
 
@@ -253,17 +253,21 @@ public class XsParser
 
         var primaryExpression = Deferred<Expression>();
 
-        var methodCall = MethodCallParser( identifier, primaryExpression );
-        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
-        var property = PropertyParser( identifier, primaryExpression );
+        var baseExpression = OneOf(
+            literal,
+            identifier,
+            groupedExpression
+        ).Named( "baseExpression" );
+
+        var methodCall = MethodCallParser( baseExpression );
+        var lambdaInvocation = LambdaInvokeParser( baseExpression );
+        var memberAccess = MemberAccessParser( baseExpression );
 
         primaryExpression.Parser = OneOf(
             methodCall,
             lambdaInvocation,
-            property,
-            literal,
-            identifier,
-            groupedExpression
+            memberAccess,
+            baseExpression
         ).Named( "primary" );
 
         // Prefix and Postfix Expressions
@@ -272,7 +276,7 @@ public class XsParser
                 Terms.Text( "++" ),
                 Terms.Text( "--" )
             )
-            .And( primaryExpression )
+            .And( varIdentifier )
             .Then<Expression>( parts =>
             {
                 var (op, variable) = parts;
@@ -285,7 +289,7 @@ public class XsParser
                 };
             } );
 
-        var postfixExpression = primaryExpression
+        var postfixExpression = varIdentifier
             .And(
                 OneOf(
                     Terms.Text( "++" ),
@@ -836,41 +840,49 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> PropertyParser( Parser<Expression> identifier, Parser<Expression> expression )
+    private Parser<Expression> MemberAccessParser( Parser<Expression> expression )
     {
-        var parser = identifier
-            .AndSkip( Terms.Text( "." ) )
+        var parser = expression
+            .AndSkip( Terms.Char( '.' ) )
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
-                var (targetExpression, propertyName) = parts;
+                var (targetExpression, memberName) = parts;
 
-                return targetExpression switch
+                var targetType = targetExpression.Type;
+                var member = targetType.GetMember( memberName.ToString()! ).FirstOrDefault();
+
+                if ( member == null )
                 {
-                    ConstantExpression ce => Property( ce, propertyName.ToString()! ),
-                    ParameterExpression pe => Property( pe, pe.Type, propertyName.ToString()! ),
-                    _ => throw new InvalidOperationException( "Invalid target expression." ),
+                    throw new InvalidOperationException( $"Member '{memberName}' not found on type '{targetType}'" );
+                }
+
+                return member switch
+                {
+                    PropertyInfo pi => Property( targetExpression, pi ),
+                    FieldInfo fi => Field( targetExpression, fi ),
+                    _ => throw new InvalidOperationException( $"Unsupported member type for '{memberName}'" )
                 };
             } );
 
         return parser;
     }
 
-    private Parser<Expression> MethodCallParser( Parser<Expression> identifier, Parser<Expression> expression )
+    private Parser<Expression> MethodCallParser(Parser<Expression> expression )
     {
-        var parser = identifier
-                .AndSkip( Terms.Text( "." ) )
-                .And( Terms.Identifier() )
-                .And(
-                    Between(
-                        Terms.Char( '(' ),
-                        Arguments( expression ),
-                        Terms.Char( ')' )
-                    )
+        var parser = expression
+            .AndSkip( Terms.Char( '.' ) )
+            .And( Terms.Identifier() )
+            .And(
+                Between(
+                    Terms.Char( '(' ),
+                    Arguments( expression ),
+                    Terms.Char( ')' )
+                )
             )
             .Then<Expression>( parts =>
             {
-                var (targetExpression, methodName, methodArguments) = parts;
+                var (targetExpression, methodName, arguments) = parts;
 
                 var type = targetExpression switch
                 {
@@ -879,18 +891,21 @@ public class XsParser
                     _ => throw new InvalidOperationException( "Invalid target expression." )
                 };
 
-                var methodInfo = TypeResolver.FindMethod( type, methodName.ToString()!, methodArguments );
+                var method = TypeResolver.FindMethod( type, methodName.ToString(), arguments );
 
-                if ( methodInfo == null )
-                    throw new MissingMethodException( $"Method '{methodName}' not found." );
+                if ( method == null )
+                {
+                    throw new InvalidOperationException( $"Method '{methodName}' not found on type '{type}'" );
+                }
 
-                return methodInfo.IsStatic
-                    ? Call( methodInfo, methodArguments.ToArray() )
-                    : Call( targetExpression, methodInfo, methodArguments.ToArray() );
+                return method.IsStatic
+                    ? Call( method, arguments.ToArray() )
+                    : Call( targetExpression, method, arguments.ToArray() );
             } );
 
         return parser;
     }
+
 
     private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression )
     {
@@ -915,5 +930,81 @@ public class XsParser
 
         return parser;
     }
+
+
+
+    private Parser<Expression> SAVEME_MemberAccessParser(Parser<Expression> baseExpression, Parser<Expression> argumentParser)
+    {
+        /*
+             var expression = Deferred<Expression>();
+
+             var primaryExpression = MemberAccessParser(
+                OneOf(literal, identifier, groupedExpression),
+                expression
+             );
+
+            expression.Parser = OneOf(
+                primaryExpression, // Handles base cases and member access
+                binaryExpression   // Handles operators like +, -, *, /
+            );
+
+        */
+
+    return baseExpression.And(
+        ZeroOrMany(
+            Terms.Char('.')
+                .SkipAnd(Terms.Identifier())
+                .And(ZeroOrOne(
+                    Between(
+                        Terms.Char('('),
+                        Arguments(argumentParser),
+                        Terms.Char(')')
+                    )
+                ))
+        )
+    ).Then(parts =>
+    {
+        var (baseExpr, accesses) = parts;
+        Expression current = baseExpr;
+
+        foreach (var (memberName, arguments) in accesses)
+        {
+            if (arguments != null)
+            {
+                // Resolve method call
+                var methodInfo = TypeResolver.FindMethod(current.Type, memberName.ToString(), arguments);
+                if (methodInfo == null)
+                {
+                    throw new InvalidOperationException($"Method '{memberName}' not found on type '{current.Type}'.");
+                }
+
+                current = methodInfo.IsStatic
+                    ? Call(methodInfo, arguments.ToArray())
+                    : Call(current, methodInfo, arguments.ToArray());
+            }
+            else
+            {
+                // Resolve property/field
+                var member = current.Type.GetMember(memberName.ToString(), BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                    .FirstOrDefault();
+
+                if (member == null)
+                {
+                    throw new InvalidOperationException($"Member '{memberName}' not found on type '{current.Type}'.");
+                }
+
+                current = member.MemberType switch
+                {
+                    MemberTypes.Property => Property(current, (PropertyInfo)member),
+                    MemberTypes.Field => Field(current, (FieldInfo)member),
+                    _ => throw new InvalidOperationException($"Unsupported member type: {member.MemberType}.")
+                };
+            }
+        }
+
+        return current;
+    });
+}
+
 }
 
