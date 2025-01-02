@@ -886,11 +886,14 @@ public class XsParser
             )
             .Then( parts =>
             {
-                var (baseExpr, accesses) = parts;
-                Expression current = baseExpr;
+                const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+
+                var (current, accesses) = parts;
 
                 foreach ( var (memberName, arguments) in accesses )
                 {
+                    var name = memberName.ToString()!;
+
                     var type = current switch
                     {
                         ConstantExpression ce => (Type) ce.Value,
@@ -903,31 +906,25 @@ public class XsParser
                     if ( arguments != null )
                     {
                         // Resolve method call
-                        var methodInfo = TypeResolver.FindMethod( type, memberName.ToString(), arguments );
-                        if ( methodInfo == null )
-                        {
-                            throw new InvalidOperationException( $"Method '{memberName}' not found on type '{type}'." );
-                        }
+                        var methodInfo = TypeResolver.FindMethod( type, name, arguments );
 
-                        current = methodInfo.IsStatic
-                            ? Call( methodInfo, arguments.ToArray() )
-                            : Call( current, methodInfo, arguments.ToArray() );
+                        current = methodInfo?.IsStatic switch
+                        {
+                            true => Call( methodInfo, arguments.ToArray() ),
+                            false => Call( current, methodInfo, arguments.ToArray() ),
+                            null => throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." )
+                        };
                     }
                     else
                     {
                         // Resolve property/field
-                        var member = current.Type.GetMember( memberName.ToString()!, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
-                            .FirstOrDefault();
+                        var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
 
-                        if ( member == null )
-                        {
-                            throw new InvalidOperationException( $"Member '{memberName}' not found on type '{current.Type}'." );
-                        }
-
-                        current = member.MemberType switch
+                        current = member?.MemberType switch
                         {
                             MemberTypes.Property => Property( current, (PropertyInfo) member ),
                             MemberTypes.Field => Field( current, (FieldInfo) member ),
+                            null => throw new InvalidOperationException( $"Member '{name}' not found on type '{current.Type}'." ),
                             _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
                         };
                     }
