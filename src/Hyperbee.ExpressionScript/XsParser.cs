@@ -267,12 +267,10 @@ public class XsParser
             groupedExpression
         ).Named( "baseExpression" );
 
-        var methodCall = MethodCallParser( baseExpression );
         var lambdaInvocation = LambdaInvokeParser( baseExpression );
-        var memberAccess = MemberAccessParser( baseExpression );
+        var memberAccess = MemberAccessParser( baseExpression, expression );
 
         primaryExpression.Parser = OneOf(
-            methodCall,
             lambdaInvocation,
             memberAccess,
             baseExpression
@@ -847,7 +845,7 @@ public class XsParser
     private Parser<Expression> MemberAccessParser( Parser<Expression> expression )
     {
         var parser = expression
-            .AndSkip( Terms.Char( '.' ) )
+            //.AndSkip( Terms.Char( '.' ) )
             .And( Terms.Identifier() )
             .Then<Expression>( parts =>
             {
@@ -935,80 +933,75 @@ public class XsParser
         return parser;
     }
 
-
-
-    private Parser<Expression> SAVEME_MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> argumentParser )
+    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> argumentParser )
     {
-        /*
-             var expression = Deferred<Expression>();
-
-             var primaryExpression = MemberAccessParser(
-                OneOf(literal, identifier, groupedExpression),
-                expression
-             );
-
-            expression.Parser = OneOf(
-                primaryExpression, // Handles base cases and member access
-                binaryExpression   // Handles operators like +, -, *, /
-            );
-
-        */
-
-        return baseExpression.And(
-            ZeroOrMany(
-                Terms.Char( '.' )
-                    .SkipAnd( Terms.Identifier() )
-                    .And( ZeroOrOne(
-                        Between(
-                            Terms.Char( '(' ),
-                            Arguments( argumentParser ),
-                            Terms.Char( ')' )
+        return baseExpression
+            .AndSkip( Terms.Char( '.' ) )
+            .And(
+                Separated(
+                    Terms.Char( '.' ),
+                    Terms.Identifier().And(
+                        ZeroOrOne(
+                            Between(
+                                Terms.Char( '(' ),
+                                Arguments( argumentParser ),
+                                Terms.Char( ')' )
+                            )
                         )
-                    ) )
+                    )
+                )
             )
-        ).Then( parts =>
-        {
-            var (baseExpr, accesses) = parts;
-            Expression current = baseExpr;
-
-            foreach ( var (memberName, arguments) in accesses )
+            .Then( parts =>
             {
-                if ( arguments != null )
+                var (baseExpr, accesses) = parts;
+                Expression current = baseExpr;
+
+                foreach ( var (memberName, arguments) in accesses )
                 {
-                    // Resolve method call
-                    var methodInfo = TypeResolver.FindMethod( current.Type, memberName.ToString(), arguments );
-                    if ( methodInfo == null )
+                    var type = current switch
                     {
-                        throw new InvalidOperationException( $"Method '{memberName}' not found on type '{current.Type}'." );
-                    }
-
-                    current = methodInfo.IsStatic
-                        ? Call( methodInfo, arguments.ToArray() )
-                        : Call( current, methodInfo, arguments.ToArray() );
-                }
-                else
-                {
-                    // Resolve property/field
-                    var member = current.Type.GetMember( memberName.ToString(), BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
-                        .FirstOrDefault();
-
-                    if ( member == null )
-                    {
-                        throw new InvalidOperationException( $"Member '{memberName}' not found on type '{current.Type}'." );
-                    }
-
-                    current = member.MemberType switch
-                    {
-                        MemberTypes.Property => Property( current, (PropertyInfo) member ),
-                        MemberTypes.Field => Field( current, (FieldInfo) member ),
-                        _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
+                        ConstantExpression ce => (Type) ce.Value,
+                        ParameterExpression pe => pe.Type,
+                        NewExpression ne => ne.Type,
+                        MemberExpression me => me.Type,
+                        _ => throw new InvalidOperationException( "Invalid target expression." )
                     };
+
+                    if ( arguments != null )
+                    {
+                        // Resolve method call
+                        var methodInfo = TypeResolver.FindMethod( type, memberName.ToString(), arguments );
+                        if ( methodInfo == null )
+                        {
+                            throw new InvalidOperationException( $"Method '{memberName}' not found on type '{type}'." );
+                        }
+
+                        current = methodInfo.IsStatic
+                            ? Call( methodInfo, arguments.ToArray() )
+                            : Call( current, methodInfo, arguments.ToArray() );
+                    }
+                    else
+                    {
+                        // Resolve property/field
+                        var member = current.Type.GetMember( memberName.ToString()!, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+                            .FirstOrDefault();
+
+                        if ( member == null )
+                        {
+                            throw new InvalidOperationException( $"Member '{memberName}' not found on type '{current.Type}'." );
+                        }
+
+                        current = member.MemberType switch
+                        {
+                            MemberTypes.Property => Property( current, (PropertyInfo) member ),
+                            MemberTypes.Field => Field( current, (FieldInfo) member ),
+                            _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
+                        };
+                    }
                 }
-            }
 
-            return current;
-        } );
+                return current;
+            } );
     }
-
 }
 
