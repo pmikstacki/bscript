@@ -58,7 +58,7 @@ public class XsParser
         return _xs.Parse( context );
     }
 
-        // Helpers
+    // Helpers
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )

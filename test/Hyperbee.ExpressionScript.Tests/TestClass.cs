@@ -4,7 +4,7 @@ public class TestClass
 {
     public int PropertyValue { get; set; }
     public int MethodValue() => PropertyValue;
-    
+
 
     public TestClass PropertySelf => this;
     public TestClass MethodSelf() => this;
