@@ -67,8 +67,8 @@ public class XsParserLambdaTests
 
         var expression = parser.Parse(
             """
-            var myLambda = ( Hyperbee.XS.Tests.SimpleClass x ) => { return x.Value; };
-            var myClass = new Hyperbee.XS.Tests.SimpleClass(42);
+            var myLambda = ( Hyperbee.XS.Tests.TestClass x ) => { return x.PropertyValue; };
+            var myClass = new Hyperbee.XS.Tests.TestClass(42);
             myLambda( myClass );
             """ );
 

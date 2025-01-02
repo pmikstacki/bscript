@@ -13,8 +13,8 @@ public class XsParserPropertyTests
 
         var expression = parser.Parse(
             """
-            var x = new Hyperbee.XS.Tests.SimpleClass(42);
-            x.Value;
+            var x = new Hyperbee.XS.Tests.TestClass(42);
+            x.PropertyValue;
             """ );
 
         var lambda = Lambda<Func<int>>( expression );

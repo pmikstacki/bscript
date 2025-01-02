@@ -13,8 +13,8 @@ public class XsParserMethodTests
 
         var expression = parser.Parse(
             """
-            var x = new Hyperbee.XS.Tests.SimpleClass(42);
-            x.ReturnValue();
+            var x = new Hyperbee.XS.Tests.TestClass(42);
+            x.MethodValue();
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
@@ -31,7 +31,7 @@ public class XsParserMethodTests
 
         var expression = parser.Parse(
             """
-            var x = new Hyperbee.XS.Tests.SimpleClass(-1);
+            var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.AddNumbers(10,32);
             """ );
 
@@ -49,7 +49,7 @@ public class XsParserMethodTests
 
         var expression = parser.Parse(
             """
-            var x = Hyperbee.XS.Tests.SimpleClass.StaticAddNumbers(10,32);
+            var x = Hyperbee.XS.Tests.TestClass.StaticAddNumbers(10,32);
             """ );
 
         var lambda = Lambda<Func<int>>( expression );

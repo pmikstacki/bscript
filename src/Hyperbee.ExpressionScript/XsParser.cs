@@ -58,6 +58,63 @@ public class XsParser
         return _xs.Parse( context );
     }
 
+        // Helpers
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    {
+        return ConvertToSingleExpression( typeof( void ), expressions );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
+    {
+        type ??= typeof( void );
+
+        return expressions?.Count switch
+        {
+            null or 0 => Default( type ),
+            1 => expressions.First(),
+            _ => Block( expressions )
+        };
+    }
+
+    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
+    {
+        var returnLabel = scope.Frame.ReturnLabel;
+        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
+
+        return returnLabel switch
+        {
+            null => Block( scope.Variables.EnumerateValues(), expressions ),
+
+            _ when returnLabel.Type != finalType
+                => throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." ),
+
+            _ => Block(
+                scope.Variables.EnumerateValues(),
+                expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] )
+            )
+        };
+    }
+
+    private void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    {
+        var xsContext = new XsContext( Resolver, Scope, expression, statement );
+
+        complexExtensions = _extensions
+            .Where( x => x.Type == ExtensionType.ComplexStatement )
+            .Select( x => x.Parser( xsContext ) )
+            .ToArray();
+
+        singleExtensions = _extensions
+            .Where( x => x.Type == ExtensionType.SingleStatement )
+            .Select( x => x.Parser( xsContext ) )
+            .ToArray();
+    }
+
+    // Parsers
+
     private Parser<Expression> CreateParser()
     {
         var statement = Deferred<Expression>();
@@ -120,75 +177,26 @@ public class XsParser
         // Finalize
 
         return Between(
-                Always().Then<Expression>( _ =>
-                {
-                    Scope.Push( FrameType.Method );
-                    return default;
-                } ),
-                ZeroOrMany( statement ).Then( statements =>
-                    ConvertToFinalExpression( statements, Scope )
-                ),
-                Always<Expression>().Then<Expression>( _ =>
-                {
-                    Scope.Pop();
-                    return default;
-                } )
-            );
-    }
+            Always().Then<Expression>( _ =>
+            {
+                Scope.Push( FrameType.Method );
+                return default;
+            } ),
+            ZeroOrMany( statement ).Then( statements =>
+                ConvertToFinalExpression( statements, Scope )
+            ),
+            Always<Expression>().Then<Expression>( ( ctx, _ ) =>
+            {
+                Scope.Pop();
 
-    // Helpers
+                //var cursor = ctx.Scanner.Cursor;
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
-    {
-        return ConvertToSingleExpression( typeof( void ), expressions );
-    }
+                //if ( cursor.Eof == false )
+                //    throw new SyntaxErrorException( "Syntax Error. Failure parsing script.", cursor );
 
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
-    {
-        type ??= typeof( void );
-
-        return expressions?.Count switch
-        {
-            null or 0 => Default( type ),
-            1 => expressions.First(),
-            _ => Block( expressions )
-        };
-    }
-
-    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
-    {
-        var returnLabel = scope.Frame.ReturnLabel;
-        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
-
-        return returnLabel switch
-        {
-            null => Block( scope.Variables.EnumerateValues(), expressions ),
-
-            _ when returnLabel.Type != finalType
-                => throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." ),
-
-            _ => Block(
-                scope.Variables.EnumerateValues(),
-                expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] )
-            )
-        };
-    }
-
-    private void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
-    {
-        var xsContext = new XsContext( Resolver, Scope, expression, statement );
-
-        complexExtensions = _extensions
-            .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( xsContext ) )
-            .ToArray();
-
-        singleExtensions = _extensions
-            .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( xsContext ) )
-            .ToArray();
+                return default;
+            } )
+        );
     }
 
     // Expression Parser
@@ -706,21 +714,17 @@ public class XsParser
             )
             .Then<Expression>( parts =>
             {
-                var (parameters, body) = parts;
-                if ( parameters.Length == 0 )
+                var (args, body) = parts;
+
+                try
                 {
-                    return Lambda( body );
+                    return Lambda( body, args );
+
                 }
-                else
+                finally
                 {
-                    try
-                    {
-                        return Lambda( body, parameters );
-                    }
-                    finally
-                    {
+                    if ( args.Length != 0 )
                         Scope.Pop();
-                    }
                 }
             } ).Named( "Lambda" );
 

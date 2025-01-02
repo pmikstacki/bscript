@@ -11,31 +11,38 @@ public class XsParserNewExpressionTests
     {
         var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
 
-        var expression = parser.Parse( "new Hyperbee.XS.Tests.SimpleClass(42);" );
+        var expression = parser.Parse( "new Hyperbee.XS.Tests.TestClass(42);" );
 
-        var lambda = Expression.Lambda<Func<SimpleClass>>( expression );
+        var lambda = Expression.Lambda<Func<TestClass>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
         Assert.IsNotNull( result );
-        Assert.AreEqual( 42, result.Value );
+        Assert.AreEqual( 42, result.PropertyValue );
     }
 
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewAndProperty()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        try
+        {
+            var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
 
-        var expression = parser.Parse(
-            """
-            (new Hyperbee.XS.Tests.SimpleClass(42)).Value;
-            """ );
+            var expression = parser.Parse(
+                """
+                (new Hyperbee.XS.Tests.TestClass(42)).PropertySelf.PropertyValue;
+                """ );
 
-        var lambda = Expression.Lambda<Func<int>>( expression );
+            var lambda = Expression.Lambda<Func<int>>( expression );
 
-        var compiled = lambda.Compile();
-        var result = compiled();
+            var compiled = lambda.Compile();
+            var result = compiled();
 
-        Assert.AreEqual( 42, result );
+            Assert.AreEqual( 42, result );
+        }
+        catch ( SyntaxErrorException se )
+        {
+            Assert.Fail( se.Message );
+        }
     }
 }
