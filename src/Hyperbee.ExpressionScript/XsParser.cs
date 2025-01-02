@@ -12,8 +12,6 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Method calls and chaining
-// Add Member access
 // Add Indexer access
 // Add Array access
 // Add Async Await
@@ -418,6 +416,76 @@ public class XsParser
             );
     }
 
+    // Member Parsers
+
+    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
+    {
+        return baseExpression
+            .AndSkip( Terms.Char( '.' ) )
+            .And(
+                Separated(
+                    Terms.Char( '.' ),
+                    Terms.Identifier().And(
+                        ZeroOrOne(
+                            Between(
+                                Terms.Char( '(' ),
+                                Arguments( expression ),
+                                Terms.Char( ')' )
+                            )
+                        )
+                    )
+                )
+            )
+            .Then( parts =>
+            {
+                const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+
+                var (current, accesses) = parts;
+
+                foreach ( var (memberName, arguments) in accesses )
+                {
+                    var name = memberName.ToString()!;
+
+                    var type = current switch
+                    {
+                        ConstantExpression ce => (Type) ce.Value,
+                        ParameterExpression pe => pe.Type,
+                        NewExpression ne => ne.Type,
+                        MemberExpression me => me.Type,
+                        _ => throw new InvalidOperationException( "Invalid target expression." )
+                    };
+
+                    if ( arguments != null )
+                    {
+                        // Resolve method call
+                        var methodInfo = TypeResolver.FindMethod( type, name, arguments );
+
+                        current = methodInfo?.IsStatic switch
+                        {
+                            true => Call( methodInfo, arguments.ToArray() ),
+                            false => Call( current, methodInfo, arguments.ToArray() ),
+                            null => throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." )
+                        };
+                    }
+                    else
+                    {
+                        // Resolve property/field
+                        var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
+
+                        current = member?.MemberType switch
+                        {
+                            MemberTypes.Property => Property( current, (PropertyInfo) member ),
+                            MemberTypes.Field => Field( current, (FieldInfo) member ),
+                            null => throw new InvalidOperationException( $"Member '{name}' not found on type '{current.Type}'." ),
+                            _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
+                        };
+                    }
+                }
+
+                return current;
+            } );
+    }
+
     // Statement Parsers
 
     private Parser<Expression> BreakParser()
@@ -663,10 +731,10 @@ public class XsParser
         var parameters = ZeroOrOne(
                 Separated(
                     Terms.Char( ',' ),
-                    identifier.And( Terms.Identifier() )  // TODO: Add identifier
+                    identifier.And( Terms.Identifier() )
                 )
             )
-            .Then( ( ctx, parts ) =>
+            .Then( parts =>
             {
                 if ( parts == null )
                     return [];
@@ -675,14 +743,15 @@ public class XsParser
 
                 return parts.Select( p =>
                 {
-                    var (typeName, name) = p;
+                    var (typeName, paramName) = p;
 
                     var type = Resolver.ResolveType( typeName.ToString() )
                         ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
-                    var parameter = Parameter( type, name.ToString() );
+                    var name = paramName.ToString()!;
+                    var parameter = Parameter( type, name );
 
-                    Scope.Variables.Add( name.ToString()!, parameter );
+                    Scope.Variables.Add( name, parameter );
 
                     return parameter;
 
@@ -864,74 +933,6 @@ public class XsParser
             } );
 
         return parser;
-    }
-
-    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
-    {
-        return baseExpression
-            .AndSkip( Terms.Char( '.' ) )
-            .And(
-                Separated(
-                    Terms.Char( '.' ),
-                    Terms.Identifier().And(
-                        ZeroOrOne(
-                            Between(
-                                Terms.Char( '(' ),
-                                Arguments( expression ),
-                                Terms.Char( ')' )
-                            )
-                        )
-                    )
-                )
-            )
-            .Then( parts =>
-            {
-                const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-
-                var (current, accesses) = parts;
-
-                foreach ( var (memberName, arguments) in accesses )
-                {
-                    var name = memberName.ToString()!;
-
-                    var type = current switch
-                    {
-                        ConstantExpression ce => (Type) ce.Value,
-                        ParameterExpression pe => pe.Type,
-                        NewExpression ne => ne.Type,
-                        MemberExpression me => me.Type,
-                        _ => throw new InvalidOperationException( "Invalid target expression." )
-                    };
-
-                    if ( arguments != null )
-                    {
-                        // Resolve method call
-                        var methodInfo = TypeResolver.FindMethod( type, name, arguments );
-
-                        current = methodInfo?.IsStatic switch
-                        {
-                            true => Call( methodInfo, arguments.ToArray() ),
-                            false => Call( current, methodInfo, arguments.ToArray() ),
-                            null => throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." )
-                        };
-                    }
-                    else
-                    {
-                        // Resolve property/field
-                        var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
-
-                        current = member?.MemberType switch
-                        {
-                            MemberTypes.Property => Property( current, (PropertyInfo) member ),
-                            MemberTypes.Field => Field( current, (FieldInfo) member ),
-                            null => throw new InvalidOperationException( $"Member '{name}' not found on type '{current.Type}'." ),
-                            _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
-                        };
-                    }
-                }
-
-                return current;
-            } );
     }
 }
 
