@@ -842,80 +842,13 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> MemberAccessParser( Parser<Expression> expression )
-    {
-        var parser = expression
-            //.AndSkip( Terms.Char( '.' ) )
-            .And( Terms.Identifier() )
-            .Then<Expression>( parts =>
-            {
-                var (targetExpression, memberName) = parts;
-
-                var targetType = targetExpression.Type;
-                var member = targetType.GetMember( memberName.ToString()! ).FirstOrDefault();
-
-                if ( member == null )
-                {
-                    throw new InvalidOperationException( $"Member '{memberName}' not found on type '{targetType}'" );
-                }
-
-                return member switch
-                {
-                    PropertyInfo pi => Property( targetExpression, pi ),
-                    FieldInfo fi => Field( targetExpression, fi ),
-                    _ => throw new InvalidOperationException( $"Unsupported member type for '{memberName}'" )
-                };
-            } );
-
-        return parser;
-    }
-
-    private Parser<Expression> MethodCallParser( Parser<Expression> expression )
-    {
-        var parser = expression
-            .AndSkip( Terms.Char( '.' ) )
-            .And( Terms.Identifier() )
-            .And(
-                Between(
-                    Terms.Char( '(' ),
-                    Arguments( expression ),
-                    Terms.Char( ')' )
-                )
-            )
-            .Then<Expression>( parts =>
-            {
-                var (targetExpression, methodName, arguments) = parts;
-
-                var type = targetExpression switch
-                {
-                    ConstantExpression ce => (Type) ce.Value,
-                    ParameterExpression pe => pe.Type,
-                    _ => throw new InvalidOperationException( "Invalid target expression." )
-                };
-
-                var method = TypeResolver.FindMethod( type, methodName.ToString(), arguments );
-
-                if ( method == null )
-                {
-                    throw new InvalidOperationException( $"Method '{methodName}' not found on type '{type}'" );
-                }
-
-                return method.IsStatic
-                    ? Call( method, arguments.ToArray() )
-                    : Call( targetExpression, method, arguments.ToArray() );
-            } );
-
-        return parser;
-    }
-
-
-    private Parser<Expression> LambdaInvokeParser( Parser<Expression> expression )
+    private Parser<Expression> LambdaInvokeParser( Parser<Expression> baseExpression )
     {
         var parser = Terms.Identifier()
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    Arguments( expression ),
+                    Arguments( baseExpression ),
                     Terms.Char( ')' )
                 )
             )
@@ -933,7 +866,7 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> argumentParser )
+    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
     {
         return baseExpression
             .AndSkip( Terms.Char( '.' ) )
@@ -944,7 +877,7 @@ public class XsParser
                         ZeroOrOne(
                             Between(
                                 Terms.Char( '(' ),
-                                Arguments( argumentParser ),
+                                Arguments( expression ),
                                 Terms.Char( ')' )
                             )
                         )
