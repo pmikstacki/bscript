@@ -27,7 +27,7 @@ simplify c# Expression Trees.
 
 Special thanks to:
 
-- [Parlot](https://github.com/sebastienros/parlot) for the performant .NET parser combinator. :heart:
+- [Parlot](https://github.com/sebastienros/parlot) for the fast .NET parser combinator. :heart:
 - [Fast Expression Compiler](https://github.com/dadhi/FastExpressionCompiler) for improved performance. :rocket:
 - [Just The Docs](https://github.com/just-the-docs/just-the-docs) for the documentation theme.
 
