@@ -697,9 +697,7 @@ public class XsParser
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
-
-                var (breakLabel, continueLabel) = parts.Item1;
-                var exprs = parts.Item2;
+                var ((breakLabel, continueLabel), exprs) = parts;
 
                 try
                 {
