@@ -30,7 +30,7 @@ public class XsParserNewExpressionTests
 
             var expression = parser.Parse(
                 """
-                (new Hyperbee.XS.Tests.TestClass(42)).PropertySelf.PropertyValue;
+                (new Hyperbee.XS.Tests.TestClass(42)).PropertyThis.PropertyValue;
                 """ );
 
             var lambda = Expression.Lambda<Func<int>>( expression );

@@ -183,14 +183,16 @@ public class XsParser
             ZeroOrMany( statement ).Then( statements =>
                 ConvertToFinalExpression( statements, Scope )
             ),
-            Always<Expression>().Then<Expression>( ( ctx, _ ) =>
+            Always<Expression>().Then<Expression>( (ctx,_) =>
             {
                 Scope.Pop();
 
-                //var cursor = ctx.Scanner.Cursor;
+                // Ensure we've reached the end of the script
+                var cursor = ctx.Scanner.Cursor;
+                ctx.SkipWhiteSpace();
 
-                //if ( cursor.Eof == false )
-                //    throw new SyntaxErrorException( "Syntax Error. Failure parsing script.", cursor );
+                if ( cursor.Eof == false )
+                    throw new SyntaxErrorException( "Syntax Error. Failure parsing script.", cursor );
 
                 return default;
             } )
@@ -793,7 +795,7 @@ public class XsParser
                     if ( args.Length != 0 )
                         Scope.Pop();
                 }
-            } ).Named( "Lambda" );
+            } );
 
         return parser;
     }

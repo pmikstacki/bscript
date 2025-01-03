@@ -5,10 +5,8 @@ public class TestClass
     public int PropertyValue { get; set; }
     public int MethodValue() => PropertyValue;
 
-
-    public TestClass PropertySelf => this;
-    public TestClass MethodSelf() => this;
-
+    public TestClass PropertyThis => this;
+    public TestClass MethodThis() => this;
 
     public int AddNumbers( int x, int y ) => x + y;
 
