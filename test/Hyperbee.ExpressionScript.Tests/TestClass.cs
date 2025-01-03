@@ -8,6 +8,9 @@ public class TestClass
     public TestClass PropertyThis => this;
     public TestClass MethodThis() => this;
 
+    public int this[int i] { get => i; set => i = value; }
+    public int this[int i, int j] { get => i + j; }
+
     public int AddNumbers( int x, int y ) => x + y;
 
     public static int StaticAddNumbers( int x, int y ) => x + y;

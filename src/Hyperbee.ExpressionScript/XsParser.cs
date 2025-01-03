@@ -266,10 +266,13 @@ public class XsParser
         ).Named( "baseExpression" );
 
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
+
+        var indexerAccess = IndexerAccessParser( baseExpression, expression );
         var memberAccess = MemberAccessParser( baseExpression, expression );
 
         primaryExpression.Parser = OneOf(
             lambdaInvocation,
+            indexerAccess,
             memberAccess,
             baseExpression
         ).Named( "primary" );
@@ -407,6 +410,34 @@ public class XsParser
     }
 
     // Member Parsers
+
+    private Parser<Expression> IndexerAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
+    {
+        return baseExpression
+        .And(
+            Between(
+                Terms.Char( '[' ),
+                Separated(
+                    Terms.Char( ',' ),
+                    expression
+                ),
+                Terms.Char( ']' )
+            ) )
+        .Then<Expression>( static parts =>
+        {
+            var (target, indexes) = parts;
+
+            var indexer = target.Type
+                .GetProperties()
+                .FirstOrDefault( p => p.GetIndexParameters().Length == indexes.Count );  // TODO: check types
+
+            if ( indexer == null )
+                throw new InvalidOperationException( $"No indexer found on type '{target.Type}' with {indexes.Count} parameters." );
+
+            return Property( target, indexer, [.. indexes] );
+        } );
+
+    }
 
     private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
     {
