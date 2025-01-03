@@ -183,7 +183,7 @@ public class XsParser
             ZeroOrMany( statement ).Then( statements =>
                 ConvertToFinalExpression( statements, Scope )
             ),
-            Always<Expression>().Then<Expression>( (ctx,_) =>
+            Always<Expression>().Then<Expression>( ( ctx, _ ) =>
             {
                 Scope.Pop();
 
