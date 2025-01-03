@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -27,6 +27,12 @@ public class XsContext : ParseContext
     {
         Resolver = new TypeResolver( config?.References );
     }
+
+    public void Deconstruct( out ParseScope scope, out TypeResolver resolver )
+    {
+        scope = Scope;
+        resolver = Resolver;
+    }
 }
 
 public class XsConfig
@@ -37,11 +43,18 @@ public class XsConfig
 
 internal static class ParserContextExtensions
 {
-    public static XsContext Unwrap( this ParseContext context ) => (XsContext) context;
+    public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver )
+    {
+        if ( context is XsContext xsContext )
+        {
+            scope = xsContext.Scope;
+            resolver = xsContext.Resolver;
+            return;
+        }
 
-    public static TypeResolver Resolver( this ParseContext context ) => context.Unwrap().Resolver;
-    public static ParseScope Scope( this ParseContext context ) => context.Unwrap().Scope;
-
+        scope = default;
+        resolver = default;
+    }
 }
 
 public class XsParser
@@ -177,15 +190,19 @@ public class XsParser
         return Between(
             Always().Then<Expression>( static ( ctx, _ ) =>
             {
-                ctx.Scope().Push( FrameType.Method );
+                var (scope, _) = ctx;
+                scope.Push( FrameType.Method );
                 return default;
             } ),
-            ZeroOrMany( statement ).Then( static ( ctx, statements ) =>
-                ConvertToFinalExpression( statements, ctx.Scope() )
-            ),
+            ZeroOrMany( statement ).Then( static  (ctx, statements) =>
+            {
+                var (scope, _) = ctx;
+                return ConvertToFinalExpression( statements, scope );
+            } ),
             Always<Expression>().Then<Expression>( static ( ctx, _ ) =>
             {
-                ctx.Scope().Pop();
+                var (scope, _) = ctx;
+                scope.Pop();
 
                 // Ensure we've reached the end of the script
                 var cursor = ctx.Scanner.Cursor;
@@ -383,8 +400,10 @@ public class XsParser
             .And( expression )
             .Then<Expression>( static ( ctx, parts ) =>
                 {
+                    var (scope, _) = ctx;
                     var (ident, op, right) = parts;
-                    var left = ctx.Scope().LookupVariable( ident );
+
+                    var left = scope.LookupVariable( ident );
 
                     return op switch
                     {
@@ -408,11 +427,13 @@ public class XsParser
             .And( expression )
             .Then<Expression>( static ( ctx, parts ) =>
                 {
+                    var (scope, _) = ctx;
                     var (ident, right) = parts;
+
                     var left = ident.ToString()!;
 
                     var variable = Variable( right.Type, left );
-                    ctx.Scope().Variables.Add( left, variable );
+                    scope.Variables.Add( left, variable );
 
                     return Assign( variable, right );
                 }
@@ -524,7 +545,8 @@ public class XsParser
         return Terms.Text( "break" )
             .Then<Expression>( static ( ctx, _ ) =>
             {
-                var breakLabel = ctx.Scope().Frame.BreakLabel;
+                var (scope, _) = ctx;
+                var breakLabel = scope.Frame.BreakLabel;
 
                 if ( breakLabel == null )
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
@@ -538,7 +560,8 @@ public class XsParser
         return Terms.Text( "continue" )
             .Then<Expression>( static ( ctx, _ ) =>
             {
-                var continueLabel = ctx.Scope().Frame.ContinueLabel;
+                var (scope, _) = ctx;
+                var continueLabel = scope.Frame.ContinueLabel;
 
                 if ( continueLabel == null )
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
@@ -553,7 +576,8 @@ public class XsParser
             .SkipAnd( Terms.Identifier() )
             .Then<Expression>( static ( ctx, labelName ) =>
             {
-                var label = ctx.Scope().Frame.GetOrCreateLabel( labelName.ToString() );
+                var (scope, _) = ctx;
+                var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
             } );
     }
@@ -565,7 +589,9 @@ public class XsParser
             .AndSkip( Literals.WhiteSpace( includeNewLines: true ) )
             .Then<Expression>( static ( ctx, labelName ) =>
             {
-                var label = ctx.Scope().Frame.GetOrCreateLabel( labelName.ToString() );
+                var (scope, _) = ctx;
+                
+                var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
             } );
     }
@@ -576,8 +602,10 @@ public class XsParser
             .SkipAnd( ZeroOrOne( expression ) )
             .Then<Expression>( static ( ctx, returnValue ) =>
             {
+                var (scope, _) = ctx;
+
                 var returnType = returnValue?.Type ?? typeof( void );
-                var returnLabel = ctx.Scope().Frame.GetOrCreateReturnLabel( returnType );
+                var returnLabel = scope.Frame.GetOrCreateReturnLabel( returnType );
 
                 return returnType == typeof( void )
                     ? Return( returnLabel )
@@ -650,10 +678,12 @@ public class XsParser
         var parser = Terms.Text( "loop" )
             .Then( ( ctx, _ ) =>
             {
+                var (scope, _) = ctx;
+
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                ctx.Scope().Push( FrameType.Child, breakLabel, continueLabel );
+                scope.Push( FrameType.Child, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
@@ -666,6 +696,8 @@ public class XsParser
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
+                var (scope, _) = ctx;
+
                 var (breakLabel, continueLabel) = parts.Item1;
                 var exprs = parts.Item2;
 
@@ -676,7 +708,7 @@ public class XsParser
                 }
                 finally
                 {
-                    ctx.Scope().Pop();
+                    scope.Pop();
                 }
             } );
 
@@ -716,8 +748,10 @@ public class XsParser
         var parser = Terms.Text( "switch" )
             .Then( static ( ctx, _ ) =>
             {
+                var (scope, _) = ctx;
+
                 var breakLabel = Label( typeof( void ), "Break" );
-                ctx.Scope().Push( FrameType.Child, breakLabel );
+                scope.Push( FrameType.Child, breakLabel );
 
                 return breakLabel;
             } )
@@ -737,6 +771,7 @@ public class XsParser
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
+                var (scope, _) = ctx;
                 var (breakLabel, switchValue, bodyParts) = parts;
 
                 try
@@ -750,7 +785,7 @@ public class XsParser
                 }
                 finally
                 {
-                    ctx.Scope().Pop();
+                    scope.Pop();
                 }
             } );
 
@@ -767,22 +802,24 @@ public class XsParser
             )
             .Then( static ( ctx, parts ) =>
             {
+                var (scope, resolver) = ctx;
+
                 if ( parts == null )
                     return [];
 
-                ctx.Scope().Push( FrameType.Method );
+                scope.Push( FrameType.Method );
 
                 return parts.Select( p =>
                 {
                     var (typeName, paramName) = p;
 
-                    var type = ctx.Resolver().ResolveType( typeName.ToString() )
+                    var type = resolver.ResolveType( typeName.ToString() )
                         ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
                     var name = paramName.ToString()!;
                     var parameter = Parameter( type, name );
 
-                    ctx.Scope().Variables.Add( name, parameter );
+                    scope.Variables.Add( name, parameter );
 
                     return parameter;
 
@@ -805,13 +842,20 @@ public class XsParser
                     )
                     .Then<Expression>( static ( ctx, body ) =>
                     {
-                        var returnLabel = ctx.Scope().Frame.ReturnLabel;
-                        return Block( body.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
+                        var (scope, _) = ctx;
+                        var returnLabel = scope.Frame.ReturnLabel;
+
+                        return Block( 
+                            body.Concat( 
+                                [Label( returnLabel, Default( returnLabel.Type ) )] 
+                            ) 
+                        );
                     } )
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
+                var (scope, _) = ctx;
                 var (args, body) = parts;
 
                 try
@@ -821,7 +865,7 @@ public class XsParser
                 finally
                 {
                     if ( args.Length != 0 )
-                        ctx.Scope().Pop();
+                        scope.Pop();
                 }
             } );
 
@@ -849,8 +893,10 @@ public class XsParser
                             )
                             .Then( static ( ctx, parts ) =>
                             {
+                                var (_, resolver) = ctx;
                                 var (typeName, variableName) = parts;
-                                var type = ctx.Resolver().ResolveType( typeName.ToString()! );
+
+                                var type = resolver.ResolveType( typeName.ToString()! );
 
                                 if ( type == null )
                                     throw new InvalidOperationException( $"Unknown type: {typeName}." );
@@ -908,8 +954,10 @@ public class XsParser
         var typeNameParser = Separated( Terms.Char( '.' ), Terms.Identifier() )
             .Then( static ( ctx, parts ) =>
             {
+                var (_, resolver) = ctx;
+
                 var typeName = string.Join( ".", parts );
-                var type = ctx.Resolver().ResolveType( typeName );
+                var type = resolver.ResolveType( typeName );
 
                 if ( type == null )
                     throw new InvalidOperationException( $"Unknown type: {typeName}." );
@@ -917,7 +965,7 @@ public class XsParser
                 return type;
             } );
 
-        // TODO: Add optional array initalizer
+        // TODO: Add optional array initializer
         var parser = Terms.Text( "new" )
             .SkipAnd( typeNameParser )
             .And(
@@ -941,7 +989,7 @@ public class XsParser
             )
             .Then<Expression>( static parts =>
             {
-                var (type, (constructorType, arguments)) = parts;  // TODO: Add initalizer
+                var (type, (constructorType, arguments)) = parts;  // TODO: Add initializer
 
                 switch ( constructorType )
                 {
@@ -984,8 +1032,10 @@ public class XsParser
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
+                var (scope, _) = ctx;
                 var (targetName, invocationArguments) = parts;
-                var targetExpression = ctx.Scope().LookupVariable( targetName );
+
+                var targetExpression = scope.LookupVariable( targetName );
 
                 return Invoke(
                     targetExpression,

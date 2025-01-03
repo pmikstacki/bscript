@@ -30,7 +30,7 @@ internal class TypeIdentifierParser : Parser<Expression>
             scanner.SkipWhiteSpaceOrNewLine();
         }
 
-        var resolver = context.Resolver();
+        var (_, resolver) = context;
 
         while ( stack.Count > 0 )
         {
