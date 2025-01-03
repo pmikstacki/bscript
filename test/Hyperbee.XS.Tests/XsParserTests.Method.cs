@@ -50,7 +50,7 @@ public class XsParserMethodTests
         var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
         var parser = new XsParser();
 
-        var expression = parser.Parse( config, 
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.MethodThis().AddNumbers(10,32);
