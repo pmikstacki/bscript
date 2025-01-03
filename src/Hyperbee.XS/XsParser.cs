@@ -277,7 +277,7 @@ public class XsParser
         var indexerAccess = IndexerAccessParser( primaryExpression, expression );
         var accessorExpression = OneOf(
             indexerAccess,
-            primaryExpression 
+            primaryExpression
         ).Named( "indexer" ); ;
 
         // Prefix and Postfix Expressions
