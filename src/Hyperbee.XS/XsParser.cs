@@ -266,16 +266,19 @@ public class XsParser
         ).Named( "baseExpression" );
 
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
-
-        var indexerAccess = IndexerAccessParser( baseExpression, expression );
         var memberAccess = MemberAccessParser( baseExpression, expression );
 
         primaryExpression.Parser = OneOf(
             lambdaInvocation,
-            indexerAccess,
             memberAccess,
             baseExpression
         ).Named( "primary" );
+
+        var indexerAccess = IndexerAccessParser( primaryExpression, expression );
+        var accessorExpression = OneOf(
+            indexerAccess,
+            primaryExpression 
+        ).Named( "indexer" ); ;
 
         // Prefix and Postfix Expressions
 
@@ -321,7 +324,7 @@ public class XsParser
         var unaryExpression = OneOf(
             prefixExpression,
             postfixExpression,
-            primaryExpression
+            accessorExpression
         ).Unary(
             (Terms.Char( '!' ), Not),
             (Terms.Char( '-' ), Negate)
@@ -429,7 +432,9 @@ public class XsParser
 
             var indexer = target.Type
                 .GetProperties()
-                .FirstOrDefault( p => p.GetIndexParameters().Length == indexes.Count );  // TODO: check types
+                .FirstOrDefault( p => p.GetIndexParameters()
+                    .Select( x => x.ParameterType )
+                    .SequenceEqual( indexes.Select( i => i.Type ) ) );
 
             if ( indexer == null )
                 throw new InvalidOperationException( $"No indexer found on type '{target.Type}' with {indexes.Count} parameters." );

@@ -7,6 +7,7 @@ public class TestClass
 
     public TestClass PropertyThis => this;
     public TestClass MethodThis() => this;
+    public TestClass this[string v] { get => this; }
 
     public int this[int i] { get => i; set => i = value; }
     public int this[int i, int j] { get => i + j; }

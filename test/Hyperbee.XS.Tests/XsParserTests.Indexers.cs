@@ -59,7 +59,6 @@ public class XsParserIndexTests
         Assert.AreEqual( 42, result );
     }
 
-    /*
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChainingIndexResult()
     {
@@ -77,5 +76,4 @@ public class XsParserIndexTests
 
         Assert.AreEqual( 42, result );
     }
-    */
 }
