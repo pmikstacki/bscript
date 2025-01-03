@@ -65,5 +65,41 @@ public class XsParserLiteralTests
 
         Assert.AreEqual( 123.45D, result );
     }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithDoubleLiteralResult()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse( "123.45D;" );
+        var lambda = Lambda<Func<double>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 123.45D, result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLiteralMethodCallChaining()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse( "123.45D.ToString();" );
+        var lambda = Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "123.45", result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLiteralGroupingMethodCallChaining()
+    {
+        var parser = new XsParser();
+        var expression = parser.Parse( "(123.45D + 7D).ToString();" );
+        var lambda = Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "130.45", result );
+    }
 }
 

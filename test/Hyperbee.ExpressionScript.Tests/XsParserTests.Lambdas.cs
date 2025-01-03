@@ -79,4 +79,23 @@ public class XsParserLambdaTests
 
         Assert.AreEqual( 42, result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithMethodChaining()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            var myLambda = ( int x ) => { return x + 1; };
+            (myLambda( 41 )).ToString();
+            """ );
+
+        var lambda = Lambda<Func<string>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "42", result );
+    }
 }

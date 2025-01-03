@@ -46,13 +46,6 @@ public class XsParser
         var scanner = new Scanner( script );
         var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
-        //context.OnEnterParser = ( obj, p ) => { 
-        //    Console.WriteLine( "Enter: {0}, {1}", obj, p );
-        //};
-        //context.OnExitParser = ( obj, p ) => {
-        //    Console.WriteLine( "Exit: {0}, {1}", obj, p );
-        //};
-
         return _xs.Parse( context );
     }
 
@@ -261,13 +254,18 @@ public class XsParser
 
         var primaryExpression = Deferred<Expression>();
 
+        var newExpression = NewParser( expression );
+        var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
+
         var baseExpression = OneOf(
             literal,
             identifier,
-            groupedExpression
+            groupedExpression,
+            newExpression,
+            lambdaExpression
         ).Named( "baseExpression" );
 
-        var lambdaInvocation = LambdaInvokeParser( baseExpression );
+        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
         var memberAccess = MemberAccessParser( baseExpression, expression );
 
         primaryExpression.Parser = OneOf(
@@ -328,7 +326,7 @@ public class XsParser
 
         // Binary Expressions
 
-        var binaryExpression = unaryExpression.LeftAssociative(
+        return expression.Parser = unaryExpression.LeftAssociative(
             (Terms.Text( "*" ), Multiply),
             (Terms.Text( "/" ), Divide),
             (Terms.Text( "+" ), Add),
@@ -344,16 +342,6 @@ public class XsParser
             (Terms.Text( "??" ), Coalesce)
         ).Named( "binary" );
 
-        // Other Expressions
-
-        var newExpression = NewParser( expression );
-        var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
-
-        return expression.Parser = OneOf(
-            newExpression,
-            lambdaExpression,
-            binaryExpression
-        );
     }
 
     // Helper Parsers
@@ -438,7 +426,7 @@ public class XsParser
                     )
                 )
             )
-            .Then( parts =>
+            .Then( static parts =>
             {
                 const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
 
@@ -450,10 +438,8 @@ public class XsParser
 
                     var type = current switch
                     {
-                        ConstantExpression ce => (Type) ce.Value,
-                        ParameterExpression pe => pe.Type,
-                        NewExpression ne => ne.Type,
-                        MemberExpression me => me.Type,
+                        ConstantExpression ce => ce.Value as Type ?? ce.Type,
+                        Expression e => e.Type,
                         _ => throw new InvalidOperationException( "Invalid target expression." )
                     };
 
@@ -788,7 +774,6 @@ public class XsParser
                 try
                 {
                     return Lambda( body, args );
-
                 }
                 finally
                 {

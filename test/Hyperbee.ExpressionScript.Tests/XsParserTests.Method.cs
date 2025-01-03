@@ -43,6 +43,42 @@ public class XsParserMethodTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithMethodCallChaining()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            var x = new Hyperbee.XS.Tests.TestClass(-1);
+            x.MethodThis().AddNumbers(10,32);
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithMethodCallPropertyChaining()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            var x = new Hyperbee.XS.Tests.TestClass(42);
+            x.MethodThis().PropertyThis.MethodValue();
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithStaticMethodCallArgs()
     {
         var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
