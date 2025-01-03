@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -302,7 +302,7 @@ public class XsParser
         var accessorExpression = OneOf(
             indexerAccess,
             primaryExpression
-        ).Named( "indexer" ); ;
+        ).Named( "indexer" );
 
         // Prefix and Postfix Expressions
 
