@@ -45,4 +45,40 @@ public class XsParserNewExpressionTests
             Assert.Fail( se.Message );
         }
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithNewArray()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            new int[5];
+            """ );
+
+        var lambda = Expression.Lambda<Func<int[]>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 5, result.Length );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithNewMultiDimensionalArray()
+    {
+        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+
+        var expression = parser.Parse(
+            """
+            new int[2,5];
+            """ );
+
+        var lambda = Expression.Lambda<Func<int[,]>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result.Length );
+    }
 }

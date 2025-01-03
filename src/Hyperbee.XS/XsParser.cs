@@ -910,25 +910,56 @@ public class XsParser
                 return type;
             } );
 
+        // TODO: Add optional array initalizer
         var parser = Terms.Text( "new" )
             .SkipAnd( typeNameParser )
             .And(
-                Between(
-                    Terms.Char( '(' ),
-                    Arguments( expression ),
-                    Terms.Char( ')' )
+                OneOf(
+                    Between(
+                        Terms.Char( '(' ),
+                        Arguments( expression ),
+                        Terms.Char( ')' )
+                    ).Then( static parts => (ConstructorType.Object, parts) ),
+                    Between(
+                        Terms.Char( '[' ),
+                        Separated(
+                            Terms.Char( ',' ),
+                            expression
+                        ),
+                        Terms.Char( ']' )
+                    )
+                    //.And( arrayInitializer ) // TODO: Toggle between bounds and init if exists
+                    .Then( static parts => (ConstructorType.ArrayBounds, parts) )
                 )
             )
             .Then<Expression>( parts =>
             {
-                var (type, arguments) = parts;
+                var (type, (constructorType, arguments)) = parts;  // TODO: Add initalizer
 
-                var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
+                switch ( constructorType )
+                {
+                    case ConstructorType.ArrayBounds:
+                        if ( arguments.Count == 0 )
+                            throw new InvalidOperationException( "Array bounds initializer requires at least one argument." );
 
-                if ( constructor == null )
-                    throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
+                        return NewArrayBounds( type, arguments );
 
-                return New( constructor, arguments );
+                    case ConstructorType.ArrayInit:
+                        throw new NotImplementedException( "Array initializer not implemented." );
+
+                    //return NewArrayInit( type, arguments );
+
+                    case ConstructorType.Object:
+                        var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
+
+                        if ( constructor == null )
+                            throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
+
+                        return New( constructor, arguments );
+
+                    default:
+                        throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
+                }
             } );
 
         return parser;
@@ -956,6 +987,13 @@ public class XsParser
             } );
 
         return parser;
+    }
+
+    private enum ConstructorType
+    {
+        Object,
+        ArrayBounds,
+        ArrayInit,
     }
 }
 
