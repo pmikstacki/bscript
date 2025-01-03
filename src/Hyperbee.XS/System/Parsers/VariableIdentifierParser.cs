@@ -7,13 +7,6 @@ namespace Hyperbee.XS.System.Parsers;
 
 internal class VariableIdentifierParser : Parser<Expression>
 {
-    private readonly LinkedDictionary<string, ParameterExpression> _variables;
-
-    public VariableIdentifierParser( LinkedDictionary<string, ParameterExpression> variables )
-    {
-        _variables = variables;
-    }
-
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
         context.EnterParser( this );
@@ -26,7 +19,9 @@ internal class VariableIdentifierParser : Parser<Expression>
 
         if ( scanner.ReadIdentifier( out var identifier ) )
         {
-            if ( _variables.TryGetValue( identifier.ToString(), out var variable ) )
+            var variables = context.Scope().Variables;
+
+            if ( variables.TryGetValue( identifier.ToString(), out var variable ) )
             {
                 result.Set( start.Offset, cursor.Position.Offset, variable );
                 context.ExitParser( this );
@@ -42,9 +37,9 @@ internal class VariableIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> VariableIdentifier( LinkedDictionary<string, ParameterExpression> variables )
+    public static Parser<Expression> VariableIdentifier()
     {
-        return new VariableIdentifierParser( variables );
+        return new VariableIdentifierParser();
     }
 }
 

@@ -6,13 +6,6 @@ namespace Hyperbee.XS.System.Parsers;
 
 internal class TypeIdentifierParser : Parser<Expression>
 {
-    private readonly TypeResolver _resolver;
-
-    public TypeIdentifierParser( TypeResolver resolver )
-    {
-        _resolver = resolver;
-    }
-
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
         context.EnterParser( this );
@@ -37,11 +30,13 @@ internal class TypeIdentifierParser : Parser<Expression>
             scanner.SkipWhiteSpaceOrNewLine();
         }
 
+        var resolver = context.Resolver();
+
         while ( stack.Count > 0 )
         {
             var segments = stack.Select( loc => loc.Segment ).Reverse(); //TODO: Improve this
             var typeName = string.Join( ".", segments );
-            var resolvedType = _resolver.ResolveType( typeName );
+            var resolvedType = resolver.ResolveType( typeName );
 
             if ( resolvedType != null )
             {
@@ -61,8 +56,8 @@ internal class TypeIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> TypeIdentifier( TypeResolver resolver )
+    public static Parser<Expression> TypeIdentifier()
     {
-        return new TypeIdentifierParser( resolver );
+        return new TypeIdentifierParser();
     }
 }

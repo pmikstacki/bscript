@@ -9,9 +9,10 @@ public class XsParserPropertyTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithPropertyResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(42);
             x.PropertyValue;
@@ -27,9 +28,10 @@ public class XsParserPropertyTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithPropertyChainingResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(42);
             x.PropertyThis.PropertyValue;
@@ -45,9 +47,10 @@ public class XsParserPropertyTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithPropertyMethodCallChainingResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.PropertyThis.AddNumbers( 10, 32 ).ToString();

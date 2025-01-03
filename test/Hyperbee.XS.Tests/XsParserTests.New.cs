@@ -9,9 +9,13 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewExpression()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse( "new Hyperbee.XS.Tests.TestClass(42);" );
+        var expression = parser.Parse( config,
+            """
+            new Hyperbee.XS.Tests.TestClass(42);
+            """ );
 
         var lambda = Expression.Lambda<Func<TestClass>>( expression );
         var compiled = lambda.Compile();
@@ -26,9 +30,10 @@ public class XsParserNewExpressionTests
     {
         try
         {
-            var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+            var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+            var parser = new XsParser();
 
-            var expression = parser.Parse(
+            var expression = parser.Parse( config,
                 """
                 new Hyperbee.XS.Tests.TestClass(42).PropertyThis.PropertyValue;
                 """ );
@@ -49,7 +54,7 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewArray()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
         var expression = parser.Parse(
             """
@@ -67,7 +72,7 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewMultiDimensionalArray()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
         var expression = parser.Parse(
             """

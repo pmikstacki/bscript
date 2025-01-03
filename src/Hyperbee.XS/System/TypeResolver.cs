@@ -9,16 +9,14 @@ public class TypeResolver
     private readonly List<Assembly> _references = [typeof( string ).Assembly];
     private readonly ConcurrentDictionary<string, Type> _typeCache = new();
 
-    public IReadOnlyCollection<Assembly> References => _references;
-
-    public void AddReference( Assembly assembly )
+    public TypeResolver()
     {
-        _references.Add( assembly );
     }
 
-    public void AddReferences( IReadOnlyCollection<Assembly> assemblies )
+    public TypeResolver( IReadOnlyCollection<Assembly> references )
     {
-        _references.AddRange( assemblies );
+        if ( references != null && references.Count > 0 )
+            _references.AddRange( references );
     }
 
     public Type ResolveType( string typeName )
@@ -26,12 +24,13 @@ public class TypeResolver
         return _typeCache.GetOrAdd( typeName, _ =>
         {
             var type = GetTypeFromKeyword( typeName );
+
             if ( type != null )
                 return type;
 
             return _references
                 .SelectMany( assembly => assembly.GetTypes() )
-                .FirstOrDefault( type => type.Name == typeName || type.FullName == typeName );
+                .FirstOrDefault( compare => compare.Name == typeName || compare.FullName == typeName );
         } );
 
         static Type GetTypeFromKeyword( string typeName )
@@ -76,6 +75,7 @@ public class TypeResolver
         foreach ( var method in methods )
         {
             var parameters = method.GetParameters();
+
             if ( parameters.Length != arguments.Count )
             {
                 continue; // Skip methods with different parameter counts
@@ -132,5 +132,4 @@ public class TypeResolver
 
         return bestMatch;
     }
-
 }

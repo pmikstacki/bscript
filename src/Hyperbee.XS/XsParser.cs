@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.ObjectModel;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -16,37 +17,45 @@ namespace Hyperbee.XS;
 // Add Array access
 // Add Async Await
 
+public class XsContext : ParseContext
+{
+    public TypeResolver Resolver { get; }
+    public ParseScope Scope { get; } = new();
+
+    public XsContext( XsConfig config, Scanner scanner, bool useNewLines = false )
+        : base( scanner, useNewLines )
+    {
+        Resolver = new TypeResolver( config?.References );
+    }
+}
+
+public class XsConfig
+{
+    public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
+    public static IReadOnlyCollection<IParseExtension> Extensions { get; set; } = ReadOnlyCollection<IParseExtension>.Empty;
+}
+
+internal static class ParserContextExtensions
+{
+    public static XsContext Unwrap( this ParseContext context ) => (XsContext) context;
+    
+    public static TypeResolver Resolver( this ParseContext context ) => context.Unwrap().Resolver;
+    public static ParseScope Scope( this ParseContext context ) => context.Unwrap().Scope;
+
+}
+
 public class XsParser
 {
-    private readonly Parser<Expression> _xs;
-    private readonly List<IParseExtension> _extensions = [];
+    private static readonly Parser<Expression> __xs = CreateParser();
 
-    private TypeResolver Resolver { get; } = new();
-    private ParseScope Scope { get; } = new();
+    public Expression Parse( string script ) => Parse( default, script );
 
-    public IReadOnlyCollection<IParseExtension> Extensions
-    {
-        get => _extensions;
-        init => _extensions.AddRange( value );
-    }
-
-    public IReadOnlyCollection<Assembly> References
-    {
-        get => Resolver.References;
-        init => Resolver.AddReferences( value );
-    }
-
-    public XsParser()
-    {
-        _xs = CreateParser();
-    }
-
-    public Expression Parse( string script )
+    public Expression Parse( XsConfig config, string script )
     {
         var scanner = new Scanner( script );
-        var context = new ParseContext( scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        var context = new XsContext( config, scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
-        return _xs.Parse( context );
+        return __xs.Parse( context );
     }
 
     // Helpers
@@ -89,24 +98,22 @@ public class XsParser
         };
     }
 
-    private void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
     {
-        var xsContext = new XsContext( Resolver, Scope, expression, statement );
-
-        complexExtensions = _extensions
+        complexExtensions = XsConfig.Extensions
             .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( xsContext ) )
+            .Select( x => x.Parser( expression, statement ) )
             .ToArray();
 
-        singleExtensions = _extensions
+        singleExtensions = XsConfig.Extensions
             .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( xsContext ) )
+            .Select( x => x.Parser( expression, statement ) )
             .ToArray();
     }
 
     // Parsers
 
-    private Parser<Expression> CreateParser()
+    private static Parser<Expression> CreateParser()
     {
         var statement = Deferred<Expression>();
 
@@ -168,17 +175,17 @@ public class XsParser
         // Finalize
 
         return Between(
-            Always().Then<Expression>( _ =>
+            Always().Then<Expression>( static (ctx,_) =>
             {
-                Scope.Push( FrameType.Method );
+                ctx.Scope().Push( FrameType.Method );
                 return default;
             } ),
-            ZeroOrMany( statement ).Then( statements =>
-                ConvertToFinalExpression( statements, Scope )
+            ZeroOrMany( statement ).Then( static  (ctx, statements) =>
+                ConvertToFinalExpression( statements, ctx.Scope() )
             ),
-            Always<Expression>().Then<Expression>( ( ctx, _ ) =>
+            Always<Expression>().Then<Expression>( static ( ctx, _ ) =>
             {
-                Scope.Pop();
+                ctx.Scope().Pop();
 
                 // Ensure we've reached the end of the script
                 var cursor = ctx.Scanner.Cursor;
@@ -194,7 +201,7 @@ public class XsParser
 
     // Expression Parser
 
-    private Parser<Expression> ExpressionParser( Deferred<Expression> statement )
+    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement )
     {
         var expression = Deferred<Expression>();
 
@@ -234,8 +241,8 @@ public class XsParser
 
         // Identifiers
 
-        var varIdentifier = XsParsers.VariableIdentifier( Scope.Variables );
-        var typeIdentifier = XsParsers.TypeIdentifier( Resolver );
+        var varIdentifier = XsParsers.VariableIdentifier();
+        var typeIdentifier = XsParsers.TypeIdentifier();
 
         var identifier = OneOf(
             varIdentifier,
@@ -258,10 +265,10 @@ public class XsParser
         var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
 
         var baseExpression = OneOf(
+            newExpression,
             literal,
             identifier,
             groupedExpression,
-            newExpression,
             lambdaExpression
         ).Named( "baseExpression" );
 
@@ -287,7 +294,7 @@ public class XsParser
                 Terms.Text( "--" )
             )
             .And( varIdentifier )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
                 var (op, variable) = parts;
 
@@ -306,7 +313,7 @@ public class XsParser
                     Terms.Text( "--" )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
                 var (variable, op) = parts;
 
@@ -355,12 +362,12 @@ public class XsParser
     private static Parser<IReadOnlyList<Expression>> Arguments( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( arguments => arguments ?? Array.Empty<Expression>() );
+            .Then( static arguments => arguments ?? Array.Empty<Expression>() );
     }
 
     // Variable Parsers
 
-    private Parser<Expression> AssignmentParser( Parser<Expression> expression )
+    private static Parser<Expression> AssignmentParser( Parser<Expression> expression )
     {
         return Terms.Identifier()
             .And(
@@ -374,10 +381,10 @@ public class XsParser
                 )
             )
             .And( expression )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
                 {
                     var (ident, op, right) = parts;
-                    var left = Scope.LookupVariable( ident );
+                    var left = ctx.Scope().LookupVariable( ident );
 
                     return op switch
                     {
@@ -393,19 +400,19 @@ public class XsParser
             );
     }
 
-    private Parser<Expression> DeclarationParser( Parser<Expression> expression )
+    private static Parser<Expression> DeclarationParser( Parser<Expression> expression )
     {
         return Terms.Text( "var" )
             .SkipAnd( Terms.Identifier() )
             .AndSkip( Terms.Char( '=' ) )
             .And( expression )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
                 {
                     var (ident, right) = parts;
                     var left = ident.ToString()!;
 
                     var variable = Variable( right.Type, left );
-                    Scope.Variables.Add( left, variable );
+                    ctx.Scope().Variables.Add( left, variable );
 
                     return Assign( variable, right );
                 }
@@ -414,7 +421,7 @@ public class XsParser
 
     // Member Parsers
 
-    private Parser<Expression> IndexerAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
+    private static Parser<Expression> IndexerAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
     {
         return baseExpression
         .And(
@@ -444,7 +451,7 @@ public class XsParser
 
     }
 
-    private Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
+    private static Parser<Expression> MemberAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
     {
         return baseExpression
             .AndSkip( Terms.Char( '.' ) )
@@ -512,12 +519,12 @@ public class XsParser
 
     // Statement Parsers
 
-    private Parser<Expression> BreakParser()
+    private static Parser<Expression> BreakParser()
     {
         return Terms.Text( "break" )
-            .Then<Expression>( _ =>
+            .Then<Expression>( static (ctx, _) =>
             {
-                var breakLabel = Scope.Frame.BreakLabel;
+                var breakLabel = ctx.Scope().Frame.BreakLabel;
 
                 if ( breakLabel == null )
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
@@ -526,12 +533,12 @@ public class XsParser
             } );
     }
 
-    private Parser<Expression> ContinueParser()
+    private static Parser<Expression> ContinueParser()
     {
         return Terms.Text( "continue" )
-            .Then<Expression>( _ =>
+            .Then<Expression>( static (ctx, _) =>
             {
-                var continueLabel = Scope.Frame.ContinueLabel;
+                var continueLabel = ctx.Scope().Frame.ContinueLabel;
 
                 if ( continueLabel == null )
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
@@ -540,37 +547,37 @@ public class XsParser
             } );
     }
 
-    private Parser<Expression> GotoParser()
+    private static Parser<Expression> GotoParser()
     {
         return Terms.Text( "goto" )
             .SkipAnd( Terms.Identifier() )
-            .Then<Expression>( labelName =>
+            .Then<Expression>( static (ctx, labelName) =>
             {
-                var label = Scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                var label = ctx.Scope().Frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
             } );
     }
 
-    private Parser<Expression> LabelParser()
+    private static Parser<Expression> LabelParser()
     {
         return Terms.Identifier()
             .AndSkip( Terms.Char( ':' ) )
             .AndSkip( Literals.WhiteSpace( includeNewLines: true ) )
-            .Then<Expression>( labelName =>
+            .Then<Expression>( static (ctx, labelName) =>
             {
-                var label = Scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                var label = ctx.Scope().Frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
             } );
     }
 
-    private Parser<Expression> ReturnParser( Parser<Expression> expression )
+    private static Parser<Expression> ReturnParser( Parser<Expression> expression )
     {
         return Terms.Text( "return" )
             .SkipAnd( ZeroOrOne( expression ) )
-            .Then<Expression>( returnValue =>
+            .Then<Expression>( static (ctx, returnValue) =>
             {
                 var returnType = returnValue?.Type ?? typeof( void );
-                var returnLabel = Scope.Frame.GetOrCreateReturnLabel( returnType );
+                var returnLabel = ctx.Scope().Frame.GetOrCreateReturnLabel( returnType );
 
                 return returnType == typeof( void )
                     ? Return( returnLabel )
@@ -578,11 +585,11 @@ public class XsParser
             } );
     }
 
-    private Parser<Expression> ThrowParser( Parser<Expression> expression )
+    private static Parser<Expression> ThrowParser( Parser<Expression> expression )
     {
         return Terms.Text( "throw" )
             .SkipAnd( ZeroOrOne( expression ) )
-            .Then<Expression>( exceptionExpression =>
+            .Then<Expression>( static exceptionExpression =>
             {
                 if ( exceptionExpression != null && !typeof( Exception ).IsAssignableFrom( exceptionExpression.Type ) )
                 {
@@ -595,7 +602,7 @@ public class XsParser
     }
 
 
-    private Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         var parser = Terms.Text( "if" )
             .SkipAnd(
@@ -638,15 +645,15 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> LoopParser( Deferred<Expression> statement )
+    private static Parser<Expression> LoopParser( Deferred<Expression> statement )
     {
         var parser = Terms.Text( "loop" )
-            .Then( _ =>
+            .Then( (ctx, _) =>
             {
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                Scope.Push( FrameType.Child, breakLabel, continueLabel );
+                ctx.Scope().Push( FrameType.Child, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
@@ -657,7 +664,7 @@ public class XsParser
                     Terms.Char( '}' )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
             {
                 var (breakLabel, continueLabel) = parts.Item1;
                 var exprs = parts.Item2;
@@ -669,14 +676,14 @@ public class XsParser
                 }
                 finally
                 {
-                    Scope.Pop();
+                    ctx.Scope().Pop();
                 }
             } );
 
         return parser;
     }
 
-    private Parser<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static Parser<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         var caseUntil = Literals.WhiteSpace( includeNewLines: true )
             .And(
@@ -707,10 +714,10 @@ public class XsParser
             } );
 
         var parser = Terms.Text( "switch" )
-            .Then( _ =>
+            .Then( static (ctx, _) =>
             {
                 var breakLabel = Label( typeof( void ), "Break" );
-                Scope.Push( FrameType.Child, breakLabel );
+                ctx.Scope().Push( FrameType.Child, breakLabel );
 
                 return breakLabel;
             } )
@@ -728,7 +735,7 @@ public class XsParser
                     Terms.Char( '}' )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
             {
                 var (breakLabel, switchValue, bodyParts) = parts;
 
@@ -743,14 +750,14 @@ public class XsParser
                 }
                 finally
                 {
-                    Scope.Pop();
+                    ctx.Scope().Pop();
                 }
             } );
 
         return parser;
     }
 
-    private Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> expression, Deferred<Expression> statement )
+    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> expression, Deferred<Expression> statement )
     {
         var parameters = ZeroOrOne(
                 Separated(
@@ -758,24 +765,24 @@ public class XsParser
                     identifier.And( Terms.Identifier() )
                 )
             )
-            .Then( parts =>
+            .Then( static (ctx, parts) =>
             {
                 if ( parts == null )
                     return [];
 
-                Scope.Push( FrameType.Method );
+                ctx.Scope().Push( FrameType.Method );
 
                 return parts.Select( p =>
                 {
                     var (typeName, paramName) = p;
 
-                    var type = Resolver.ResolveType( typeName.ToString() )
+                    var type = ctx.Resolver().ResolveType( typeName.ToString() )
                         ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
                     var name = paramName.ToString()!;
                     var parameter = Parameter( type, name );
 
-                    Scope.Variables.Add( name, parameter );
+                    ctx.Scope().Variables.Add( name, parameter );
 
                     return parameter;
 
@@ -796,14 +803,14 @@ public class XsParser
                         ZeroOrMany( statement ),
                         Terms.Char( '}' )
                     )
-                    .Then<Expression>( body =>
+                    .Then<Expression>( static (ctx, body) =>
                     {
-                        var returnLabel = Scope.Frame.ReturnLabel;
+                        var returnLabel = ctx.Scope().Frame.ReturnLabel;
                         return Block( body.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
                     } )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
             {
                 var (args, body) = parts;
 
@@ -814,14 +821,14 @@ public class XsParser
                 finally
                 {
                     if ( args.Length != 0 )
-                        Scope.Pop();
+                        ctx.Scope().Pop();
                 }
             } );
 
         return parser;
     }
 
-    private Parser<Expression> TryCatchParser( Deferred<Expression> statement )
+    private static Parser<Expression> TryCatchParser( Deferred<Expression> statement )
     {
         var parser = Terms.Text( "try" )
             .SkipAnd(
@@ -840,10 +847,10 @@ public class XsParser
                                 Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ),
                                 Terms.Char( ')' )
                             )
-                            .Then( parts =>
+                            .Then( static (ctx, parts) =>
                             {
                                 var (typeName, variableName) = parts;
-                                var type = Resolver.ResolveType( typeName.ToString()! );
+                                var type = ctx.Resolver().ResolveType( typeName.ToString()! );
 
                                 if ( type == null )
                                     throw new InvalidOperationException( $"Unknown type: {typeName}." );
@@ -896,13 +903,13 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> NewParser( Parser<Expression> expression )
+    private static Parser<Expression> NewParser( Parser<Expression> expression )
     {
         var typeNameParser = Separated( Terms.Char( '.' ), Terms.Identifier() )
-            .Then( parts =>
+            .Then( static (ctx, parts) =>
             {
                 var typeName = string.Join( ".", parts );
-                var type = Resolver.ResolveType( typeName );
+                var type = ctx.Resolver().ResolveType( typeName );
 
                 if ( type == null )
                     throw new InvalidOperationException( $"Unknown type: {typeName}." );
@@ -932,7 +939,7 @@ public class XsParser
                     .Then( static parts => (ConstructorType.ArrayBounds, parts) )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static parts =>
             {
                 var (type, (constructorType, arguments)) = parts;  // TODO: Add initalizer
 
@@ -965,7 +972,7 @@ public class XsParser
         return parser;
     }
 
-    private Parser<Expression> LambdaInvokeParser( Parser<Expression> baseExpression )
+    private static Parser<Expression> LambdaInvokeParser( Parser<Expression> baseExpression )
     {
         var parser = Terms.Identifier()
             .And(
@@ -975,10 +982,10 @@ public class XsParser
                     Terms.Char( ')' )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( static (ctx, parts) =>
             {
                 var (targetName, invocationArguments) = parts;
-                var targetExpression = Scope.LookupVariable( targetName );
+                var targetExpression = ctx.Scope().LookupVariable( targetName );
 
                 return Invoke(
                     targetExpression,

@@ -63,9 +63,10 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithReferenceArgument()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var myLambda = ( Hyperbee.XS.Tests.TestClass x ) => { return x.PropertyValue; };
             var myClass = new Hyperbee.XS.Tests.TestClass(42);
@@ -83,9 +84,10 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChaining()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var myLambda = ( int x ) => { return x + 1; };
             (myLambda( 41 )).ToString();

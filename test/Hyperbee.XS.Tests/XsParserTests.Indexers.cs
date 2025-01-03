@@ -9,9 +9,10 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithIndexResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x[42];
@@ -27,9 +28,10 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMultiDimensionalIndexResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x[32,10];
@@ -45,9 +47,10 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithIndexChaining()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             new Hyperbee.XS.Tests.TestClass(-1)[42];
             """ );
@@ -62,9 +65,10 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChainingIndexResult()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.MethodThis()[42];

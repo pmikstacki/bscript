@@ -9,9 +9,10 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodCall()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(42);
             x.MethodValue();
@@ -27,9 +28,10 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodCallArgs()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.AddNumbers(10,32);
@@ -45,9 +47,10 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodCallChaining()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config, 
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.MethodThis().AddNumbers(10,32);
@@ -63,9 +66,10 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodCallPropertyChaining()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = new Hyperbee.XS.Tests.TestClass(42);
             x.MethodThis().PropertyThis.MethodValue();
@@ -81,9 +85,10 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithStaticMethodCallArgs()
     {
-        var parser = new XsParser { References = [Assembly.GetExecutingAssembly()] };
+        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
+        var parser = new XsParser();
 
-        var expression = parser.Parse(
+        var expression = parser.Parse( config,
             """
             var x = Hyperbee.XS.Tests.TestClass.StaticAddNumbers(10,32);
             """ );
