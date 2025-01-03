@@ -194,7 +194,7 @@ public class XsParser
                 scope.Push( FrameType.Method );
                 return default;
             } ),
-            ZeroOrMany( statement ).Then( static  (ctx, statements) =>
+            ZeroOrMany( statement ).Then( static ( ctx, statements ) =>
             {
                 var (scope, _) = ctx;
                 return ConvertToFinalExpression( statements, scope );
@@ -590,7 +590,7 @@ public class XsParser
             .Then<Expression>( static ( ctx, labelName ) =>
             {
                 var (scope, _) = ctx;
-                
+
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
             } );
@@ -845,10 +845,10 @@ public class XsParser
                         var (scope, _) = ctx;
                         var returnLabel = scope.Frame.ReturnLabel;
 
-                        return Block( 
-                            body.Concat( 
-                                [Label( returnLabel, Default( returnLabel.Type ) )] 
-                            ) 
+                        return Block(
+                            body.Concat(
+                                [Label( returnLabel, Default( returnLabel.Type ) )]
+                            )
                         );
                     } )
                 )

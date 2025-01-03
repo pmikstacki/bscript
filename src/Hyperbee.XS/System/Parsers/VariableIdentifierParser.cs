@@ -19,7 +19,7 @@ internal class VariableIdentifierParser : Parser<Expression>
 
         if ( scanner.ReadIdentifier( out var identifier ) )
         {
-            var (scope, _ ) = context;
+            var (scope, _) = context;
             var variables = scope.Variables;
 
             if ( variables.TryGetValue( identifier.ToString(), out var variable ) )
