@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 
-namespace Hyperbee.ExpressionScript.Benchmark;
+namespace Hyperbee.XS.Benchmark;
 
 public class ScriptBenchmarks
 {

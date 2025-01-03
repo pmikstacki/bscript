@@ -7,7 +7,7 @@ using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Validators;
 
-namespace Hyperbee.ExpressionScript.Benchmark;
+namespace Hyperbee.XS.Benchmark;
 
 public class BenchmarkConfig
 {

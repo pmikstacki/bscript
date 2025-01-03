@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>Hyperbee.XS.Tests</RootNamespace>
+    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hyperbee.ExpressionScript\Hyperbee.ExpressionScript.csproj" />
+    <ProjectReference Include="..\..\src\Hyperbee.XS\Hyperbee.XS.csproj" />
   </ItemGroup>
 
   <ItemGroup>

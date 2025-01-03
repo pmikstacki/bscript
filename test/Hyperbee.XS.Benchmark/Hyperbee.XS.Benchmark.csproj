@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hyperbee.ExpressionScript\Hyperbee.ExpressionScript.csproj" />
+    <ProjectReference Include="..\..\src\Hyperbee.XS\Hyperbee.XS.csproj" />
   </ItemGroup>
 
   <ItemGroup>
