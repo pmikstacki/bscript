@@ -15,7 +15,7 @@ public class ScriptBenchmarks
 
     [BenchmarkCategory( "Compile" )]
     [Benchmark( Description = "Hyperbee Compile" )]
-    public void Hyperbee_AsyncBlock_Compile()
+    public void Hyperbee_Script_Compile()
     {
         //var script = @"
         //    let result = if (x > 10) {
