@@ -45,7 +45,7 @@ public class XsParserNewExpressionTests
 
             Assert.AreEqual( 42, result );
         }
-        catch ( SyntaxErrorException se )
+        catch ( SyntaxException se )
         {
             Assert.Fail( se.Message );
         }

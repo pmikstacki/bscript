@@ -169,7 +169,7 @@ public partial class XsParser
                 ctx.SkipWhiteSpace();
 
                 if ( cursor.Eof == false )
-                    throw new SyntaxErrorException( "Syntax Error. Failure parsing script.", cursor );
+                    throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
 
                 return default;
             } )

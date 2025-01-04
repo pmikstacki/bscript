@@ -2,7 +2,7 @@
 
 namespace Hyperbee.XS;
 
-public class SyntaxErrorException : Exception
+public class SyntaxException : Exception
 {
     public int Line { get; }
     public int Column { get; }
@@ -12,7 +12,7 @@ public class SyntaxErrorException : Exception
 
     public ReadOnlySpan<char> Span => Buffer != null ? Buffer.AsSpan( Offset ) : ReadOnlySpan<char>.Empty;
 
-    public SyntaxErrorException( string message, Cursor cursor = null )
+    public SyntaxException( string message, Cursor cursor = null )
         : base( message )
     {
         if ( cursor == null )
