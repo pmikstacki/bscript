@@ -58,18 +58,17 @@ public partial class XsParser
         var returnLabel = scope.Frame.ReturnLabel;
         var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
 
-        return returnLabel switch
+        if ( returnLabel == null )
         {
-            null => Block( scope.Variables.EnumerateValues(), expressions ),
+            return Block( scope.Variables.EnumerateValues(), expressions );
+        }
 
-            _ when returnLabel.Type != finalType
-                => throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." ),
+        if ( returnLabel.Type != finalType )
+        {
+            throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." );
+        }
 
-            _ => Block(
-                scope.Variables.EnumerateValues(),
-                expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] )
-            )
-        };
+        return Block( scope.Variables.EnumerateValues(), expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
     }
 
     private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
