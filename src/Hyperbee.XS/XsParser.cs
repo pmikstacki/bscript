@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -768,8 +768,8 @@ public class XsParser
     {
         return Between(
                 Terms.Char( '(' ),
-                Parameters( identifier ), 
-                Terms.Char( ')' ) 
+                Parameters( identifier ),
+                Terms.Char( ')' )
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
@@ -932,22 +932,22 @@ public class XsParser
                 var catchBlocks = catchParts.Select( part =>
                 {
                     var (exceptionVariable, catchBody) = part;
-                    
+
                     return Catch(
-                        exceptionVariable, 
-                        Block( tryType, catchBody ) 
+                        exceptionVariable,
+                        Block( tryType, catchBody )
                     );
                 } ).ToArray();
 
                 var tryBlock = ConvertToSingleExpression( tryType, tryParts );
                 var finallyBlock = ConvertToSingleExpression( finallyParts );
 
-                return TryCatchFinally( 
-                    tryBlock, 
-                    finallyBlock, 
-                    catchBlocks 
+                return TryCatchFinally(
+                    tryBlock,
+                    finallyBlock,
+                    catchBlocks
                 );
-            } ) 
+            } )
         );
     }
 
