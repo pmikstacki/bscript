@@ -10,7 +10,7 @@ public sealed class IfIdentifier<T> : Parser<T>
 
     public IfIdentifier( ReadOnlySpan<char> match, Parser<T> parser )
     {
-        _parser = parser ?? throw new ArgumentNullException( nameof(parser) );
+        _parser = parser ?? throw new ArgumentNullException( nameof( parser ) );
         _match = match.ToString();
 
         Name = $"{parser.Name} (IfIdentifier)";
@@ -24,7 +24,7 @@ public sealed class IfIdentifier<T> : Parser<T>
         var valid = false;
 
         var start = context.Scanner.Cursor.Position;
-        scanner.SkipWhiteSpaceOrNewLine(); 
+        scanner.SkipWhiteSpaceOrNewLine();
 
         if ( scanner.ReadIdentifier( out var identifier ) && identifier.SequenceEqual( _match ) )
         {
@@ -34,7 +34,7 @@ public sealed class IfIdentifier<T> : Parser<T>
                 valid = true;
             }
         }
-        
+
         if ( !valid )
             context.Scanner.Cursor.ResetPosition( start );
 

@@ -582,7 +582,7 @@ public class XsParser
     private static Parser<Expression> ThrowParser( Parser<Expression> expression )
     {
         return XsParsers.IfIdentifier( "throw",
-            ZeroOrOne( expression ) 
+            ZeroOrOne( expression )
             .Then<Expression>( static exceptionExpression =>
             {
                 if ( exceptionExpression != null && !typeof( Exception ).IsAssignableFrom( exceptionExpression.Type ) )
@@ -612,7 +612,7 @@ public class XsParser
                     Terms.Char( '}' )
                 )
             )
-            .And( 
+            .And(
                 ZeroOrOne(
                     Terms.Text( "else" )
                     .SkipAnd(
@@ -631,7 +631,7 @@ public class XsParser
                 var ifTrue = ConvertToSingleExpression( trueExprs );
                 var ifFalse = ConvertToSingleExpression( ifTrue?.Type, falseExprs );
 
-                var type = ifTrue!.Type; 
+                var type = ifTrue!.Type;
 
                 return Condition( test, ifTrue, ifFalse, type );
             } )
@@ -722,7 +722,7 @@ public class XsParser
                 {
                     scope.Pop();
                 }
-            } ) 
+            } )
         );
 
         static Sequence<TextSpan, string> CaseUntil()
@@ -732,7 +732,7 @@ public class XsParser
                 .And(
                     Terms.Text( "case" )
                         .Or( Terms.Text( "default" ) )
-                        .Or( Terms.Text( "}" ) ) 
+                        .Or( Terms.Text( "}" ) )
                 );
         }
 
@@ -766,10 +766,10 @@ public class XsParser
 
     private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> primaryExpression, Deferred<Expression> statement )
     {
-        return Between( 
+        return Between(
                 Terms.Char( '(' ),
                 Parameters( identifier ),
-                Terms.Char( ')' ) 
+                Terms.Char( ')' )
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
@@ -807,7 +807,7 @@ public class XsParser
                     if ( args.Length != 0 )
                         scope.Pop();
                 }
-            } 
+            }
         );
 
         static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
@@ -939,7 +939,7 @@ public class XsParser
                 } ).ToArray();
 
                 return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
-            } ) 
+            } )
         );
     }
 
@@ -947,7 +947,7 @@ public class XsParser
     {
         // TODO: Add optional array initializer
 
-        return XsParsers.IfIdentifier( "new", 
+        return XsParsers.IfIdentifier( "new",
             TypeNameParser()
             .And(
                 OneOf(
