@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -13,53 +12,15 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Indexer access
 // Add Array access
+// Add Generics
 // Add Async Await
-
-public class XsContext : ParseContext
-{
-    public TypeResolver Resolver { get; }
-    public ParseScope Scope { get; } = new();
-
-    public XsContext( XsConfig config, Scanner scanner, bool useNewLines = false )
-        : base( scanner, useNewLines )
-    {
-        Resolver = new TypeResolver( config?.References );
-    }
-
-    public void Deconstruct( out ParseScope scope, out TypeResolver resolver )
-    {
-        scope = Scope;
-        resolver = Resolver;
-    }
-}
-
-public class XsConfig
-{
-    public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
-    public static IReadOnlyCollection<IParseExtension> Extensions { get; set; } = ReadOnlyCollection<IParseExtension>.Empty;
-}
-
-internal static class ParserContextExtensions
-{
-    public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver )
-    {
-        if ( context is XsContext xsContext )
-        {
-            scope = xsContext.Scope;
-            resolver = xsContext.Resolver;
-            return;
-        }
-
-        scope = default;
-        resolver = default;
-    }
-}
 
 public class XsParser
 {
     private static readonly Parser<Expression> __xs = CreateParser();
+
+    // Parse
 
     public Expression Parse( string script ) => Parse( default, script );
 
@@ -92,7 +53,7 @@ public class XsParser
         };
     }
 
-    private static Expression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
+    private static BlockExpression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
     {
         var returnLabel = scope.Frame.ReturnLabel;
         var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
@@ -194,7 +155,7 @@ public class XsParser
                 scope.Push( FrameType.Method );
                 return default;
             } ),
-            ZeroOrMany( statement ).Then( static ( ctx, statements ) =>
+            ZeroOrMany( statement ).Then<Expression>( static ( ctx, statements ) =>
             {
                 var (scope, _) = ctx;
                 return ConvertToFinalExpression( statements, scope );
@@ -421,8 +382,8 @@ public class XsParser
 
     private static Parser<Expression> DeclarationParser( Parser<Expression> expression )
     {
-        return Terms.Text( "var" )
-            .SkipAnd( Terms.Identifier() )
+        return XsParsers.IfIdentifier( "var",
+            Terms.Identifier()
             .AndSkip( Terms.Char( '=' ) )
             .And( expression )
             .Then<Expression>( static ( ctx, parts ) =>
@@ -437,7 +398,8 @@ public class XsParser
 
                     return Assign( variable, right );
                 }
-            );
+            )
+        );
     }
 
     // Member Parsers
@@ -521,7 +483,7 @@ public class XsParser
                     }
                     else
                     {
-                        // Resolve property/field
+                        // Resolve property or field
                         var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
 
                         current = member?.MemberType switch
@@ -542,8 +504,8 @@ public class XsParser
 
     private static Parser<Expression> BreakParser()
     {
-        return Terms.Text( "break" )
-            .Then<Expression>( static ( ctx, _ ) =>
+        return XsParsers.IfIdentifier( "break",
+            Always().Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
                 var breakLabel = scope.Frame.BreakLabel;
@@ -552,13 +514,14 @@ public class XsParser
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
 
                 return Break( breakLabel );
-            } );
+            } )
+        );
     }
 
     private static Parser<Expression> ContinueParser()
     {
-        return Terms.Text( "continue" )
-            .Then<Expression>( static ( ctx, _ ) =>
+        return XsParsers.IfIdentifier( "continue",
+            Always().Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
                 var continueLabel = scope.Frame.ContinueLabel;
@@ -567,19 +530,21 @@ public class XsParser
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
 
                 return Continue( continueLabel );
-            } );
+            } )
+        );
     }
 
     private static Parser<Expression> GotoParser()
     {
-        return Terms.Text( "goto" )
-            .SkipAnd( Terms.Identifier() )
+        return XsParsers.IfIdentifier( "goto",
+            Terms.Identifier()
             .Then<Expression>( static ( ctx, labelName ) =>
             {
                 var (scope, _) = ctx;
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
-            } );
+            } )
+        );
     }
 
     private static Parser<Expression> LabelParser()
@@ -598,8 +563,8 @@ public class XsParser
 
     private static Parser<Expression> ReturnParser( Parser<Expression> expression )
     {
-        return Terms.Text( "return" )
-            .SkipAnd( ZeroOrOne( expression ) )
+        return XsParsers.IfIdentifier( "return",
+            ZeroOrOne( expression )
             .Then<Expression>( static ( ctx, returnValue ) =>
             {
                 var (scope, _) = ctx;
@@ -610,13 +575,14 @@ public class XsParser
                 return returnType == typeof( void )
                     ? Return( returnLabel )
                     : Return( returnLabel, returnValue, returnType );
-            } );
+            } )
+        );
     }
 
     private static Parser<Expression> ThrowParser( Parser<Expression> expression )
     {
-        return Terms.Text( "throw" )
-            .SkipAnd( ZeroOrOne( expression ) )
+        return XsParsers.IfIdentifier( "throw",
+            ZeroOrOne( expression ) 
             .Then<Expression>( static exceptionExpression =>
             {
                 if ( exceptionExpression != null && !typeof( Exception ).IsAssignableFrom( exceptionExpression.Type ) )
@@ -626,19 +592,18 @@ public class XsParser
                 }
 
                 return Throw( exceptionExpression );
-            } );
+            } )
+        );
     }
 
 
     private static Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-        var parser = Terms.Text( "if" )
-            .SkipAnd(
-                Between(
-                    Terms.Char( '(' ),
-                    expression,
-                    Terms.Char( ')' )
-                )
+        return XsParsers.IfIdentifier( "if",
+            Between(
+                Terms.Char( '(' ),
+                expression,
+                Terms.Char( ')' )
             )
             .And(
                 Between(
@@ -647,8 +612,9 @@ public class XsParser
                     Terms.Char( '}' )
                 )
             )
-            .And( ZeroOrOne(
-                Terms.Text( "else" )
+            .And( 
+                ZeroOrOne(
+                    Terms.Text( "else" )
                     .SkipAnd(
                         Between(
                             Terms.Char( '{' ),
@@ -665,18 +631,17 @@ public class XsParser
                 var ifTrue = ConvertToSingleExpression( trueExprs );
                 var ifFalse = ConvertToSingleExpression( ifTrue?.Type, falseExprs );
 
-                var type = ifTrue?.Type ?? ifFalse?.Type ?? typeof( void );
+                var type = ifTrue!.Type; 
 
-                return Condition( test, ifTrue!, ifFalse!, type );
-            } );
-
-        return parser;
+                return Condition( test, ifTrue, ifFalse, type );
+            } )
+        );
     }
 
     private static Parser<Expression> LoopParser( Deferred<Expression> statement )
     {
-        var parser = Terms.Text( "loop" )
-            .Then( ( ctx, _ ) =>
+        return XsParsers.IfIdentifier( "loop",
+            Always().Then( ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
 
@@ -708,43 +673,14 @@ public class XsParser
                 {
                     scope.Pop();
                 }
-            } );
-
-        return parser;
+            } )
+        );
     }
 
     private static Parser<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-        var caseUntil = Literals.WhiteSpace( includeNewLines: true )
-            .And(
-                Terms.Text( "case" )
-                .Or( Terms.Text( "default" ) )
-                .Or( Terms.Text( "}" )
-            ) );
-
-        var caseParser = Terms.Text( "case" )
-            .SkipAnd( expression )
-            .AndSkip( Terms.Char( ':' ) )
-            .And( XsParsers.ZeroOrManyUntil( statement, caseUntil ) )
-            .Then( static parts =>
-            {
-                var (testExpression, statements) = parts;
-                var body = ConvertToSingleExpression( statements );
-
-                return SwitchCase( body, testExpression );
-            } );
-
-        var defaultParser = Terms.Text( "default" )
-            .SkipAnd( Terms.Char( ':' ) )
-            .SkipAnd( ZeroOrMany( statement ) )
-            .Then( static statements =>
-            {
-                var body = ConvertToSingleExpression( statements );
-                return body;
-            } );
-
-        var parser = Terms.Text( "switch" )
-            .Then( static ( ctx, _ ) =>
+        return XsParsers.IfIdentifier( "switch",
+            Always().Then( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
 
@@ -763,7 +699,8 @@ public class XsParser
             .And(
                 Between(
                     Terms.Char( '{' ),
-                    ZeroOrMany( caseParser ).And( ZeroOrOne( defaultParser ) ),
+                    ZeroOrMany( Case( expression, statement ) )
+                        .And( ZeroOrOne( Default( statement ) ) ),
                     Terms.Char( '}' )
                 )
             )
@@ -785,54 +722,59 @@ public class XsParser
                 {
                     scope.Pop();
                 }
-            } );
+            } ) 
+        );
 
-        return parser;
+        static Sequence<TextSpan, string> CaseUntil()
+        {
+            return Literals
+                .WhiteSpace( includeNewLines: true )
+                .And(
+                    Terms.Text( "case" )
+                        .Or( Terms.Text( "default" ) )
+                        .Or( Terms.Text( "}" ) ) 
+                );
+        }
+
+        static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
+        {
+            return Terms.Text( "case" )
+                .SkipAnd( expression )
+                .AndSkip( Terms.Char( ':' ) )
+                .And( XsParsers.ZeroOrManyUntil( statement, CaseUntil() ) )
+                .Then( static parts =>
+                {
+                    var (testExpression, statements) = parts;
+                    var body = ConvertToSingleExpression( statements );
+
+                    return SwitchCase( body, testExpression );
+                } );
+        }
+
+        static Parser<Expression> Default( Deferred<Expression> statement )
+        {
+            return Terms.Text( "default" )
+                .SkipAnd( Terms.Char( ':' ) )
+                .SkipAnd( ZeroOrMany( statement ) )
+                .Then( static statements =>
+                {
+                    var body = ConvertToSingleExpression( statements );
+                    return body;
+                } );
+        }
     }
 
-    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> expression, Deferred<Expression> statement )
+    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> primaryExpression, Deferred<Expression> statement )
     {
-        var parameters = ZeroOrOne(
-                Separated(
-                    Terms.Char( ',' ),
-                    identifier.And( Terms.Identifier() )
-                )
-            )
-            .Then( static ( ctx, parts ) =>
-            {
-                var (scope, resolver) = ctx;
-
-                if ( parts == null )
-                    return [];
-
-                scope.Push( FrameType.Method );
-
-                return parts.Select( p =>
-                {
-                    var (typeName, paramName) = p;
-
-                    var type = resolver.ResolveType( typeName.ToString() )
-                        ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
-
-                    var name = paramName.ToString()!;
-                    var parameter = Parameter( type, name );
-
-                    scope.Variables.Add( name, parameter );
-
-                    return parameter;
-
-                } ).ToArray();
-            } );
-
-        var parser =
-            Between(
+        return Between( 
                 Terms.Char( '(' ),
-                parameters,
-                Terms.Char( ')' ) )
+                Parameters( identifier ),
+                Terms.Char( ')' ) 
+            )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    expression,
+                    primaryExpression,
                     Between(
                         Terms.Char( '{' ),
                         ZeroOrMany( statement ),
@@ -865,45 +807,100 @@ public class XsParser
                     if ( args.Length != 0 )
                         scope.Pop();
                 }
-            } );
+            } 
+        );
 
-        return parser;
+        static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
+        {
+            return ZeroOrOne(
+                Separated(
+                    Terms.Char( ',' ),
+                    identifier.And( Terms.Identifier() )
+                )
+            )
+            .Then( static ( ctx, parts ) =>
+            {
+                var (scope, resolver) = ctx;
+
+                if ( parts == null )
+                    return [];
+
+                scope.Push( FrameType.Method );
+
+                return parts.Select( p =>
+                {
+                    var (typeName, paramName) = p;
+
+                    var type = resolver.ResolveType( typeName.ToString() )
+                               ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
+
+                    var name = paramName.ToString()!;
+                    var parameter = Parameter( type, name );
+
+                    scope.Variables.Add( name, parameter );
+
+                    return parameter;
+
+                } ).ToArray();
+            } );
+        }
+    }
+
+    private static Parser<Expression> LambdaInvokeParser( Parser<Expression> primaryExpression )
+    {
+        return Terms.Identifier()
+            .And(
+                Between(
+                    Terms.Char( '(' ),
+                    Arguments( primaryExpression ),
+                    Terms.Char( ')' )
+                )
+            )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (scope, _) = ctx;
+                var (targetName, invocationArguments) = parts;
+
+                var targetExpression = scope.LookupVariable( targetName );
+
+                return Invoke(
+                    targetExpression,
+                    invocationArguments
+                );
+            } );
     }
 
     private static Parser<Expression> TryCatchParser( Deferred<Expression> statement )
     {
-        var parser = Terms.Text( "try" )
-            .SkipAnd(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
+        return XsParsers.IfIdentifier( "try",
+            Between(
+                Terms.Char( '{' ),
+                ZeroOrMany( statement ),
+                Terms.Char( '}' )
             )
             .And(
                 ZeroOrMany(
                     Terms.Text( "catch" )
-                        .SkipAnd(
-                            Between(
-                                Terms.Char( '(' ),
-                                Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ),
-                                Terms.Char( ')' )
-                            )
-                            .Then( static ( ctx, parts ) =>
-                            {
-                                var (_, resolver) = ctx;
-                                var (typeName, variableName) = parts;
-
-                                var type = resolver.ResolveType( typeName.ToString()! );
-
-                                if ( type == null )
-                                    throw new InvalidOperationException( $"Unknown type: {typeName}." );
-
-                                var name = variableName.Length == 0 ? null : variableName.ToString();
-
-                                return Parameter( type, name );
-                            }
+                    .SkipAnd(
+                        Between(
+                            Terms.Char( '(' ),
+                            Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ),
+                            Terms.Char( ')' )
                         )
+                        .Then( static ( ctx, parts ) =>
+                        {
+                            var (_, resolver) = ctx;
+                            var (typeName, variableName) = parts;
+
+                            var type = resolver.ResolveType( typeName.ToString()! );
+
+                            if ( type == null )
+                                throw new InvalidOperationException( $"Unknown type: {typeName}." );
+
+                            var name = variableName.Length == 0 ? null : variableName.ToString();
+
+                            return Parameter( type, name );
+                        } )
                         .And(
                             Between(
                                 Terms.Char( '{' ),
@@ -917,14 +914,14 @@ public class XsParser
             .And(
                 ZeroOrOne(
                     Terms.Text( "finally" )
-                        .SkipAnd(
-                            Between(
-                                Terms.Char( '{' ),
-                                ZeroOrMany( statement ),
-                                Terms.Char( '}' )
-                            )
+                    .SkipAnd(
+                        Between(
+                            Terms.Char( '{' ),
+                            ZeroOrMany( statement ),
+                            Terms.Char( '}' )
                         )
                     )
+                )
             )
             .Then<Expression>( static parts =>
             {
@@ -942,30 +939,16 @@ public class XsParser
                 } ).ToArray();
 
                 return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
-            } );
-
-        return parser;
+            } ) 
+        );
     }
 
     private static Parser<Expression> NewParser( Parser<Expression> expression )
     {
-        var typeNameParser = Separated( Terms.Char( '.' ), Terms.Identifier() )
-            .Then( static ( ctx, parts ) =>
-            {
-                var (_, resolver) = ctx;
-
-                var typeName = string.Join( ".", parts );
-                var type = resolver.ResolveType( typeName );
-
-                if ( type == null )
-                    throw new InvalidOperationException( $"Unknown type: {typeName}." );
-
-                return type;
-            } );
-
         // TODO: Add optional array initializer
-        var parser = Terms.Text( "new" )
-            .SkipAnd( typeNameParser )
+
+        return XsParsers.IfIdentifier( "new", 
+            TypeNameParser()
             .And(
                 OneOf(
                     Between(
@@ -1013,35 +996,24 @@ public class XsParser
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
-            } );
+            } ) );
 
-        return parser;
-    }
+        static Parser<Type> TypeNameParser()
+        {
+            return Separated( Terms.Char( '.' ), Terms.Identifier() )
+                .Then( static ( ctx, parts ) =>
+                {
+                    var (_, resolver) = ctx;
 
-    private static Parser<Expression> LambdaInvokeParser( Parser<Expression> baseExpression )
-    {
-        var parser = Terms.Identifier()
-            .And(
-                Between(
-                    Terms.Char( '(' ),
-                    Arguments( baseExpression ),
-                    Terms.Char( ')' )
-                )
-            )
-            .Then<Expression>( static ( ctx, parts ) =>
-            {
-                var (scope, _) = ctx;
-                var (targetName, invocationArguments) = parts;
+                    var typeName = string.Join( ".", parts );
+                    var type = resolver.ResolveType( typeName );
 
-                var targetExpression = scope.LookupVariable( targetName );
+                    if ( type == null )
+                        throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
-                return Invoke(
-                    targetExpression,
-                    invocationArguments
-                );
-            } );
-
-        return parser;
+                    return type;
+                } );
+        }
     }
 
     private enum ConstructorType
