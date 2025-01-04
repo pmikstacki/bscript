@@ -337,22 +337,22 @@ public partial class XsParser
                 var catchBlocks = catchParts.Select( part =>
                 {
                     var (exceptionVariable, catchBody) = part;
-                    
+
                     return Catch(
-                        exceptionVariable, 
-                        Block( tryType, catchBody ) 
+                        exceptionVariable,
+                        Block( tryType, catchBody )
                     );
                 } ).ToArray();
 
                 var tryBlock = ConvertToSingleExpression( tryType, tryParts );
                 var finallyBlock = ConvertToSingleExpression( finallyParts );
 
-                return TryCatchFinally( 
-                    tryBlock, 
-                    finallyBlock, 
-                    catchBlocks 
+                return TryCatchFinally(
+                    tryBlock,
+                    finallyBlock,
+                    catchBlocks
                 );
-            } ) 
+            } )
         );
     }
 }

@@ -10,13 +10,13 @@ public partial class XsParser
 {
 
     // Lambda Parsers
-    
+
     private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> primaryExpression, Deferred<Expression> statement )
     {
         return Between(
                 Terms.Char( '(' ),
-                Parameters( identifier ), 
-                Terms.Char( ')' ) 
+                Parameters( identifier ),
+                Terms.Char( ')' )
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
