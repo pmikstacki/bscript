@@ -57,7 +57,6 @@ public class TypeResolver
                 _ => null, // Return null for unknown types
             };
         }
-
     }
 
     public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> arguments, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )

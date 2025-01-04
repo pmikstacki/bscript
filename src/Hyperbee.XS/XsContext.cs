@@ -21,3 +21,20 @@ public class XsContext : ParseContext
         resolver = Resolver;
     }
 }
+
+internal static class ParseContextExtensions
+{
+    public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver )
+    {
+        if ( context is XsContext xsContext )
+        {
+            scope = xsContext.Scope;
+            resolver = xsContext.Resolver;
+            return;
+        }
+
+        scope = default;
+        resolver = default;
+    }
+}
+

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
@@ -14,6 +14,7 @@ namespace Hyperbee.XS;
 //
 // Add Array access
 // Add Generics
+// Add Cast As Is Operators
 // Add Async Await
 
 public class XsParser
@@ -248,7 +249,7 @@ public class XsParser
             identifier,
             groupedExpression,
             lambdaExpression
-        ).Named( "baseExpression" );
+        ).Named( "base" );
 
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
         var memberAccess = MemberAccessParser( baseExpression, expression );
@@ -331,7 +332,7 @@ public class XsParser
             (Terms.Text( "&&" ), AndAlso),
             (Terms.Text( "||" ), OrElse),
             (Terms.Text( "??" ), Coalesce)
-        ).Named( "binary" );
+        ).Named( "expression" );
 
     }
 
@@ -454,20 +455,18 @@ public class XsParser
             )
             .Then( static parts =>
             {
-                const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-
                 var (current, accesses) = parts;
 
                 foreach ( var (memberName, arguments) in accesses )
                 {
-                    var name = memberName.ToString()!;
-
                     var type = current switch
                     {
                         ConstantExpression ce => ce.Value as Type ?? ce.Type,
                         Expression e => e.Type,
                         _ => throw new InvalidOperationException( "Invalid target expression." )
                     };
+
+                    var name = memberName.ToString()!;
 
                     if ( arguments != null )
                     {
@@ -484,6 +483,7 @@ public class XsParser
                     else
                     {
                         // Resolve property or field
+                        const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
                         var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
 
                         current = member?.MemberType switch
@@ -768,8 +768,8 @@ public class XsParser
     {
         return Between(
                 Terms.Char( '(' ),
-                Parameters( identifier ),
-                Terms.Char( ')' )
+                Parameters( identifier ), 
+                Terms.Char( ')' ) 
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
@@ -796,15 +796,15 @@ public class XsParser
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
-                var (args, body) = parts;
+                var (parameters, body) = parts;
 
                 try
                 {
-                    return Lambda( body, args );
+                    return Lambda( body, parameters );
                 }
                 finally
                 {
-                    if ( args.Length != 0 )
+                    if ( parameters.Length != 0 )
                         scope.Pop();
                 }
             }
@@ -929,17 +929,25 @@ public class XsParser
 
                 var tryType = tryParts?[^1].Type ?? typeof( void );
 
-                var tryBlock = ConvertToSingleExpression( tryType, tryParts );
-                var finallyBlock = ConvertToSingleExpression( finallyParts );
-
                 var catchBlocks = catchParts.Select( part =>
                 {
                     var (exceptionVariable, catchBody) = part;
-                    return Catch( exceptionVariable, Block( tryType, catchBody ) );
+                    
+                    return Catch(
+                        exceptionVariable, 
+                        Block( tryType, catchBody ) 
+                    );
                 } ).ToArray();
 
-                return TryCatchFinally( tryBlock, finallyBlock, catchBlocks );
-            } )
+                var tryBlock = ConvertToSingleExpression( tryType, tryParts );
+                var finallyBlock = ConvertToSingleExpression( finallyParts );
+
+                return TryCatchFinally( 
+                    tryBlock, 
+                    finallyBlock, 
+                    catchBlocks 
+                );
+            } ) 
         );
     }
 
