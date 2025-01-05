@@ -59,11 +59,11 @@ public class TypeResolver
         }
     }
 
-    public static MethodInfo FindMethod( 
-        Type type, 
-        string methodName, 
-        IReadOnlyList<Type> typeArgs, 
-        IReadOnlyList<Expression> args, 
+    public static MethodInfo FindMethod(
+        Type type,
+        string methodName,
+        IReadOnlyList<Type> typeArgs,
+        IReadOnlyList<Expression> args,
         BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
     {
         var methods = type.GetMethods( bindingAttr ).Where( method => method.Name == methodName ).ToArray();
@@ -215,7 +215,7 @@ public class TypeResolver
         {
             var index = Array.IndexOf( genericParameters, parameterType );
 
-            if ( index < 0 ) 
+            if ( index < 0 )
                 return true; // Not relevant
 
             if ( inferredTypes[index] == null )
