@@ -59,12 +59,12 @@ public class TypeResolver
         }
     }
 
-    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
-    {
-        return FindMethod( type, methodName, null, args, bindingAttr );
-    }
-
-    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+    public static MethodInfo FindMethod( 
+        Type type, 
+        string methodName, 
+        IReadOnlyList<Type> typeArgs, 
+        IReadOnlyList<Expression> args, 
+        BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
     {
         var methods = type.GetMethods( bindingAttr ).Where( method => method.Name == methodName ).ToArray();
 
@@ -196,10 +196,12 @@ public class TypeResolver
 
         foreach ( var (parameterType, argumentType) in method.GetParameters().Select( ( p, i ) => (p.ParameterType, args[i].Type) ) )
         {
-            if ( !TryInferTypes( parameterType, argumentType, genericParameters, inferredTypes ) )
+            if ( TryInferTypes( parameterType, argumentType, genericParameters, inferredTypes ) )
             {
-                return null;
+                continue;
             }
+
+            return null;
         }
 
         return inferredTypes;
@@ -213,7 +215,8 @@ public class TypeResolver
         {
             var index = Array.IndexOf( genericParameters, parameterType );
 
-            if ( index < 0 ) return true; // Not relevant
+            if ( index < 0 ) 
+                return true; // Not relevant
 
             if ( inferredTypes[index] == null )
             {
@@ -243,7 +246,7 @@ public class TypeResolver
         var parameterArgs = parameterType.GetGenericArguments();
         var argumentArgs = argumentType.GetGenericArguments();
 
-        for ( int i = 0; i < parameterArgs.Length; i++ )
+        for ( var i = 0; i < parameterArgs.Length; i++ )
         {
             if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) )
                 continue;
