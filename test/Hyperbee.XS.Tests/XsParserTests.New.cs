@@ -86,4 +86,22 @@ public class XsParserNewExpressionTests
 
         Assert.AreEqual( 10, result.Length );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithGeneric()
+    {
+        var parser = new XsParser();
+
+        var expression = parser.Parse(
+            """
+            new List<int>();
+            """ );
+
+        var lambda = Expression.Lambda<Func<List<int>>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.IsInstanceOfType<List<int>>( result );
+    }
 }

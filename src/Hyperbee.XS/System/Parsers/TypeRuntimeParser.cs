@@ -85,6 +85,8 @@ internal class TypeRuntimeParser : Parser<Type>
                 context.ExitParser( this );
                 return false;
             }
+
+            typeBuilder.Append( $"`{genericArgs.Count}" );
         }
 
         // resolve the type from the type-name
@@ -94,11 +96,11 @@ internal class TypeRuntimeParser : Parser<Type>
         // the type-name may have right-side properties or methods that are not part of the type-name.
 
         var (_, resolver) = context;
-        var typeSpan = typeBuilder.ToString();
+        var typeName = typeBuilder.ToString();
 
         while ( true )
         {
-            var resolvedType = resolver.ResolveType( typeSpan );
+            var resolvedType = resolver.ResolveType( typeName );
 
             if ( resolvedType != null )
             {
@@ -117,12 +119,12 @@ internal class TypeRuntimeParser : Parser<Type>
             // Adjust the span by removing the last segment
 
             cursor.ResetPosition( positions.Pop() );
-            var lastDotIndex = typeSpan.LastIndexOf( '.' );
+            var lastDotIndex = typeName.LastIndexOf( '.' );
 
             if ( lastDotIndex == -1 )
                 break;
 
-            typeSpan = typeSpan[..lastDotIndex];
+            typeName = typeName[..lastDotIndex];
         }
 
         cursor.ResetPosition( start );
