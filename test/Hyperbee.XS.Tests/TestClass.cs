@@ -1,4 +1,6 @@
-﻿namespace Hyperbee.XS.Tests;
+﻿using System.Numerics;
+
+namespace Hyperbee.XS.Tests;
 
 public class TestClass
 {
@@ -15,6 +17,8 @@ public class TestClass
     public int AddNumbers( int x, int y ) => x + y;
 
     public static int StaticAddNumbers( int x, int y ) => x + y;
+
+    public T GenericAdd<T>( T x, T y ) where T : INumber<T> => x + y;
 
     public TestClass( int value )
     {

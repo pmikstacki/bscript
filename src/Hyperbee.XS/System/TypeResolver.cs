@@ -66,7 +66,7 @@ public class TypeResolver
 
     public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
     {
-        var methods = type.GetMethods( bindingAttr ).Where( m => m.Name == methodName ).ToArray();
+        var methods = type.GetMethods( bindingAttr ).Where( method => method.Name == methodName ).ToArray();
 
         if ( methods.Length == 0 )
         {
@@ -78,62 +78,179 @@ public class TypeResolver
 
         foreach ( var method in methods )
         {
-            var parameters = method.GetParameters();
-
-            if ( parameters.Length != args.Count )
-            {
-                continue; // Skip methods with different parameter counts
-            }
-
-            var score = 0;
-            var isMatch = true;
-
-            for ( var i = 0; i < parameters.Length; i++ )
-            {
-                var argument = args[i];
-                var parameterType = parameters[i].ParameterType;
-
-                // Handle null arguments
-                if ( argument is ConstantExpression constant && constant.Value == null )
-                {
-                    // Null can match any reference type or nullable value type
-                    if ( !parameterType.IsClass && Nullable.GetUnderlyingType( parameterType ) == null )
-                    {
-                        isMatch = false;
-                        break;
-                    }
-
-                    score += 2; // Weak confidence match for null
-                    continue;
-                }
-
-                // Match based on argument type
-                var argumentType = argument.Type;
-
-                if ( parameterType == argumentType )
-                {
-                    score += 0; // Perfect match
-                }
-                else if ( parameterType.IsAssignableFrom( argumentType ) )
-                {
-                    score += 1; // Compatible match
-                }
-                else
-                {
-                    isMatch = false;
-                    break;
-                }
-            }
-
-            if ( !isMatch || score >= bestScore )
+            if ( !TryResolveMethod( method, typeArgs, args, out var resolvedMethod ) )
             {
                 continue;
             }
 
-            bestScore = score;
-            bestMatch = method;
+            if ( !TryScoreMethod( resolvedMethod, args, out var score ) )
+            {
+                continue;
+            }
+
+            if ( score == bestScore )
+            {
+                throw new AmbiguousMatchException(
+                    $"Ambiguous match for method '{methodName}'. Unable to resolve method." );
+            }
+
+            if ( score < bestScore )
+            {
+                bestScore = score;
+                bestMatch = resolvedMethod;
+            }
         }
 
         return bestMatch;
+    }
+
+    private static bool TryResolveMethod( MethodInfo method, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args, out MethodInfo resolvedMethod )
+    {
+        resolvedMethod = method;
+
+        var methodTypeArgs = typeArgs?.ToArray() ?? [];
+
+        if ( method.IsGenericMethodDefinition )
+        {
+            if ( methodTypeArgs.Length == 0 )
+            {
+                methodTypeArgs = InferGenericArguments( method, args );
+
+                if ( methodTypeArgs == null )
+                {
+                    return false;
+                }
+            }
+
+            if ( method.GetGenericArguments().Length != methodTypeArgs.Length )
+            {
+                return false;
+            }
+
+            try
+            {
+                resolvedMethod = method.MakeGenericMethod( methodTypeArgs );
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        else if ( methodTypeArgs.Length > 0 )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryScoreMethod( MethodInfo method, IReadOnlyList<Expression> args, out int score )
+    {
+        var parameters = method.GetParameters();
+        score = 0;
+
+        if ( parameters.Length != args.Count )
+        {
+            return false;
+        }
+
+        for ( var i = 0; i < parameters.Length; i++ )
+        {
+            var argument = args[i];
+            var parameterType = parameters[i].ParameterType;
+
+            if ( argument is ConstantExpression constant && constant.Value == null )
+            {
+                if ( !parameterType.IsClass && Nullable.GetUnderlyingType( parameterType ) == null )
+                {
+                    return false;
+                }
+
+                score += 2; // Weak confidence match for null
+                continue;
+            }
+
+            var argumentType = argument.Type;
+
+            if ( parameterType == argumentType )
+            {
+                score += 0; // Perfect match
+            }
+            else if ( parameterType.IsAssignableFrom( argumentType ) )
+            {
+                score += 1; // Compatible match
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static Type[] InferGenericArguments( MethodInfo method, IReadOnlyList<Expression> args )
+    {
+        var genericParameters = method.GetGenericArguments();
+        var inferredTypes = new Type[genericParameters.Length];
+
+        foreach ( var (parameterType, argumentType) in method.GetParameters().Select( ( p, i ) => (p.ParameterType, args[i].Type) ) )
+        {
+            if ( !TryInferTypes( parameterType, argumentType, genericParameters, inferredTypes ) )
+            {
+                return null;
+            }
+        }
+
+        return inferredTypes;
+    }
+
+    private static bool TryInferTypes( Type parameterType, Type argumentType, Type[] genericParameters, Type[] inferredTypes )
+    {
+        // Handle direct generic parameters
+
+        if ( parameterType.IsGenericParameter )
+        {
+            var index = Array.IndexOf( genericParameters, parameterType );
+
+            if ( index < 0 ) return true; // Not relevant
+
+            if ( inferredTypes[index] == null )
+            {
+                inferredTypes[index] = argumentType; // Infer the type
+            }
+            else if ( inferredTypes[index] != argumentType )
+            {
+                return false; // Ambiguous inference
+            }
+
+            return true;
+        }
+
+        // Handle nested generic types
+
+        if ( !parameterType.ContainsGenericParameters )
+        {
+            return true; // Non-generic parameter, no inference needed
+        }
+
+        if ( !parameterType.IsGenericType || !argumentType.IsGenericType ||
+             parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
+        {
+            return false;
+        }
+
+        var parameterArgs = parameterType.GetGenericArguments();
+        var argumentArgs = argumentType.GetGenericArguments();
+
+        for ( int i = 0; i < parameterArgs.Length; i++ )
+        {
+            if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) )
+                continue;
+
+            return false;
+        }
+
+        return true;
     }
 }
