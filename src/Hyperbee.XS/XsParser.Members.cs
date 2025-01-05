@@ -52,16 +52,12 @@ public partial class XsParser
                     Terms.Identifier()
                         .And(
                             ZeroOrOne(
-                                Between(
-                                    Terms.Char( '<' ),
-                                    Separated( Terms.Char( ',' ), XsParsers.TypeConstant() ),
-                                    Terms.Char( '>' )
-                                )
+                                Between( Terms.Char( '<' ), TypeArgsParser(), Terms.Char( '>' ) )
                             )
                         )
                         .And(
                             ZeroOrOne(
-                                Between( Terms.Char( '(' ), Arguments( expression ), Terms.Char( ')' ) )
+                                Between( Terms.Char( '(' ), ArgumentsParser( expression ), Terms.Char( ')' ) )
                             )
                         )
                 )
@@ -70,21 +66,15 @@ public partial class XsParser
             {
                 var (current, accesses) = parts;
 
-                foreach ( var (memberName, genericArgs, args) in accesses )
+                foreach ( var (memberName, typeArgs, args) in accesses )
                 {
-                    var type = current switch
-                    {
-                        ConstantExpression ce => ce.Value as Type ?? ce.Type,
-                        Expression e => e.Type,
-                        _ => throw new InvalidOperationException( "Invalid target expression." )
-                    };
-
+                    var type = ConvertToType( current );
                     var name = memberName.ToString()!;
 
                     if ( args != null )
                     {
                         // Resolve method call
-                        var methodInfo = TypeResolver.FindMethod( type, name, genericArgs, args );
+                        var methodInfo = TypeResolver.FindMethod( type, name, typeArgs, args );
 
                         current = methodInfo?.IsStatic switch
                         {

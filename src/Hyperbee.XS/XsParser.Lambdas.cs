@@ -99,7 +99,7 @@ public partial class XsParser
             .And(
                 Between(
                     Terms.Char( '(' ),
-                    Arguments( primaryExpression ),
+                    ArgumentsParser( primaryExpression ),
                     Terms.Char( ')' )
                 )
             )

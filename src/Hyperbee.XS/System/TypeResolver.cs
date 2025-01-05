@@ -64,7 +64,7 @@ public class TypeResolver
         return FindMethod( type, methodName, null, args, bindingAttr );
     }
 
-    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> genericArgs, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
     {
         var methods = type.GetMethods( bindingAttr ).Where( m => m.Name == methodName ).ToArray();
 

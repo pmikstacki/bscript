@@ -80,7 +80,7 @@ public partial class XsParser
                 OneOf(
                     Between(
                         Terms.Char( '(' ),
-                        Arguments( expression ),
+                        ArgumentsParser( expression ),
                         Terms.Char( ')' )
                     ).Then( static parts => (ConstructorType.Object, parts) ),
                     Between(

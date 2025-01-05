@@ -282,10 +282,16 @@ public partial class XsParser
 
     // Helper Parsers
 
-    private static Parser<IReadOnlyList<Expression>> Arguments( Parser<Expression> expression )
+    private static Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
             .Then( static arguments => arguments ?? Array.Empty<Expression>() );
+    }
+
+    private static Parser<IReadOnlyList<Type>> TypeArgsParser()
+    {
+        return ZeroOrOne( Separated( Terms.Char( ',' ), XsParsers.TypeRuntime() ) )
+            .Then( static typeArgs => typeArgs ?? Array.Empty<Type>() );
     }
 
     // Helpers
@@ -325,6 +331,18 @@ public partial class XsParser
         }
 
         return Block( scope.Variables.EnumerateValues(), expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Type ConvertToType( Expression expression )
+    {
+        ArgumentNullException.ThrowIfNull( expression, nameof( expression ) );
+
+        return expression switch
+        {
+            ConstantExpression ce => ce.Value as Type ?? ce.Type,
+            Expression => expression.Type
+        };
     }
 
     private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
