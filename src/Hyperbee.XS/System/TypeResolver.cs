@@ -59,7 +59,12 @@ public class TypeResolver
         }
     }
 
-    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> arguments, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+    {
+        return FindMethod( type, methodName, null, args, bindingAttr );
+    }
+
+    public static MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Expression> genericArgs, IReadOnlyList<Expression> args, BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
     {
         var methods = type.GetMethods( bindingAttr ).Where( m => m.Name == methodName ).ToArray();
 
@@ -75,7 +80,7 @@ public class TypeResolver
         {
             var parameters = method.GetParameters();
 
-            if ( parameters.Length != arguments.Count )
+            if ( parameters.Length != args.Count )
             {
                 continue; // Skip methods with different parameter counts
             }
@@ -85,7 +90,7 @@ public class TypeResolver
 
             for ( var i = 0; i < parameters.Length; i++ )
             {
-                var argument = arguments[i];
+                var argument = args[i];
                 var parameterType = parameters[i].ParameterType;
 
                 // Handle null arguments

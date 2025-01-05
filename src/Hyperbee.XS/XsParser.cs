@@ -145,7 +145,7 @@ public partial class XsParser
             expressionStatement
         );
 
-        // Finalize
+        // Create the final parser
 
         return Between(
             Always().Then<Expression>( static ( ctx, _ ) =>
@@ -218,12 +218,12 @@ public partial class XsParser
 
         // Identifiers
 
-        var varIdentifier = XsParsers.VariableIdentifier();
-        var typeIdentifier = XsParsers.TypeIdentifier();
+        var variable = XsParsers.Variable();
+        var typeConstant = XsParsers.TypeConstant();
 
         var identifier = OneOf(
-            varIdentifier,
-            typeIdentifier
+            variable,
+            typeConstant
         ).Named( "identifier" );
 
         // Grouped Expressions
@@ -270,7 +270,7 @@ public partial class XsParser
                 Terms.Text( "++" ),
                 Terms.Text( "--" )
             )
-            .And( varIdentifier )
+            .And( variable )
             .Then<Expression>( static parts =>
             {
                 var (op, variable) = parts;
@@ -283,7 +283,7 @@ public partial class XsParser
                 };
             } );
 
-        var postfixExpression = varIdentifier
+        var postfixExpression = variable
             .And(
                 OneOf(
                     Terms.Text( "++" ),
@@ -406,7 +406,7 @@ public partial class XsParser
         // TODO: Add optional array initializer
 
         return XsParsers.IfIdentifier( "new",
-            TypeNameParser()
+            XsParsers.RuntimeType()
             .And(
                 OneOf(
                     Between(
@@ -455,23 +455,6 @@ public partial class XsParser
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
             } ) );
-
-        static Parser<Type> TypeNameParser()
-        {
-            return Separated( Terms.Char( '.' ), Terms.Identifier() )
-                .Then( static ( ctx, parts ) =>
-                {
-                    var (_, resolver) = ctx;
-
-                    var typeName = string.Join( ".", parts );
-                    var type = resolver.ResolveType( typeName );
-
-                    if ( type == null )
-                        throw new InvalidOperationException( $"Unknown type: {typeName}." );
-
-                    return type;
-                } );
-        }
     }
 
     private enum ConstructorType

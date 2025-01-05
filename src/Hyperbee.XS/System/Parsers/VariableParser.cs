@@ -4,7 +4,7 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
 
-internal class VariableIdentifierParser : Parser<Expression>
+internal class VariableParser : Parser<Expression>
 {
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
@@ -37,9 +37,9 @@ internal class VariableIdentifierParser : Parser<Expression>
 
 internal static partial class XsParsers
 {
-    public static Parser<Expression> VariableIdentifier()
+    public static Parser<Expression> Variable()
     {
-        return new VariableIdentifierParser();
+        return new VariableParser();
     }
 }
 

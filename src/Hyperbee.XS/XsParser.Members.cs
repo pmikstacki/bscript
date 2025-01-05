@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -48,22 +49,28 @@ public partial class XsParser
             .And(
                 Separated(
                     Terms.Char( '.' ),
-                    Terms.Identifier().And(
-                        ZeroOrOne(
-                            Between(
-                                Terms.Char( '(' ),
-                                Arguments( expression ),
-                                Terms.Char( ')' )
+                    Terms.Identifier()
+                        .And(
+                            ZeroOrOne(
+                                Between(
+                                    Terms.Char( '<' ),
+                                    Separated( Terms.Char( ',' ), XsParsers.TypeConstant() ),
+                                    Terms.Char( '>' )
+                                )
                             )
                         )
-                    )
+                        .And(
+                            ZeroOrOne(
+                                Between( Terms.Char( '(' ), Arguments( expression ), Terms.Char( ')' ) )
+                            )
+                        )
                 )
             )
             .Then( static parts =>
             {
                 var (current, accesses) = parts;
 
-                foreach ( var (memberName, arguments) in accesses )
+                foreach ( var (memberName, genericArgs, args) in accesses )
                 {
                     var type = current switch
                     {
@@ -74,15 +81,15 @@ public partial class XsParser
 
                     var name = memberName.ToString()!;
 
-                    if ( arguments != null )
+                    if ( args != null )
                     {
                         // Resolve method call
-                        var methodInfo = TypeResolver.FindMethod( type, name, arguments );
+                        var methodInfo = TypeResolver.FindMethod( type, name, genericArgs, args );
 
                         current = methodInfo?.IsStatic switch
                         {
-                            true => Call( methodInfo, arguments.ToArray() ),
-                            false => Call( current, methodInfo, arguments.ToArray() ),
+                            true => Call( methodInfo, args.ToArray() ),
+                            false => Call( current, methodInfo, args.ToArray() ),
                             null => throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." )
                         };
                     }
