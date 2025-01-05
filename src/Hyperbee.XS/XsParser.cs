@@ -32,58 +32,6 @@ public partial class XsParser
         return __xs.Parse( context );
     }
 
-    // Helpers
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
-    {
-        return ConvertToSingleExpression( typeof( void ), expressions );
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
-    {
-        type ??= typeof( void );
-
-        return expressions?.Count switch
-        {
-            null or 0 => Default( type ),
-            1 => expressions.First(),
-            _ => Block( expressions )
-        };
-    }
-
-    private static BlockExpression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
-    {
-        var returnLabel = scope.Frame.ReturnLabel;
-        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
-
-        if ( returnLabel == null )
-        {
-            return Block( scope.Variables.EnumerateValues(), expressions );
-        }
-
-        if ( returnLabel.Type != finalType )
-        {
-            throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." );
-        }
-
-        return Block( scope.Variables.EnumerateValues(), expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
-    }
-
-    private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
-    {
-        complexExtensions = XsConfig.Extensions
-            .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( expression, statement ) )
-            .ToArray();
-
-        singleExtensions = XsConfig.Extensions
-            .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( expression, statement ) )
-            .ToArray();
-    }
-
     // Parsers
 
     private static Parser<Expression> CreateParser()
@@ -334,15 +282,7 @@ public partial class XsParser
 
     }
 
-    // Helper Parsers
-
-    private static Parser<IReadOnlyList<Expression>> Arguments( Parser<Expression> expression )
-    {
-        return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( static arguments => arguments ?? Array.Empty<Expression>() );
-    }
-
-    // Variable Parsers
+    // Value Parsers
 
     private static Parser<Expression> AssignmentParser( Parser<Expression> expression )
     {
@@ -406,7 +346,7 @@ public partial class XsParser
         // TODO: Add optional array initializer
 
         return XsParsers.IfIdentifier( "new",
-            XsParsers.RuntimeType()
+            XsParsers.TypeRuntime()
             .And(
                 OneOf(
                     Between(
@@ -462,6 +402,66 @@ public partial class XsParser
         Object,
         ArrayBounds,
         ArrayInit,
+    }
+
+    // Helper Parsers
+
+    private static Parser<IReadOnlyList<Expression>> Arguments( Parser<Expression> expression )
+    {
+        return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
+            .Then( static arguments => arguments ?? Array.Empty<Expression>() );
+    }
+
+    // Helpers
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    {
+        return ConvertToSingleExpression( typeof( void ), expressions );
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
+    {
+        type ??= typeof( void );
+
+        return expressions?.Count switch
+        {
+            null or 0 => Default( type ),
+            1 => expressions.First(),
+            _ => Block( expressions )
+        };
+    }
+
+    private static BlockExpression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
+    {
+        var returnLabel = scope.Frame.ReturnLabel;
+        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
+
+        if ( returnLabel == null )
+        {
+            return Block( scope.Variables.EnumerateValues(), expressions );
+        }
+
+        if ( returnLabel.Type != finalType )
+        {
+            throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." );
+        }
+
+        return Block( scope.Variables.EnumerateValues(), expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
+    }
+
+    private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    {
+        complexExtensions = XsConfig.Extensions
+            .Where( x => x.Type == ExtensionType.ComplexStatement )
+            .Select( x => x.Parser( expression, statement ) )
+            .ToArray();
+
+        singleExtensions = XsConfig.Extensions
+            .Where( x => x.Type == ExtensionType.SingleStatement )
+            .Select( x => x.Parser( expression, statement ) )
+            .ToArray();
     }
 }
 

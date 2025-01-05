@@ -5,11 +5,11 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
 
-internal class RuntimeTypeParser : Parser<Type>
+internal class TypeRuntimeParser : Parser<Type>
 {
     private readonly bool _backtrack;
 
-    public RuntimeTypeParser( bool backtrack )
+    public TypeRuntimeParser( bool backtrack )
     {
         _backtrack = backtrack;
     }
@@ -64,7 +64,7 @@ internal class RuntimeTypeParser : Parser<Type>
             {
                 var genericArgResult = new ParseResult<Type>();
 
-                if ( XsParsers.RuntimeType( backtrack: false ).Parse( context, ref genericArgResult ) ) // generic arguments cannot be backtracked
+                if ( XsParsers.TypeRuntime( backtrack: false ).Parse( context, ref genericArgResult ) ) // generic arguments cannot be backtracked
                 {
                     genericArgs.Add( genericArgResult.Value );
                 }
@@ -133,8 +133,8 @@ internal class RuntimeTypeParser : Parser<Type>
 
 internal static partial class XsParsers
 {
-    public static Parser<Type> RuntimeType( bool backtrack = false )
+    public static Parser<Type> TypeRuntime( bool backtrack = false )
     {
-        return new RuntimeTypeParser( backtrack );
+        return new TypeRuntimeParser( backtrack );
     }
 }

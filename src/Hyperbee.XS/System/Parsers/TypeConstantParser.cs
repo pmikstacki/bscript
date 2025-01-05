@@ -19,7 +19,7 @@ internal class TypeConstantParser : Parser<Expression>
 
         var typeResult = new ParseResult<Type>();
 
-        if ( XsParsers.RuntimeType( _backtrack ).Parse( context, ref typeResult ) )
+        if ( XsParsers.TypeRuntime( _backtrack ).Parse( context, ref typeResult ) )
         {
             var resolvedType = typeResult.Value;
             result.Set( typeResult.Start, typeResult.End, Expression.Constant( resolvedType ) );
