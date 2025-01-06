@@ -22,7 +22,7 @@ public class XsContext : ParseContext
     }
 }
 
-internal static class ParseContextExtensions
+public static class ParseContextExtensions
 {
     public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver )
     {

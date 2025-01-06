@@ -12,7 +12,7 @@ namespace Hyperbee.XS;
 // Parser TODO
 //
 // Add Array access
-// Add Generics
+// Add Collection Initializers
 // Add Cast As Is Operators
 // Add Async Await
 
@@ -59,9 +59,20 @@ public partial class XsParser
         var returnStatement = ReturnParser( expression );
         var throwStatement = ThrowParser( expression );
 
+        var assignableExpression = OneOf(
+            declaration,
+            assignment,
+            expression
+        );
+
+        var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
+
         // Compose Statements
 
-        GetExtensionParsers( expression, statement, out var complexExtensions, out var singleExtensions );
+        GetExtensionParsers( 
+            new ExtensionBinder( expression, assignableExpression, statement ), 
+            out var complexExtensions, out var singleExtensions 
+        ); 
 
         var complexStatement = OneOf(
             conditionalStatement,
@@ -80,12 +91,6 @@ public partial class XsParser
             OneOf( singleExtensions )
         ).AndSkip( Terms.Char( ';' ) );
 
-        var expressionStatement = OneOf(
-            declaration,
-            assignment,
-            expression
-        ).AndSkip( Terms.Char( ';' ) );
-
         statement.Parser = OneOf(
             complexStatement,
             labelStatement, // colon terminated
@@ -95,19 +100,18 @@ public partial class XsParser
 
         // Create the final parser
 
-        return Between(
-            Always().Then<Expression>( static ( ctx, _ ) =>
+        return XsParsers.Bounded(
+            static ctx =>
             {
                 var (scope, _) = ctx;
                 scope.Push( FrameType.Method );
-                return default;
-            } ),
+            },
             ZeroOrMany( statement ).Then<Expression>( static ( ctx, statements ) =>
             {
                 var (scope, _) = ctx;
                 return ConvertToFinalExpression( statements, scope );
             } ),
-            Always<Expression>().Then<Expression>( static ( ctx, _ ) =>
+            static ctx =>
             {
                 var (scope, _) = ctx;
                 scope.Pop();
@@ -118,9 +122,7 @@ public partial class XsParser
 
                 if ( cursor.Eof == false )
                     throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
-
-                return default;
-            } )
+            } 
         );
     }
 
@@ -190,7 +192,7 @@ public partial class XsParser
         var baseExpression = OneOf(
             newExpression,
             literal,
-            identifier,
+            identifier, //BF ME - reserved words
             groupedExpression,
             lambdaExpression
         ).Named( "base" );
@@ -345,16 +347,16 @@ public partial class XsParser
         };
     }
 
-    private static void GetExtensionParsers( Parser<Expression> expression, Deferred<Expression> statement, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    private static void GetExtensionParsers( ExtensionBinder extensionBinder, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
     {
         complexExtensions = XsConfig.Extensions
             .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( expression, statement ) )
+            .Select( x => x.Parser( extensionBinder ) )
             .ToArray();
 
         singleExtensions = XsConfig.Extensions
             .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( expression, statement ) )
+            .Select( x => x.Parser( extensionBinder ) )
             .ToArray();
     }
 }

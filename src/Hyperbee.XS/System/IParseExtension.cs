@@ -3,6 +3,8 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System;
 
+public record ExtensionBinder( Parser<Expression> ExpressionParser, Parser<Expression> AssignableParser, Deferred<Expression> StatementParser );
+
 public enum ExtensionType
 {
     ComplexStatement,
@@ -12,5 +14,5 @@ public enum ExtensionType
 public interface IParseExtension
 {
     ExtensionType Type { get; }
-    Parser<Expression> Parser( Parser<Expression> expression, Deferred<Expression> statement );
+    Parser<Expression> Parser( ExtensionBinder binder );
 }

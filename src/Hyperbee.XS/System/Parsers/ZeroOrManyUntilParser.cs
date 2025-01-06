@@ -72,4 +72,3 @@ internal static partial class XsParsers
         return new ZeroOrManyUntilParser<T, U>( parser, untilParser );
     }
 }
-
