@@ -94,7 +94,7 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodCallPropertyChaining()
     {
-        var expression = Xs.Parse( 
+        var expression = Xs.Parse(
             """
             var x = new Hyperbee.XS.Tests.TestClass(42);
             x.MethodThis().PropertyThis.MethodValue();
@@ -110,7 +110,7 @@ public class XsParserMethodTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithStaticMethodCallArgs()
     {
-        var expression = Xs.Parse( 
+        var expression = Xs.Parse(
             """
             var x = Hyperbee.XS.Tests.TestClass.StaticAddNumbers(10,32);
             """ );

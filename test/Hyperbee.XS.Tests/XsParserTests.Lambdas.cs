@@ -65,7 +65,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithReferenceArgument()
     {
-        var expression = Xs.Parse( 
+        var expression = Xs.Parse(
             """
             var myLambda = ( Hyperbee.XS.Tests.TestClass x ) => { return x.PropertyValue; };
             var myClass = new Hyperbee.XS.Tests.TestClass(42);
@@ -83,7 +83,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChaining()
     {
-        var expression = Xs.Parse( 
+        var expression = Xs.Parse(
             """
             var myLambda = ( int x ) => { return x + 1; };
             (myLambda( 41 )).ToString();

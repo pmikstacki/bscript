@@ -14,12 +14,12 @@ namespace Hyperbee.XS.Tests;
 public class XsParserExtensions
 {
     public XsParser Xs { get; set; } = new
-    ( 
+    (
         new XsConfig
-        { 
-            References = [Assembly.GetExecutingAssembly()], 
+        {
+            References = [Assembly.GetExecutingAssembly()],
             Extensions = [new ForParseExtension()]
-        } 
+        }
     );
 
     [TestMethod]
