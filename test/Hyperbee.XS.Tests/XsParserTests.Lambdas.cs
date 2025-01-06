@@ -6,11 +6,15 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserLambdaTests
 {
+    public XsParser Xs { get; set; } = new
+    (
+        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+    );
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithResult()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var myLambda = () => 1;
             myLambda();
@@ -27,8 +31,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithArgumentAndResult()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var myLambda = ( int x ) => x;
             myLambda( 10 );
@@ -45,8 +48,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WitStatementArgument()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var myLambda = ( int x ) => { return x + 1; };
             myLambda( 12 );
@@ -63,10 +65,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithReferenceArgument()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse( 
             """
             var myLambda = ( Hyperbee.XS.Tests.TestClass x ) => { return x.PropertyValue; };
             var myClass = new Hyperbee.XS.Tests.TestClass(42);
@@ -84,10 +83,7 @@ public class XsParserLambdaTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChaining()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse( 
             """
             var myLambda = ( int x ) => { return x + 1; };
             (myLambda( 41 )).ToString();

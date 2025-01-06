@@ -6,11 +6,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserLiteralTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Parse_ShouldSucceed_WithIntegerLiteralDefault()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "var x = 12345;" );
+        var expression = Xs.Parse( "var x = 12345;" );
         var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -21,8 +22,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithIntegerLiteral()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "var x = 12345N;" );
+        var expression = Xs.Parse( "var x = 12345N;" );
         var lambda = Lambda<Func<int>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -33,8 +33,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithLongLiteral()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "var x = 12345L;" );
+        var expression = Xs.Parse( "var x = 12345L;" );
         var lambda = Lambda<Func<long>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -45,8 +44,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithFloatLiteral()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "var x = 123.45F;" );
+        var expression = Xs.Parse( "var x = 123.45F;" );
         var lambda = Lambda<Func<float>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -57,8 +55,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithDoubleLiteral()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "var x = 123.45D;" );
+        var expression = Xs.Parse( "var x = 123.45D;" );
         var lambda = Lambda<Func<double>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -69,8 +66,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithDoubleLiteralResult()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "123.45D;" );
+        var expression = Xs.Parse( "123.45D;" );
         var lambda = Lambda<Func<double>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -81,8 +77,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithLiteralMethodCallChaining()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "123.45D.ToString();" );
+        var expression = Xs.Parse( "123.45D.ToString();" );
         var lambda = Lambda<Func<string>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -93,8 +88,7 @@ public class XsParserLiteralTests
     [TestMethod]
     public void Parse_ShouldSucceed_WithLiteralGroupingMethodCallChaining()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse( "(123.45D + 7D).ToString();" );
+        var expression = Xs.Parse( "(123.45D + 7D).ToString();" );
         var lambda = Lambda<Func<string>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();

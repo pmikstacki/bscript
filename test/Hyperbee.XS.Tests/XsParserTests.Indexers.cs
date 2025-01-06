@@ -6,13 +6,15 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserIndexTests
 {
+    public XsParser Xs { get; set; } = new
+    (
+        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+    );
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithIndexResult()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x[42];
@@ -28,10 +30,7 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMultiDimensionalIndexResult()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x[32,10];
@@ -47,10 +46,7 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithIndexChaining()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             new Hyperbee.XS.Tests.TestClass(-1)[42];
             """ );
@@ -65,10 +61,7 @@ public class XsParserIndexTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMethodChainingIndexResult()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             var x = new Hyperbee.XS.Tests.TestClass(-1);
             x.MethodThis()[42];

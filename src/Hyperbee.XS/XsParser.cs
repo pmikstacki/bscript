@@ -18,23 +18,33 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-    private static readonly Parser<Expression> __xs = CreateParser();
+    private readonly Parser<Expression> _xs;
+    private readonly XsConfig _config;
+
+    public XsParser()
+        : this( default )
+    {
+    }
+
+    public XsParser( XsConfig config )
+    {
+        _config = config ?? new XsConfig();
+        _xs = CreateParser( _config );
+    }
 
     // Parse
 
-    public Expression Parse( string script ) => Parse( default, script );
-
-    public Expression Parse( XsConfig config, string script )
+    public Expression Parse( string script )
     {
         var scanner = new Scanner( script );
-        var context = new XsContext( config, scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        var context = new XsContext( _config, scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
 
-        return __xs.Parse( context );
+        return _xs.Parse( context );
     }
 
     // Parsers
 
-    private static Parser<Expression> CreateParser()
+    private static Parser<Expression> CreateParser( XsConfig config )
     {
         var statement = Deferred<Expression>();
 
@@ -67,12 +77,13 @@ public partial class XsParser
 
         var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
 
-        // Compose Statements
+        // Extensions
 
-        GetExtensionParsers(
-            new ExtensionBinder( expression, assignableExpression, statement ),
-            out var complexExtensions, out var singleExtensions
-        );
+        var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+
+        GetExtensionParsers( binder, out var complexExtensions, out var singleExtensions );
+
+        // Compose Statements
 
         var complexStatement = OneOf(
             conditionalStatement,
@@ -279,7 +290,6 @@ public partial class XsParser
             (Terms.Text( "||" ), OrElse),
             (Terms.Text( "??" ), Coalesce)
         ).Named( "expression" );
-
     }
 
     // Helper Parsers
@@ -347,16 +357,16 @@ public partial class XsParser
         };
     }
 
-    private static void GetExtensionParsers( ExtensionBinder extensionBinder, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
+    private static void GetExtensionParsers( ExtensionBinder binder, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
     {
-        complexExtensions = XsConfig.Extensions
+        complexExtensions = binder.Config.Extensions
             .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( extensionBinder ) )
+            .Select( x => x.Parser( binder ) )
             .ToArray();
 
-        singleExtensions = XsConfig.Extensions
+        singleExtensions = binder.Config.Extensions
             .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( extensionBinder ) )
+            .Select( x => x.Parser( binder ) )
             .ToArray();
     }
 }

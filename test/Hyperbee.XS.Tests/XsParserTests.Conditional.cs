@@ -5,11 +5,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserConditionalTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditional()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             if (true)
             {
@@ -32,8 +33,7 @@ public class XsParserConditionalTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditionalAndNoElse()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = "goodbye";
             if (true)
@@ -54,8 +54,7 @@ public class XsParserConditionalTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithConditionalVariable()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 10;
             if ( x == (9 + 1) )

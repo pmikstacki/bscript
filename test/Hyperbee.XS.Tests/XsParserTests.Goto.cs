@@ -5,11 +5,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserGotoTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithGotoStatements()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             label1:
                 var x = 10;

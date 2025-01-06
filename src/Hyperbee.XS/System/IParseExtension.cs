@@ -3,7 +3,12 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System;
 
-public record ExtensionBinder( Parser<Expression> ExpressionParser, Parser<Expression> AssignableParser, Deferred<Expression> StatementParser );
+public record ExtensionBinder( 
+    XsConfig Config,
+    Parser<Expression> ExpressionParser, 
+    Parser<Expression> AssignableParser, 
+    Deferred<Expression> StatementParser 
+);
 
 public enum ExtensionType
 {

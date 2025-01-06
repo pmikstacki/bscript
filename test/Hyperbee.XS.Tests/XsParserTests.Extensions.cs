@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.Collections;
 using Hyperbee.Expressions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -12,23 +13,22 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserExtensions
 {
-    [AssemblyInitialize]
-    public static void AssemblyInitialize( TestContext testContext )
-    {
-        XsConfig.Extensions = new List<IParseExtension>() { new ForParseExtension() };
-    }
+    public XsParser Xs { get; set; } = new
+    ( 
+        new XsConfig
+        { 
+            References = [Assembly.GetExecutingAssembly()], 
+            Extensions = [new ForParseExtension()]
+        } 
+    );
 
     [TestMethod]
     public void Compile_ShouldSucceed_WithExtensions()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             var x = 0;
-            var i = 0;
-            for ( i = 0; i < 10; i++ )
+            for ( var i = 0; i < 10; i++ )
             {
                 x++;
             }
@@ -50,7 +50,7 @@ public class ForParseExtension : IParseExtension
 
     public Parser<Expression> Parser( ExtensionBinder binder )
     {
-        var (expression, assignable, statement) = binder;
+        var (_, expression, assignable, statement) = binder;
 
         return XsParsers.IfIdentifier( "for",
             XsParsers.Bounded(
@@ -75,10 +75,10 @@ public class ForParseExtension : IParseExtension
                 )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
-                    var (scope, _) = ctx;
+                    var (_, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
 
-                    var bodyBlock = Block( /*scope.Variables.EnumerateValues(),*/ body );
+                    var bodyBlock = Block( /*scope.Variables.EnumerateValues( KeyScope.Current ),*/ body );
                     return ExpressionExtensions.For( initializer, test, iteration, bodyBlock );
                 } ),
                 static ctx =>

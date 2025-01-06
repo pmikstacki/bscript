@@ -6,13 +6,15 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserNewExpressionTests
 {
+    public XsParser Xs { get; set; } = new
+    (
+        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+    );
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewExpression()
     {
-        var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-        var parser = new XsParser();
-
-        var expression = parser.Parse( config,
+        var expression = Xs.Parse(
             """
             new Hyperbee.XS.Tests.TestClass(42);
             """ );
@@ -30,10 +32,7 @@ public class XsParserNewExpressionTests
     {
         try
         {
-            var config = new XsConfig { References = [Assembly.GetExecutingAssembly()] };
-            var parser = new XsParser();
-
-            var expression = parser.Parse( config,
+            var expression = Xs.Parse(
                 """
                 new Hyperbee.XS.Tests.TestClass(42).PropertyThis.PropertyValue;
                 """ );
@@ -54,9 +53,7 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewArray()
     {
-        var parser = new XsParser();
-
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             new int[5];
             """ );
@@ -72,9 +69,7 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNewMultiDimensionalArray()
     {
-        var parser = new XsParser();
-
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             new int[2,5];
             """ );
@@ -90,9 +85,7 @@ public class XsParserNewExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithGeneric()
     {
-        var parser = new XsParser();
-
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             new List<int>();
             """ );

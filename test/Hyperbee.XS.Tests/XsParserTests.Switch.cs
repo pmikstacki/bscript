@@ -5,11 +5,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserSwitchTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchCaseOnly()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 3;
             var result = 0;
@@ -37,8 +38,7 @@ public class XsParserSwitchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchDefaultOnly()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 3;
             var result = 0;
@@ -63,8 +63,7 @@ public class XsParserSwitchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchCasesAndDefault()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 2;
             var result = 0;
@@ -95,8 +94,7 @@ public class XsParserSwitchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchFallthroughToDefault()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 99;
             var result = 0;
@@ -127,8 +125,7 @@ public class XsParserSwitchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchMultipleCaseLabels()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 2;
             var result = 0;
@@ -157,8 +154,7 @@ public class XsParserSwitchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithSwitchNestedSwitchStatements()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 1;
             var y = 2;

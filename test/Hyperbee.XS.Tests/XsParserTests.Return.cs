@@ -5,11 +5,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserReturnTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithVoidReturn()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 10;
             if (true)
@@ -29,8 +30,7 @@ public class XsParserReturnTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithIntReturn()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 10;
             if (true)
@@ -52,8 +52,7 @@ public class XsParserReturnTests
     {
         try
         {
-            var parser = new XsParser();
-            var expresison = parser.Parse(
+            Xs.Parse(
                 """
                 var x = 10;
                 if (true)
@@ -76,8 +75,7 @@ public class XsParserReturnTests
     {
         try
         {
-            var parser = new XsParser();
-            parser.Parse(
+            Xs.Parse(
                 """
                 var x = 10;
                 if (true)
@@ -98,8 +96,7 @@ public class XsParserReturnTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithMatchingNestedReturns()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 10;
             if (true)
@@ -122,8 +119,7 @@ public class XsParserReturnTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithReturnInLoop()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var result = 0;
             loop
@@ -144,8 +140,7 @@ public class XsParserReturnTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithReturnInSwitch()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 3;
             switch (x)
@@ -170,8 +165,7 @@ public class XsParserReturnTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVoidReturnInSwitch()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 3;
             switch (x)

@@ -5,11 +5,12 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserTryCatchTests
 {
+    public XsParser Xs { get; } = new();
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithTryCatch()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -34,8 +35,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithTryFinally()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -60,8 +60,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithTryCatchFinally()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -90,8 +89,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldCatchException()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -116,8 +114,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldHandleMultipleCatchBlocks()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -146,8 +143,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithNestedTryCatch()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
@@ -179,8 +175,7 @@ public class XsParserTryCatchTests
     [TestMethod]
     public void Compile_ShouldRethrowException()
     {
-        var parser = new XsParser();
-        var expression = parser.Parse(
+        var expression = Xs.Parse(
             """
             var x = 0;
             try
