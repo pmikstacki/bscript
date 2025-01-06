@@ -73,7 +73,7 @@ public class ForParseExtension : IParseExtension
                         Terms.Char( '}' )
                     )
                 )
-                .Then<Expression>( static (ctx,parts) =>
+                .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
@@ -86,7 +86,7 @@ public class ForParseExtension : IParseExtension
                     var (scope, _) = ctx;
                     scope.Pop();
                 }
-            ) 
+            )
         );
     }
 }

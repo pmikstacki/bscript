@@ -69,10 +69,10 @@ public partial class XsParser
 
         // Compose Statements
 
-        GetExtensionParsers( 
-            new ExtensionBinder( expression, assignableExpression, statement ), 
-            out var complexExtensions, out var singleExtensions 
-        ); 
+        GetExtensionParsers(
+            new ExtensionBinder( expression, assignableExpression, statement ),
+            out var complexExtensions, out var singleExtensions
+        );
 
         var complexStatement = OneOf(
             conditionalStatement,
@@ -122,7 +122,7 @@ public partial class XsParser
 
                 if ( cursor.Eof == false )
                     throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
-            } 
+            }
         );
     }
 
