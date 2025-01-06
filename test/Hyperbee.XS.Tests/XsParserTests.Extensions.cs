@@ -12,8 +12,8 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserExtensions
 {
-    [TestInitialize]
-    public void Initialize()
+    [AssemblyInitialize]
+    public static void AssemblyInitialize( TestContext testContext )
     {
         XsConfig.Extensions = new List<IParseExtension>() { new ForParseExtension() };
     }
