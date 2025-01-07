@@ -11,8 +11,8 @@ public sealed class DependentParser<T1, T2> : Parser<ValueTuple<T1, T2>>
 
     public DependentParser( Parser<T1> parent, Parser<T2> child )
     {
-        _parent = parent ?? throw new ArgumentNullException( nameof(parent) );
-        _child = child ?? throw new ArgumentNullException( nameof(child) );
+        _parent = parent ?? throw new ArgumentNullException( nameof( parent ) );
+        _child = child ?? throw new ArgumentNullException( nameof( child ) );
 
         Name = $"Dependent({parent.Name}, {child.Name})";
     }
