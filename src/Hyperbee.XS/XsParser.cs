@@ -64,7 +64,7 @@ public partial class XsParser
         // Compose Statements
 
         var statements = XsParsers.IdentifierLookup<Expression>();
-        
+
         var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
         var label = LabelParser();
 
@@ -117,10 +117,10 @@ public partial class XsParser
             }
         );
 
-        static KeyParserPair<Expression>[] Extensions( 
-            XsConfig config, 
-            Parser<Expression> expression, 
-            Parser<Expression> assignableExpression, 
+        static KeyParserPair<Expression>[] Extensions(
+            XsConfig config,
+            Parser<Expression> expression,
+            Parser<Expression> assignableExpression,
             Deferred<Expression> statement )
         {
             var binder = new ExtensionBinder( config, expression, assignableExpression, statement );

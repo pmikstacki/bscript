@@ -44,7 +44,7 @@ public class AnswerToEverythingParseExtension : IParseExtension
 
         return new( "answer",
             Always()
-            .AndSkip( Terms.Char(';'))
+            .AndSkip( Terms.Char( ';' ) )
             .Then<Expression>( static ( _, _ ) => Constant( 42 ) )
         );
     }

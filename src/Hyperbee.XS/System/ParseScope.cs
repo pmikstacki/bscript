@@ -88,7 +88,7 @@ public class Frame
     }
 
     public LabelTarget GetOrCreateReturnLabel( Type returnType )
-    { 
+    {
         var currentFrame = this;
 
         while ( currentFrame != null )
