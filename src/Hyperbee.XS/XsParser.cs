@@ -68,20 +68,20 @@ public partial class XsParser
         var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
         var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
 
-        statements.Add( 
+        statements.Add(
             BreakParser(),
             ContinueParser(),
             GotoParser(),
-            ReturnParser( expression ), 
-            ThrowParser( expression ), 
-            ConditionalParser( expression, statement ), 
-            LoopParser( statement ), 
-            TryCatchParser( statement ), 
+            ReturnParser( expression ),
+            ThrowParser( expression ),
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
             SwitchParser( expression, statement )
         );
 
-        statements.Add( 
-            Extensions( binder ) 
+        statements.Add(
+            Extensions( binder )
         );
 
         statement.Parser = OneOf(

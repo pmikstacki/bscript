@@ -14,12 +14,12 @@ public sealed class LookupParser<T> : Parser<T>
     {
         if ( string.IsNullOrWhiteSpace( keyword ) )
         {
-            throw new ArgumentException( "Keyword cannot be null or whitespace.", nameof(keyword) );
+            throw new ArgumentException( "Keyword cannot be null or whitespace.", nameof( keyword ) );
         }
 
         if ( parser == null )
         {
-            throw new ArgumentNullException( nameof(parser) );
+            throw new ArgumentNullException( nameof( parser ) );
         }
 
         _parsers[keyword] = parser;
@@ -29,7 +29,7 @@ public sealed class LookupParser<T> : Parser<T>
     {
         if ( parsers == null )
         {
-            throw new ArgumentNullException( nameof(parsers) );
+            throw new ArgumentNullException( nameof( parsers ) );
         }
 
         foreach ( var (keyword, parser) in parsers )
