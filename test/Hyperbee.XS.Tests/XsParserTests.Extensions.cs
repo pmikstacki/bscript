@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-using Hyperbee.Collections;
 using Hyperbee.Expressions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
