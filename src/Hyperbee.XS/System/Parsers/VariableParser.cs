@@ -35,7 +35,7 @@ internal class VariableParser : Parser<Expression>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<Expression> Variable()
     {

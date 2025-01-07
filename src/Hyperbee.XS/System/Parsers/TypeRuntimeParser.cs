@@ -133,7 +133,7 @@ internal class TypeRuntimeParser : Parser<Type>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<Type> TypeRuntime( bool backtrack = false )
     {

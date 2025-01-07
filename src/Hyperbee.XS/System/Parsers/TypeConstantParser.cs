@@ -32,7 +32,7 @@ internal class TypeConstantParser : Parser<Expression>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<Expression> TypeConstant( bool backtrack = true )
     {

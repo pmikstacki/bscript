@@ -53,7 +53,7 @@ public class ParseScope
 
 public enum FrameType
 {
-    Method,
+    Parent,
     Child
 }
 
@@ -88,12 +88,12 @@ public class Frame
     }
 
     public LabelTarget GetOrCreateReturnLabel( Type returnType )
-    {
+    { 
         var currentFrame = this;
 
         while ( currentFrame != null )
         {
-            if ( currentFrame.FrameType != FrameType.Method )
+            if ( currentFrame.FrameType != FrameType.Parent )
             {
                 currentFrame = currentFrame.Parent;
                 continue;

@@ -72,7 +72,7 @@ public partial class XsParser
                 if ( parts == null )
                     return [];
 
-                scope.Push( FrameType.Method );
+                scope.Push( FrameType.Parent );
 
                 return parts.Select( p =>
                 {

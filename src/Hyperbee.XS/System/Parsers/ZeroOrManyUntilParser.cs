@@ -65,7 +65,7 @@ internal class ZeroOrManyUntilParser<T, U> : Parser<IReadOnlyList<T>>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<IReadOnlyList<T>> ZeroOrManyUntil<T, U>( Parser<T> parser, Parser<U> untilParser )
     {

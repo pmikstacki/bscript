@@ -34,7 +34,7 @@ internal class WhitespaceOrNewLineOrCommentParser : Parser<TextSpan>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<TextSpan> WhitespaceOrNewLineOrComment()
     {

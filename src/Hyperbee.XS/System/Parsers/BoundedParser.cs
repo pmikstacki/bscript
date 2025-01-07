@@ -4,7 +4,7 @@ using Parlot.Fluent;
 using static Parlot.Fluent.Parsers;
 namespace Hyperbee.XS.System.Parsers;
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static Parser<T> Bounded<T>(
         Action<ParseContext> before,

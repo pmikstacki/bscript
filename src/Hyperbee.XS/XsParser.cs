@@ -64,9 +64,9 @@ public partial class XsParser
         // Compose Statements
 
         var statements = XsParsers.IdentifierLookup<Expression>();
-
+        
         var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
-        var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+        var label = LabelParser();
 
         statements.Add(
             BreakParser(),
@@ -81,12 +81,12 @@ public partial class XsParser
         );
 
         statements.Add(
-            Extensions( binder )
+            Extensions( config, expression, assignableExpression, statement )
         );
 
         statement.Parser = OneOf(
+            label,
             statements,
-            LabelParser(), // colon terminated
             expressionStatement
         );
 
@@ -96,7 +96,7 @@ public partial class XsParser
             static ctx =>
             {
                 var (scope, _) = ctx;
-                scope.Push( FrameType.Method );
+                scope.Push( FrameType.Parent );
             },
             ZeroOrMany( statement ).Then<Expression>( static ( ctx, statements ) =>
             {
@@ -117,8 +117,14 @@ public partial class XsParser
             }
         );
 
-        static KeyParserPair<Expression>[] Extensions( ExtensionBinder binder )
+        static KeyParserPair<Expression>[] Extensions( 
+            XsConfig config, 
+            Parser<Expression> expression, 
+            Parser<Expression> assignableExpression, 
+            Deferred<Expression> statement )
         {
+            var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+
             return binder.Config.Extensions
                 .OrderBy( x => x.Type ) // group by type
                 .Select( x => x.CreateParser( binder ) )

@@ -63,7 +63,7 @@ public sealed class LookupParser<T> : Parser<T>
     }
 }
 
-internal static partial class XsParsers
+public static partial class XsParsers
 {
     public static LookupParser<T> IdentifierLookup<T>()
     {
