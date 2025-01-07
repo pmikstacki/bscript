@@ -201,7 +201,7 @@ public partial class XsParser
             identifier, //BF ME - reserved words
             groupedExpression,
             lambdaExpression
-        ).Named( "base" );
+        ).AndAdvance().Named( "base" );
 
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
         var memberAccess = MemberAccessParser( baseExpression, expression );
