@@ -13,7 +13,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> BreakParser()
     {
-        return new ( "break",
+        return new( "break",
             Always()
             .Then<Expression>( static ( ctx, _ ) =>
             {
@@ -31,7 +31,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> ContinueParser()
     {
-        return new ( "continue",
+        return new( "continue",
             Always().Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
@@ -48,7 +48,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> GotoParser()
     {
-        return new ( "goto",
+        return new( "goto",
             Terms.Identifier()
             .Then<Expression>( static ( ctx, labelName ) =>
             {
@@ -71,13 +71,13 @@ public partial class XsParser
 
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
-            } 
+            }
         );
     }
 
     private static KeyParserPair<Expression> ReturnParser( Parser<Expression> expression )
     {
-        return new ( "return",
+        return new( "return",
             ZeroOrOne( expression )
             .Then<Expression>( static ( ctx, returnValue ) =>
             {
@@ -116,7 +116,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-        return new ( "if",
+        return new( "if",
             Between(
                 Terms.Char( '(' ),
                 expression,
@@ -157,7 +157,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> LoopParser( Deferred<Expression> statement )
     {
-        return new ( "loop",
+        return new( "loop",
             Always().Then( ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
@@ -277,7 +277,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
     {
-        return new ( "try",
+        return new( "try",
             Between(
                 Terms.Char( '{' ),
                 ZeroOrMany( statement ),
@@ -352,7 +352,7 @@ public partial class XsParser
                     finallyBlock,
                     catchBlocks
                 );
-            } ) 
+            } )
         );
     }
 }

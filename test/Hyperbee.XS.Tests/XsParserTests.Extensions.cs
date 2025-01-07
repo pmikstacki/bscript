@@ -47,12 +47,12 @@ public class XsParserExtensions
 public class ForParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
-    
+
     public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, assignable, statement) = binder;
 
-        return new ( "for",
+        return new( "for",
             XsParsers.Bounded(
                 static ctx =>
                 {
