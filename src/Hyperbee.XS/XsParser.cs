@@ -52,22 +52,8 @@ public partial class XsParser
 
         var expression = ExpressionParser( statement );
 
-        // Statements
-
-        var conditionalStatement = ConditionalParser( expression, statement );
-        var loopStatement = LoopParser( statement );
-        var tryCatchStatement = TryCatchParser( statement );
-        var switchStatement = SwitchParser( expression, statement );
-
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
-
-        var breakStatement = BreakParser();
-        var continueStatement = ContinueParser();
-        var gotoStatement = GotoParser();
-        var labelStatement = LabelParser();
-        var returnStatement = ReturnParser( expression );
-        var throwStatement = ThrowParser( expression );
 
         var assignableExpression = OneOf(
             declaration,
@@ -75,37 +61,32 @@ public partial class XsParser
             expression
         );
 
-        var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
-
-        // Extensions
-
-        var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
-
-        GetExtensionParsers( binder, out var complexExtensions, out var singleExtensions );
-
         // Compose Statements
 
-        var complexStatement = OneOf(
-            conditionalStatement,
-            loopStatement,
-            tryCatchStatement,
-            switchStatement,
-            OneOf( complexExtensions )
+        var statements = XsParsers.IdentifierLookup<Expression>();
+
+        var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
+        var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+
+        statements.Add( 
+            BreakParser(),
+            ContinueParser(),
+            GotoParser(),
+            ReturnParser( expression ), 
+            ThrowParser( expression ), 
+            ConditionalParser( expression, statement ), 
+            LoopParser( statement ), 
+            TryCatchParser( statement ), 
+            SwitchParser( expression, statement )
         );
 
-        var singleLineStatement = OneOf(
-            breakStatement,
-            continueStatement,
-            gotoStatement,
-            returnStatement,
-            throwStatement,
-            OneOf( singleExtensions )
-        ).AndSkip( Terms.Char( ';' ) );
+        statements.Add( 
+            Extensions( binder ) 
+        );
 
         statement.Parser = OneOf(
-            complexStatement,
-            labelStatement, // colon terminated
-            singleLineStatement,
+            statements,
+            LabelParser(), // colon terminated
             expressionStatement
         );
 
@@ -135,6 +116,14 @@ public partial class XsParser
                     throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
             }
         );
+
+        static KeyParserPair<Expression>[] Extensions( ExtensionBinder binder )
+        {
+            return binder.Config.Extensions
+                .OrderBy( x => x.Type ) // group by type
+                .Select( x => x.CreateParser( binder ) )
+                .ToArray();
+        }
     }
 
     private static Parser<Expression> ExpressionParser( Deferred<Expression> statement )
@@ -355,19 +344,6 @@ public partial class XsParser
             ConstantExpression ce => ce.Value as Type ?? ce.Type,
             Expression => expression.Type
         };
-    }
-
-    private static void GetExtensionParsers( ExtensionBinder binder, out Parser<Expression>[] complexExtensions, out Parser<Expression>[] singleExtensions )
-    {
-        complexExtensions = binder.Config.Extensions
-            .Where( x => x.Type == ExtensionType.ComplexStatement )
-            .Select( x => x.Parser( binder ) )
-            .ToArray();
-
-        singleExtensions = binder.Config.Extensions
-            .Where( x => x.Type == ExtensionType.SingleStatement )
-            .Select( x => x.Parser( binder ) )
-            .ToArray();
     }
 }
 

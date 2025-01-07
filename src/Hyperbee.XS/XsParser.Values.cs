@@ -50,23 +50,22 @@ public partial class XsParser
 
     private static Parser<Expression> DeclarationParser( Parser<Expression> expression )
     {
-        return XsParsers.IfIdentifier( "var",
-            Terms.Identifier()
+        return Terms.Text( "var" )
+            .SkipAnd( Terms.Identifier() )
             .AndSkip( Terms.Char( '=' ) )
             .And( expression )
             .Then<Expression>( static ( ctx, parts ) =>
-                {
-                    var (scope, _) = ctx;
-                    var (ident, right) = parts;
+            {
+                var (scope, _) = ctx;
+                var (ident, right) = parts;
 
-                    var left = ident.ToString()!;
+                var left = ident.ToString()!;
 
-                    var variable = Variable( right.Type, left );
-                    scope.Variables.Add( left, variable );
+                var variable = Variable( right.Type, left );
+                scope.Variables.Add( left, variable );
 
-                    return Assign( variable, right );
-                }
-            )
+                return Assign( variable, right );
+            }
         );
     }
 
@@ -74,8 +73,8 @@ public partial class XsParser
     {
         // TODO: Add optional array initializer
 
-        return XsParsers.IfIdentifier( "new",
-            XsParsers.TypeRuntime()
+        return Terms.Text( "new" )
+            .SkipAnd( XsParsers.TypeRuntime() )
             .And(
                 OneOf(
                     Between(
@@ -123,7 +122,8 @@ public partial class XsParser
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
-            } ) );
+            } 
+        );
     }
 
     private enum ConstructorType

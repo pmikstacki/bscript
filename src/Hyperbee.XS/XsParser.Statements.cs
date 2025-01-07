@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
-using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -12,10 +11,11 @@ public partial class XsParser
 {
     // Terminated Statement Parsers
 
-    private static Parser<Expression> BreakParser()
+    private static KeyParserPair<Expression> BreakParser()
     {
-        return XsParsers.IfIdentifier( "break",
-            Always().Then<Expression>( static ( ctx, _ ) =>
+        return new ( "break",
+            Always()
+            .Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
                 var breakLabel = scope.Frame.BreakLabel;
@@ -25,12 +25,13 @@ public partial class XsParser
 
                 return Break( breakLabel );
             } )
+            .AndSkip( Terms.Char( ';' ) )
         );
     }
 
-    private static Parser<Expression> ContinueParser()
+    private static KeyParserPair<Expression> ContinueParser()
     {
-        return XsParsers.IfIdentifier( "continue",
+        return new ( "continue",
             Always().Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
@@ -41,12 +42,13 @@ public partial class XsParser
 
                 return Continue( continueLabel );
             } )
+            .AndSkip( Terms.Char( ';' ) )
         );
     }
 
-    private static Parser<Expression> GotoParser()
+    private static KeyParserPair<Expression> GotoParser()
     {
-        return XsParsers.IfIdentifier( "goto",
+        return new ( "goto",
             Terms.Identifier()
             .Then<Expression>( static ( ctx, labelName ) =>
             {
@@ -54,6 +56,7 @@ public partial class XsParser
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
             } )
+            .AndSkip( Terms.Char( ';' ) )
         );
     }
 
@@ -68,12 +71,13 @@ public partial class XsParser
 
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
-            } );
+            } 
+        );
     }
 
-    private static Parser<Expression> ReturnParser( Parser<Expression> expression )
+    private static KeyParserPair<Expression> ReturnParser( Parser<Expression> expression )
     {
-        return XsParsers.IfIdentifier( "return",
+        return new ( "return",
             ZeroOrOne( expression )
             .Then<Expression>( static ( ctx, returnValue ) =>
             {
@@ -86,12 +90,13 @@ public partial class XsParser
                     ? Return( returnLabel )
                     : Return( returnLabel, returnValue, returnType );
             } )
+            .AndSkip( Terms.Char( ';' ) )
         );
     }
 
-    private static Parser<Expression> ThrowParser( Parser<Expression> expression )
+    private static KeyParserPair<Expression> ThrowParser( Parser<Expression> expression )
     {
-        return XsParsers.IfIdentifier( "throw",
+        return new( "throw",
             ZeroOrOne( expression )
             .Then<Expression>( static exceptionExpression =>
             {
@@ -103,14 +108,15 @@ public partial class XsParser
 
                 return Throw( exceptionExpression );
             } )
+            .AndSkip( Terms.Char( ';' ) )
         );
     }
 
     // Compound Statement Parsers
 
-    private static Parser<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static KeyParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-        return XsParsers.IfIdentifier( "if",
+        return new ( "if",
             Between(
                 Terms.Char( '(' ),
                 expression,
@@ -149,9 +155,9 @@ public partial class XsParser
         );
     }
 
-    private static Parser<Expression> LoopParser( Deferred<Expression> statement )
+    private static KeyParserPair<Expression> LoopParser( Deferred<Expression> statement )
     {
-        return XsParsers.IfIdentifier( "loop",
+        return new ( "loop",
             Always().Then( ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
@@ -188,9 +194,9 @@ public partial class XsParser
         );
     }
 
-    private static Parser<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static KeyParserPair<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
-        return XsParsers.IfIdentifier( "switch",
+        return new( "switch",
             Always().Then( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
@@ -236,15 +242,9 @@ public partial class XsParser
             } )
         );
 
-        static Sequence<TextSpan, string> CaseUntil()
+        static Parser<string> CaseUntil()
         {
-            return Literals
-                .WhiteSpace( includeNewLines: true )
-                .And(
-                    Terms.Text( "case" )
-                        .Or( Terms.Text( "default" ) )
-                        .Or( Terms.Text( "}" ) )
-                );
+            return Terms.Text( "case" ).Or( Terms.Text( "default" ) ).Or( Terms.Text( "}" ) );
         }
 
         static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
@@ -275,9 +275,9 @@ public partial class XsParser
         }
     }
 
-    private static Parser<Expression> TryCatchParser( Deferred<Expression> statement )
+    private static KeyParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
     {
-        return XsParsers.IfIdentifier( "try",
+        return new ( "try",
             Between(
                 Terms.Char( '{' ),
                 ZeroOrMany( statement ),
@@ -352,7 +352,7 @@ public partial class XsParser
                     finallyBlock,
                     catchBlocks
                 );
-            } )
+            } ) 
         );
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 
 namespace Hyperbee.XS.System;
@@ -12,12 +13,14 @@ public record ExtensionBinder(
 
 public enum ExtensionType
 {
-    ComplexStatement,
-    SingleStatement
+    Complex,
+    Terminated
+    //Binary,
+    //Unary
 }
 
 public interface IParseExtension
 {
     ExtensionType Type { get; }
-    Parser<Expression> Parser( ExtensionBinder binder );
+    KeyParserPair<Expression> CreateParser( ExtensionBinder binder );
 }

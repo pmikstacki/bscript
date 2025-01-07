@@ -107,8 +107,11 @@ public class XsParserSwitchTests
                 case 2:
                     result = 20;
                     break;
-                default:
+                case 3:
                     result = 30;
+                    break;
+                default:
+                    result = 50;
                     break;
             }
 
@@ -119,7 +122,7 @@ public class XsParserSwitchTests
         var compiled = lambda.Compile();
         var result = compiled();
 
-        Assert.AreEqual( 30, result );
+        Assert.AreEqual( 50, result );
     }
 
     [TestMethod]

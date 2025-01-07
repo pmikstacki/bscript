@@ -46,13 +46,13 @@ public class XsParserExtensions
 
 public class ForParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.ComplexStatement;
-
-    public Parser<Expression> Parser( ExtensionBinder binder )
+    public ExtensionType Type => ExtensionType.Complex;
+    
+    public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, assignable, statement) = binder;
 
-        return XsParsers.IfIdentifier( "for",
+        return new ( "for",
             XsParsers.Bounded(
                 static ctx =>
                 {
@@ -73,12 +73,11 @@ public class ForParseExtension : IParseExtension
                         Terms.Char( '}' )
                     )
                 )
-                .Then<Expression>( static ( ctx, parts ) =>
+                .Then<Expression>( static parts =>
                 {
-                    var (_, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
 
-                    var bodyBlock = Block( /*scope.Variables.EnumerateValues( KeyScope.Current ),*/ body );
+                    var bodyBlock = Block( body );
                     return ExpressionExtensions.For( initializer, test, iteration, bodyBlock );
                 } ),
                 static ctx =>
