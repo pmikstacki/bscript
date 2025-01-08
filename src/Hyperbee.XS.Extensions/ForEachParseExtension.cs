@@ -38,7 +38,7 @@ public class ForEachParseExtension : IParseExtension
                     var (elementIdentifer, collection) = parts;
 
                     var elementName = elementIdentifer.ToString()!;
-                    var elementVariable = Variable( 
+                    var elementVariable = Variable(
                         collection.Type.GetElementType(),
                         elementName );
 
