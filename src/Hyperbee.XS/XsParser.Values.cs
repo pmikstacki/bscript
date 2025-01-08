@@ -1,8 +1,5 @@
 ﻿using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
-using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -71,32 +68,52 @@ public partial class XsParser
 
     private static Parser<Expression> NewParser( Parser<Expression> expression )
     {
-        // TODO: Add optional array initializer
+        var objectConstructor =
+            Between(
+                Terms.Char( '(' ),
+                ArgumentsParser( expression ),
+                Terms.Char( ')' )
+            ).Then( static parts =>
+                (ConstructorType.Object, parts, (IReadOnlyList<Expression>) null)
+            );
 
-        return Terms.Text( "new" )
-            .SkipAnd( XsParsers.TypeRuntime() )
+        var arrayConstructor =
+            Between(
+                Terms.Char( '[' ),
+                ZeroOrOne( Separated(
+                    Terms.Char( ',' ),
+                    expression
+                ) ),
+                Terms.Char( ']' )
+            )
             .And(
-                OneOf(
+                ZeroOrOne(
                     Between(
-                        Terms.Char( '(' ),
-                        ArgumentsParser( expression ),
-                        Terms.Char( ')' )
-                    ).Then( static parts => (ConstructorType.Object, parts) ),
-                    Between(
-                        Terms.Char( '[' ),
+                        Terms.Char( '{' ),
                         Separated(
                             Terms.Char( ',' ),
                             expression
                         ),
-                        Terms.Char( ']' )
+                        Terms.Char( '}' )
                     )
-                    //.And( arrayInitializer ) // TODO: Toggle between bounds and init if exists
-                    .Then( static parts => (ConstructorType.ArrayBounds, parts) )
                 )
             )
-            .Then<Expression>( static parts =>
+            .Then( static parts =>
             {
-                var (type, (constructorType, arguments)) = parts;  // TODO: Add initializer
+                var (bounds, initial) = parts;
+
+                return initial == null
+                    ? (ConstructorType.ArrayBounds, bounds, initial)
+                    : (ConstructorType.ArrayInit, bounds, initial);
+            } );
+
+
+        return Terms.Text( "new" )
+            .SkipAnd( XsParsers.TypeRuntime() )
+            .And( OneOf( objectConstructor, arrayConstructor ) )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (type, (constructorType, arguments, initial)) = parts;
 
                 switch ( constructorType )
                 {
@@ -107,9 +124,12 @@ public partial class XsParser
                         return NewArrayBounds( type, arguments );
 
                     case ConstructorType.ArrayInit:
-                        throw new NotImplementedException( "Array initializer not implemented." );
+                        var arrayType = initial[^1].Type;
 
-                    //return NewArrayInit( type, arguments );
+                        if ( type != arrayType && arrayType.IsArray && type != arrayType.GetElementType() )
+                            throw new InvalidOperationException( $"Array of type {type.Name} does not match type {arrayType.Name}." );
+
+                        return NewArrayInit( arrayType, initial );
 
                     case ConstructorType.Object:
                         var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );

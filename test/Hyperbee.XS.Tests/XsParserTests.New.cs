@@ -83,6 +83,49 @@ public class XsParserNewExpressionTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithNewArrayInit()
+    {
+        var parser = new XsParser();
+
+        var expression = parser.Parse(
+            """
+            new int[] {1,2};
+            """ );
+
+        var lambda = Expression.Lambda<Func<int[]>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 2, result.Length );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithNewJaggedArray()
+    {
+        var parser = new XsParser();
+
+        var expression = parser.Parse(
+            """
+            new int[] { new int[] {10,20,30}, new int[] {40,50}, new int[] {60} };
+            """ );
+
+        var lambda = Expression.Lambda<Func<int[][]>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 3, result.Length );
+        Assert.AreEqual( 3, result[0].Length );
+        Assert.AreEqual( 10, result[0][0] );
+        Assert.AreEqual( 2, result[1].Length );
+        Assert.AreEqual( 40, result[1][0] );
+        Assert.AreEqual( 1, result[2].Length );
+        Assert.AreEqual( 60, result[2][0] );
+
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithGeneric()
     {
         var expression = Xs.Parse(
