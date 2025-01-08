@@ -198,25 +198,34 @@ public partial class XsParser
         var baseExpression = OneOf(
             newExpression,
             literal,
-            identifier, //BF ME - reserved words
+            identifier,
             groupedExpression,
             lambdaExpression
-        ).AndAdvance().Named( "base" );
+        ).Named( "base" );
 
         var lambdaInvocation = LambdaInvokeParser( primaryExpression );
-        var memberAccess = MemberAccessParser( baseExpression, expression );
 
         primaryExpression.Parser = OneOf(
             lambdaInvocation,
-            memberAccess,
-            baseExpression
-        ).Named( "primary" );
+            baseExpression.Then( ( ctx, expr ) =>
+            {
+                var extensions = OneOf(
+                    MemberAccessParser( expr, expression )
+                );
 
-        var indexerAccess = IndexerAccessParser( primaryExpression, expression );
-        var accessorExpression = OneOf(
-            indexerAccess,
-            primaryExpression
-        ).Named( "indexer" );
+                return extensions.Parse( ctx ) ?? expr;
+            } )
+            ).Named( "primary" );
+
+        var accessorExpression = primaryExpression.Then( ( ctx, expr ) =>
+        {
+            var extensions = OneOf(
+                IndexerAccessParser( expr, expression )
+            );
+
+            return extensions.Parse( ctx ) ?? expr;
+        } )
+        .Named( "accessor" );
 
         // Prefix and Postfix Expressions
 
