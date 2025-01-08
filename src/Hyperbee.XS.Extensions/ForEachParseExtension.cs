@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.Collections;
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
@@ -35,11 +34,11 @@ public class ForEachParseExtension : IParseExtension
                 ).Then( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
-                    var (elementIdentifer, collection) = parts;
+                    var (elementIdentifier, collection) = parts;
 
-                    var elementName = elementIdentifer.ToString()!;
+                    var elementName = elementIdentifier.ToString()!;
                     var elementVariable = Variable(
-                        collection.Type.GetElementType(),
+                        collection.Type.GetElementType()!,
                         elementName );
 
                     scope.Variables.Add( elementName, elementVariable );
@@ -55,7 +54,6 @@ public class ForEachParseExtension : IParseExtension
                 )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
-                    var (scope, _) = ctx;
                     var ((element, collection), body) = parts;
 
                     var bodyBlock = Block( body );
