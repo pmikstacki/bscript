@@ -32,11 +32,16 @@ public partial class XsParser
                         var (scope, _) = ctx;
                         var returnLabel = scope.Frame.ReturnLabel;
 
-                        return Block(
-                            body.Concat(
-                                [Label( returnLabel, Default( returnLabel.Type ) )]
-                            )
-                        );
+                        if ( returnLabel != null )
+                        {
+                            return Block(
+                                body.Concat(
+                                    [Label( returnLabel, Default( returnLabel.Type ) )]
+                                )
+                            );
+                        }
+
+                        return Block( body );
                     } )
                 )
             )
@@ -51,8 +56,7 @@ public partial class XsParser
                 }
                 finally
                 {
-                    if ( parameters.Length != 0 )
-                        scope.Pop();
+                    scope.Pop();
                 }
             }
         );
@@ -69,10 +73,10 @@ public partial class XsParser
             {
                 var (scope, resolver) = ctx;
 
+                scope.Push( FrameType.Parent );
+
                 if ( parts == null )
                     return [];
-
-                scope.Push( FrameType.Parent );
 
                 return parts.Select( p =>
                 {

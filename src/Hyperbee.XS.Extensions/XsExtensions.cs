@@ -10,6 +10,7 @@ public static class XsExtensions
             new ForEachParseExtension(),
             new ForParseExtension(),
             new WhileParseExtension(),
+            new UsingParseExtension(),
         ];
     }
 }
