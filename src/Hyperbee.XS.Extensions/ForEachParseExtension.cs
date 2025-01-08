@@ -10,15 +10,15 @@ using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
 
-public class ForParseExtension : IParseExtension
+public class ForEachParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
 
     public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (_, expression, _, statement) = binder;
 
-        return new( "for",
+        return new( "foreach",
             XsParsers.Bounded(
                 static ctx =>
                 {
@@ -27,11 +27,25 @@ public class ForParseExtension : IParseExtension
                 },
                 Between(
                     Terms.Char( '(' ),
-                    assignable.AndSkip( Terms.Char( ';' ) )
-                            .And( expression ).AndSkip( Terms.Char( ';' ) )
+                        Terms.Text( "var" )
+                            .SkipAnd( Terms.Identifier() )
+                            .AndSkip( Terms.Text( "in" ) )
                             .And( expression ),
                     Terms.Char( ')' )
-                )
+                ).Then( static ( ctx, parts ) =>
+                {
+                    var (scope, _) = ctx;
+                    var (elementIdentifer, collection) = parts;
+
+                    var elementName = elementIdentifer.ToString()!;
+                    var elementVariable = Variable( 
+                        collection.Type.GetElementType(),
+                        elementName );
+
+                    scope.Variables.Add( elementName, elementVariable );
+
+                    return (elementVariable, collection);
+                } )
                 .And(
                     Between(
                         Terms.Char( '{' ),
@@ -42,19 +56,17 @@ public class ForParseExtension : IParseExtension
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
-                    var ((initializer, test, iteration), body) = parts;
-
-                    var variables = scope.Variables.EnumerateValues( KeyScope.Current ).ToArray();
+                    var ((element, collection), body) = parts;
 
                     var bodyBlock = Block( body );
-                    return ExpressionExtensions.For( variables, initializer, test, iteration, bodyBlock );
+                    return ExpressionExtensions.ForEach( collection, element, bodyBlock );
                 } ),
                 static ctx =>
                 {
                     var (scope, _) = ctx;
                     scope.Pop();
                 }
-            ).Named( "for" )
+            ).Named( "foreach" )
         );
     }
 }

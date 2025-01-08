@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.Collections;
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
@@ -38,7 +37,7 @@ public class WhileParseExtension : IParseExtension
 
                 var bodyBlock = Block( body );
                 return ExpressionExtensions.While( test, bodyBlock );
-            } )
+            } ).Named( "while" )
         );
     }
 }

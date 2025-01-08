@@ -7,6 +7,7 @@ public static class XsExtensions
     public static IReadOnlyCollection<IParseExtension> Extensions()
     {
         return [
+            new ForEachParseExtension(),
             new ForParseExtension(),
             new WhileParseExtension(),
         ];
