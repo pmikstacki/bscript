@@ -192,6 +192,7 @@ public partial class XsParser
 
         var newExpression = NewParser( expression );
         var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
+        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
 
         var baseExpression = OneOf(
             newExpression,
@@ -201,28 +202,20 @@ public partial class XsParser
             lambdaExpression
         ).Named( "base" );
 
-        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
-
         primaryExpression.Parser = OneOf(
             lambdaInvocation,
-            baseExpression.Then( ( ctx, expr ) =>
-            {
-                var extensions = OneOf(
+            baseExpression.AndMaybe( expr =>
+                OneOf(
                     MemberAccessParser( expr, expression )
-                );
+                )
+            )
+        ).Named( "primary" );
 
-                return extensions.Parse( ctx ) ?? expr;
-            } )
-            ).Named( "primary" );
-
-        var accessorExpression = primaryExpression.Then( ( ctx, expr ) =>
-        {
-            var extensions = OneOf(
+        var accessorExpression = primaryExpression.AndMaybe( expr =>
+            OneOf(
                 IndexerAccessParser( expr, expression )
-            );
-
-            return extensions.Parse( ctx ) ?? expr;
-        } )
+            )
+        )
         .Named( "accessor" );
 
         // Prefix and Postfix Expressions

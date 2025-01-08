@@ -39,10 +39,4 @@ public static partial class XsParsers
     {
         return Bounded( _ => { }, parser, after );
     }
-
-    public static Parser<T> Bounded<T>(
-        Parser<T> parser )
-    {
-        return Bounded( _ => { }, parser, _ => { } );
-    }
 }
