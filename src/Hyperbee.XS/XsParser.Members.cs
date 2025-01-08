@@ -11,49 +11,16 @@ public partial class XsParser
 {
     // Member Parsers
 
-    //private static Parser<Expression> IndexerAccessParser( Parser<Expression> baseExpression, Parser<Expression> expression )
-    //{
-    //    return baseExpression
-    //    .And(
-    //        Between(
-    //            Terms.Char( '[' ),
-    //            Separated(
-    //                Terms.Char( ',' ),
-    //                expression
-    //            ),
-    //            Terms.Char( ']' )
-    //        ) )
-    //    .Then<Expression>( static parts =>
-    //    {
-    //        var (target, indexes) = parts;
-
-    //        var indexer = target.Type
-    //            .GetProperties()
-    //            .FirstOrDefault( p => p.GetIndexParameters()
-    //                .Select( x => x.ParameterType )
-    //                .SequenceEqual( indexes.Select( i => i.Type ) ) );
-
-    //        if ( indexer == null )
-    //            throw new InvalidOperationException( $"No indexer found on type '{target.Type}' with {indexes.Count} parameters." );
-
-    //        return Property( target, indexer, [.. indexes] );
-    //    } );
-
-    //}
-
     private static Parser<Expression> IndexerAccessParser( Expression target, Parser<Expression> expression )
     {
-        return //expression.And(
+        return 
             Between(
                 Terms.Char( '[' ),
                 Separated( Terms.Char( ',' ), expression ),
                 Terms.Char( ']' )
             )
-        //)
         .Then<Expression>( indexes =>
         {
-            //var (target, indexes) = parts;
-
             // Retrieve all indexers on the target's type
             var indexers = target.Type.GetProperties()
                 .Where( p => p.GetIndexParameters().Length == indexes.Count )
