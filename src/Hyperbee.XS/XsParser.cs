@@ -192,6 +192,7 @@ public partial class XsParser
 
         var newExpression = NewParser( expression );
         var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
+        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
 
         var baseExpression = OneOf(
             newExpression,
@@ -200,30 +201,6 @@ public partial class XsParser
             groupedExpression,
             lambdaExpression
         ).Named( "base" );
-
-        var lambdaInvocation = LambdaInvokeParser( primaryExpression );
-
-        //primaryExpression.Parser = OneOf(
-        //    lambdaInvocation,
-        //    baseExpression.Then( ( ctx, expr ) =>
-        //    {
-        //        var extensions = OneOf(
-        //            MemberAccessParser( expr, expression )
-        //        );
-
-        //        return extensions.Parse( ctx ) ?? expr;
-        //    } )
-        //    ).Named( "primary" );
-
-        //var accessorExpression = primaryExpression.Then( ( ctx, expr ) =>
-        //{
-        //    var extensions = OneOf(
-        //        IndexerAccessParser( expr, expression )
-        //    );
-
-        //    return extensions.Parse( ctx ) ?? expr;
-        //} )
-        //.Named( "accessor" );
 
         primaryExpression.Parser = OneOf(
             lambdaInvocation,
