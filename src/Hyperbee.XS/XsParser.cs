@@ -11,8 +11,6 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Array access
-// Add Collection Initializers
 // Add Cast As Is Operators
 // Add Async Await
 

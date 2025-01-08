@@ -5,7 +5,7 @@ using static System.Linq.Expressions.Expression;
 namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
-public class ForParseExtensionTests
+public class WhileParseExtensionTests
 {
     public XsParser XsParser { get; set; } = new
     (
@@ -21,10 +21,15 @@ public class ForParseExtensionTests
     {
         var expression = XsParser.Parse(
             """
+            var running = true;
             var x = 0;
-            for ( var i = 0; i < 10; i++ )
-            {
+            while ( running )
+            {    
                 x++;
+                if ( x == 10 )
+                { 
+                    running = false;
+                }
             }
             x;
             """ );
