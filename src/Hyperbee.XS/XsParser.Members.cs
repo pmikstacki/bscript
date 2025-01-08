@@ -13,7 +13,7 @@ public partial class XsParser
 
     private static Parser<Expression> IndexerAccessParser( Expression target, Parser<Expression> expression )
     {
-        return 
+        return
             Between(
                 Terms.Char( '[' ),
                 Separated( Terms.Char( ',' ), expression ),
