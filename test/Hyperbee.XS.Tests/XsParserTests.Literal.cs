@@ -124,5 +124,49 @@ public class XsParserLiteralTests
 
         Assert.AreEqual( "130.45", result );
     }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLongAsForcedInt()
+    {
+        var expression = Xs.Parse( "var x = 12345L as int;" );
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 12345, result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLongAsLong()
+    {
+        var expression = Xs.Parse( "var x = 12345L as? long;" );
+        var lambda = Lambda<Func<long?>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 12345, result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLongAsInt()
+    {
+        var expression = Xs.Parse( "var x = 12345L as? int;" );
+        var lambda = Lambda<Func<int?>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( null, result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithLongIsLong()
+    {
+        var expression = Xs.Parse( "12345L is long;" );
+        var lambda = Lambda<Func<bool>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.IsTrue( result );
+    }
 }
 

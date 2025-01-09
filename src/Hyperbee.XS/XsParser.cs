@@ -11,7 +11,6 @@ namespace Hyperbee.XS;
 
 // Parser TODO
 //
-// Add Cast As Is Operators
 // Add Async Await
 
 public partial class XsParser
@@ -236,6 +235,7 @@ public partial class XsParser
         )
         .Named( "accessor" );
 
+
         // Prefix and Postfix Expressions
 
         var prefixExpression = OneOf(
@@ -274,11 +274,39 @@ public partial class XsParser
                 };
             } );
 
+        // Cast Expressions
+
+        var castExpression = baseExpression
+            .And(
+                OneOf(
+                    Terms.Text( "as?" ),
+                    Terms.Text( "as" ),
+                    Terms.Text( "is" )
+                )
+                .And( typeConstant )
+            )
+            .Then<Expression>( static parts =>
+            {
+                var (expr, (op, expression)) = parts;
+
+                if ( expression is not ConstantExpression constantExpression || constantExpression.Value is not Type type )
+                    throw new InvalidOperationException( $"The '{op}' operator must be followed by a valid type." );
+
+                return op switch
+                {
+                    "as?" => TypeAs( expr, typeof( Nullable<> ).MakeGenericType( type ) ),
+                    "as" => Convert( expr, type ),
+                    "is" => TypeIs( expr, type ),
+                    _ => throw new NotImplementedException(),
+                };
+            } );
+
         // Unary Expressions
 
         var unaryExpression = OneOf(
             prefixExpression,
             postfixExpression,
+            castExpression,
             accessorExpression
         ).Unary(
             (Terms.Char( '!' ), Not),
