@@ -37,16 +37,16 @@ public class XsParserExtensionsTests
 public class AnswerToEverythingParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
+    public string Key => "answer";
 
-    public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
+    public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, assignable, statement) = binder;
 
-        return new( "answer",
-            Always()
+        return Always()
             .AndSkip( Terms.Char( ';' ) )
             .Then<Expression>( static ( _, _ ) => Constant( 42 ) )
-        );
+            .Named( "hitchhiker" );
     }
 }
 

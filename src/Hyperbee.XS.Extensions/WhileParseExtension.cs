@@ -2,7 +2,6 @@
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
-using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -12,12 +11,13 @@ namespace Hyperbee.Xs.Extensions;
 public class WhileParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
+    public string Key => "while";
 
-    public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
+    public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, assignable, statement) = binder;
 
-        return new( "while",
+        return
             Between(
                 Terms.Char( '(' ),
                 expression,
@@ -37,7 +37,6 @@ public class WhileParseExtension : IParseExtension
 
                 var bodyBlock = Block( body );
                 return ExpressionExtensions.While( test, bodyBlock );
-            } ).Named( "while" )
-        );
+            } ).Named( "while" );
     }
 }

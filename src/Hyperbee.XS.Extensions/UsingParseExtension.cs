@@ -2,7 +2,6 @@
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
-using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -12,12 +11,13 @@ namespace Hyperbee.Xs.Extensions;
 public class UsingParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
+    public string Key => "using";
 
-    public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
+    public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, assignable, statement) = binder;
 
-        return new( "using",
+        return
             Between(
                 Terms.Char( '(' ),
                 Terms.Text( "var" )
@@ -52,7 +52,6 @@ public class UsingParseExtension : IParseExtension
 
                 var bodyBlock = Block( body );
                 return ExpressionExtensions.Using( variable, disposable, bodyBlock );
-            } ).Named( "using" )
-        );
+            } ).Named( "using" );
     }
 }

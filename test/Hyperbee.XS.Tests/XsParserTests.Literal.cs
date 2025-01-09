@@ -2,11 +2,40 @@
 
 namespace Hyperbee.XS.Tests;
 
-
 [TestClass]
 public class XsParserLiteralTests
 {
     public XsParser Xs { get; } = new();
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithStringLiteralDefault()
+    {
+        var expression = Xs.Parse( "\"Some String\";" );
+
+        var lambda = Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "Some String", result );
+    }
+
+    [TestMethod]
+    public void Parse_ShouldSucceed_WithCharLiteralDefault()
+    {
+        var expression = Xs.Parse( "var x = 'c';" );
+        var lambda = Lambda<Func<char>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 'c', result );
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( InvalidOperationException ) )]
+    public void Parse_ShouldSucceed_WithInvalidCharLiteral()
+    {
+        Xs.Parse( "var x = 'too many charaters';" );
+    }
 
     [TestMethod]
     public void Parse_ShouldSucceed_WithIntegerLiteralDefault()

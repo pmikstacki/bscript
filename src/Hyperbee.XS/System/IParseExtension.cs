@@ -11,16 +11,20 @@ public record ExtensionBinder(
     Deferred<Expression> StatementParser
 );
 
+[Flags]
 public enum ExtensionType
 {
-    Complex,
-    Terminated
-    //Binary,
-    //Unary
+    None = 0,
+    Literal = 1,
+    Complex = 2,
+    Terminated = 4,
+    Binary = 8,
+    //Unary = 16,
 }
 
 public interface IParseExtension
 {
     ExtensionType Type { get; }
-    KeyParserPair<Expression> CreateParser( ExtensionBinder binder );
+    string Key { get; }
+    Parser<Expression> CreateParser( ExtensionBinder binder );
 }

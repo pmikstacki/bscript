@@ -48,7 +48,7 @@ public partial class XsParser
 
         // Expressions
 
-        var expression = ExpressionParser( statement );
+        var expression = ExpressionParser( statement, config );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
@@ -79,7 +79,7 @@ public partial class XsParser
         );
 
         statements.Add(
-            Extensions( config, expression, assignableExpression, statement )
+            StatementExtensions( config, ExtensionType.Complex | ExtensionType.Terminated, expression, assignableExpression, statement )
         );
 
         statement.Parser = OneOf(
@@ -115,22 +115,24 @@ public partial class XsParser
             }
         );
 
-        static KeyParserPair<Expression>[] Extensions(
-            XsConfig config,
-            Parser<Expression> expression,
-            Parser<Expression> assignableExpression,
-            Deferred<Expression> statement )
+        static KeyParserPair<Expression>[] StatementExtensions(
+                XsConfig config,
+                ExtensionType type,
+                Parser<Expression> expression,
+                Parser<Expression> assignableExpression,
+                Deferred<Expression> statement )
         {
             var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
 
             return binder.Config.Extensions
-                .OrderBy( x => x.Type ) // group by type
-                .Select( x => x.CreateParser( binder ) )
+                .Where( x => type.HasFlag( x.Type ) )
+                .OrderBy( x => x.Type )
+                .Select( x => new KeyParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
                 .ToArray();
         }
     }
 
-    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement )
+    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
     {
         var expression = Deferred<Expression>();
 
@@ -155,7 +157,18 @@ public partial class XsParser
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) )
             .Then<Expression>( static value => Constant( bool.Parse( value ) ) );
 
-        var stringLiteral = Terms.String().Then<Expression>( static value => Constant( value.ToString() ) );
+        var charaterLiteral = Terms.String( StringLiteralQuotes.Single )
+            .Then<Expression>( static value =>
+            {
+                if ( value.Length != 1 )
+                    throw new InvalidOperationException( "Character literal must be a single character." );
+
+                return Constant( value.Span[0] );
+            } );
+
+        var stringLiteral = Terms.String( StringLiteralQuotes.Double )
+            .Then<Expression>( static value => Constant( value.ToString() ) );
+
         var nullLiteral = Terms.Text( "null" ).Then<Expression>( static _ => Constant( null ) );
 
         var literal = OneOf(
@@ -163,9 +176,14 @@ public partial class XsParser
             doubleLiteral,
             floatLiteral,
             integerLiteral,
+            charaterLiteral,
             stringLiteral,
             booleanLiteral,
             nullLiteral
+        ).Or(
+            OneOf(
+                LiteralExtensions( config, expression, statement )
+            )
         ).Named( "literal" );
 
         // Identifiers
@@ -256,7 +274,6 @@ public partial class XsParser
                 };
             } );
 
-
         // Unary Expressions
 
         var unaryExpression = OneOf(
@@ -285,6 +302,21 @@ public partial class XsParser
             (Terms.Text( "||" ), OrElse),
             (Terms.Text( "??" ), Coalesce)
         ).Named( "expression" );
+
+        static Parser<Expression>[] LiteralExtensions(
+            XsConfig config,
+            Parser<Expression> expression,
+            Deferred<Expression> statement )
+        {
+            var binder = new ExtensionBinder( config, expression, null, statement );
+
+            return binder.Config.Extensions
+                .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
+                .OrderBy( x => x.Type )
+                .Select( x => x.CreateParser( binder ) )
+                .ToArray();
+        }
+
     }
 
     // Helper Parsers

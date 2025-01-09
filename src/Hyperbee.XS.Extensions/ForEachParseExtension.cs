@@ -12,12 +12,13 @@ namespace Hyperbee.Xs.Extensions;
 public class ForEachParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Complex;
+    public string Key => "foreach";
 
-    public KeyParserPair<Expression> CreateParser( ExtensionBinder binder )
+    public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
         var (_, expression, _, statement) = binder;
 
-        return new( "foreach",
+        return
             XsParsers.Bounded(
                 static ctx =>
                 {
@@ -64,7 +65,6 @@ public class ForEachParseExtension : IParseExtension
                     var (scope, _) = ctx;
                     scope.Pop();
                 }
-            ).Named( "foreach" )
-        );
+            ).Named( "foreach" );
     }
 }
