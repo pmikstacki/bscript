@@ -105,7 +105,7 @@ public partial class XsParser
                 ArgumentsParser( expression ),
                 Terms.Char( ')' )
             )
-            .Then<Expression>( args => Invoke( targetExpression, args ) 
+            .Then<Expression>( args => Invoke( targetExpression, args )
         );
     }
 

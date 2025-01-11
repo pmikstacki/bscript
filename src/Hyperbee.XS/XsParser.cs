@@ -314,10 +314,10 @@ public partial class XsParser
 
         // Binary Expressions
 
-        return expression.Parser = unaryExpression.LeftAssociative( 
+        return expression.Parser = unaryExpression.LeftAssociative(
             (Terms.Text( "*" ), Multiply),
-            (Terms.Text( "/" ), Divide),  
-            (Terms.Text( "+" ), Add),     
+            (Terms.Text( "/" ), Divide),
+            (Terms.Text( "+" ), Add),
             (Terms.Text( "-" ), Subtract),
             (Terms.Text( "==" ), Equal),
             (Terms.Text( "!=" ), NotEqual),

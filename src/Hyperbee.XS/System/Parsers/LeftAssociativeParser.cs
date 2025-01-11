@@ -39,14 +39,14 @@ public class LeftAssociativeParser<T> : Parser<T>
 
     public LeftAssociativeParser( Parser<T> leftParser, params Func<T, Parser<T>>[] rightFactories )
     {
-        _leftParser = leftParser ?? throw new ArgumentNullException( nameof(leftParser) );
-        _rightFactories = rightFactories ?? throw new ArgumentNullException( nameof(rightFactories) );
+        _leftParser = leftParser ?? throw new ArgumentNullException( nameof( leftParser ) );
+        _rightFactories = rightFactories ?? throw new ArgumentNullException( nameof( rightFactories ) );
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )
     {
         context.EnterParser( this );
-       
+
         if ( !_leftParser.Parse( context, ref result ) )
         {
             context.ExitParser( this );

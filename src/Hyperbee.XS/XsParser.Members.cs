@@ -8,7 +8,7 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-   
+
     // Member Parsers
 
     private static Parser<Expression> IndexerAccessParser( Expression targetExpression, Parser<Expression> expression )
@@ -44,7 +44,7 @@ public partial class XsParser
                 }
 
                 return Expression.Property( targetExpression, indexer, indexes.ToArray() );
-            } 
+            }
         );
     }
 
@@ -53,7 +53,7 @@ public partial class XsParser
         return Terms.Char( '.' )
             .SkipAnd(
                 Terms.Identifier()
-                .And( 
+                .And(
                     ZeroOrOne(
                         ZeroOrOne(
                             Between(
