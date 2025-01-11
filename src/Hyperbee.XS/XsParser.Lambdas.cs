@@ -23,102 +23,89 @@ public partial class XsParser
                 OneOf(
                     primaryExpression,
                     Between(
-                        Terms.Char( '{' ),
-                        ZeroOrMany( statement ),
-                        Terms.Char( '}' )
-                    )
-                    .Then<Expression>( static ( ctx, body ) =>
-                    {
-                        var (scope, _) = ctx;
-                        var returnLabel = scope.Frame.ReturnLabel;
-
-                        if ( returnLabel != null )
+                            Terms.Char( '{' ),
+                            ZeroOrMany( statement ),
+                            Terms.Char( '}' )
+                        )
+                        .Then<Expression>( static ( ctx, body ) =>
                         {
-                            return Block(
-                                body.Concat(
-                                    [Label( returnLabel, Default( returnLabel.Type ) )]
-                                )
-                            );
-                        }
+                            var (scope, _) = ctx;
+                            var returnLabel = scope.Frame.ReturnLabel;
 
-                        return Block( body );
-                    } )
+                            if ( returnLabel != null )
+                            {
+                                return Block(
+                                    body.Concat(
+                                        [Label( returnLabel, Default( returnLabel.Type ) )]
+                                    )
+                                );
+                            }
+
+                            return Block( body );
+                        } )
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>
-            {
-                var (scope, _) = ctx;
-                var (parameters, body) = parts;
+                {
+                    var (scope, _) = ctx;
+                    var (parameters, body) = parts;
 
-                try
-                {
-                    return Lambda( body, parameters );
+                    try
+                    {
+                        return Lambda( body, parameters );
+                    }
+                    finally
+                    {
+                        scope.Pop();
+                    }
                 }
-                finally
-                {
-                    scope.Pop();
-                }
-            }
-        );
+            );
 
         static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
         {
             return ZeroOrOne(
-                Separated(
-                    Terms.Char( ',' ),
-                    identifier.And( Terms.Identifier() )
+                    Separated(
+                        Terms.Char( ',' ),
+                        identifier.And( Terms.Identifier() )
+                    )
                 )
-            )
-            .Then( static ( ctx, parts ) =>
-            {
-                var (scope, resolver) = ctx;
-
-                scope.Push( FrameType.Parent );
-
-                if ( parts == null )
-                    return [];
-
-                return parts.Select( p =>
+                .Then( static ( ctx, parts ) =>
                 {
-                    var (typeName, paramName) = p;
+                    var (scope, resolver) = ctx;
 
-                    var type = resolver.ResolveType( typeName.ToString() )
-                               ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
+                    scope.Push( FrameType.Parent );
 
-                    var name = paramName.ToString()!;
-                    var parameter = Parameter( type, name );
+                    if ( parts == null )
+                        return [];
 
-                    scope.Variables.Add( name, parameter );
+                    return parts.Select( p =>
+                    {
+                        var (typeName, paramName) = p;
 
-                    return parameter;
+                        var type = resolver.ResolveType( typeName.ToString() )
+                                   ?? throw new InvalidOperationException( $"Unknown type: {typeName}." );
 
-                } ).ToArray();
-            } );
+                        var name = paramName.ToString()!;
+                        var parameter = Parameter( type, name );
+
+                        scope.Variables.Add( name, parameter );
+
+                        return parameter;
+
+                    } ).ToArray();
+                } );
         }
     }
 
-    private static Parser<Expression> LambdaInvokeParser( Parser<Expression> primaryExpression )
+    private static Parser<Expression> LambdaInvokeParser( Expression targetExpression, Parser<Expression> expression )
     {
-        return Terms.Identifier()
-            .And(
-                Between(
-                    Terms.Char( '(' ),
-                    ArgumentsParser( primaryExpression ),
-                    Terms.Char( ')' )
-                )
+        return Between(
+                Terms.Char( '(' ),
+                ArgumentsParser( expression ),
+                Terms.Char( ')' )
             )
-            .Then<Expression>( static ( ctx, parts ) =>
-            {
-                var (scope, _) = ctx;
-                var (targetName, invocationArguments) = parts;
-
-                var targetExpression = scope.LookupVariable( targetName );
-
-                return Invoke(
-                    targetExpression,
-                    invocationArguments
-                );
-            } );
+            .Then<Expression>( args => Invoke( targetExpression, args )
+        );
     }
 }
 
