@@ -218,17 +218,6 @@ public partial class XsParser
             lambdaExpression
         ).Named( "base" );
 
-        //primaryExpression.Parser = OneOf(
-        //    primaryExpression.AndMaybe( expr =>
-        //        OneOf(
-        //            MemberAccessParser( expr, expression ),
-        //            LambdaInvokeParser( expr, expression ),
-        //            IndexerAccessParser( expr, expression )
-        //        )
-        //    ),
-        //    baseExpression
-        //).Named( "primary" );
-
         primaryExpression.Parser = baseExpression.LeftAssociative(
             left => MemberAccessParser( left, expression ),
             left => LambdaInvokeParser( left, expression ),

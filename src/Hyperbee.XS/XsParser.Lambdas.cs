@@ -96,7 +96,6 @@ public partial class XsParser
                 } );
         }
     }
-    //Expression baseExpression, Parser<Expression> expression 
 
     private static Parser<Expression> LambdaInvokeParser( Expression targetExpression, Parser<Expression> expression )
     {
@@ -108,29 +107,5 @@ public partial class XsParser
             .Then<Expression>( args => Invoke( targetExpression, args )
         );
     }
-
-    //private static Parser<Expression> LambdaInvokeParser( Parser<Expression> primaryExpression )
-    //{
-    //    return Terms.Identifier()
-    //        .And(
-    //            Between(
-    //                Terms.Char( '(' ),
-    //                ArgumentsParser( primaryExpression ),
-    //                Terms.Char( ')' )
-    //            )
-    //        )
-    //        .Then<Expression>( static ( ctx, parts ) =>
-    //        {
-    //            var (scope, _) = ctx;
-    //            var (targetName, invocationArguments) = parts;
-
-    //            var targetExpression = scope.LookupVariable( targetName );
-
-    //            return Invoke(
-    //                targetExpression,
-    //                invocationArguments
-    //            );
-    //        } );
-    //}
 }
 

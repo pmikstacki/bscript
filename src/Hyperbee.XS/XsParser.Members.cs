@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
@@ -8,7 +8,6 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-
     // Member Parsers
 
     private static Parser<Expression> IndexerAccessParser( Expression targetExpression, Parser<Expression> expression )
@@ -88,7 +87,9 @@ public partial class XsParser
                     if ( method == null )
                         throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." );
 
-                    return Expression.Call( targetExpression, method, args );
+                    return method.IsStatic
+                        ? Expression.Call( method, args )
+                        : Expression.Call( targetExpression, method, args );
                 }
 
                 // property or field

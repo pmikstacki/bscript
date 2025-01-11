@@ -63,18 +63,11 @@ public class LeftAssociativeParser<T> : Parser<T>
             foreach ( var factory in _rightFactories )
             {
                 var rightParser = factory( currentResult );
-                var combinedParser = rightParser.And( _leftParser )
-                    .Then( ( _, parts ) =>
-                    {
-                        var (right, _) = parts;
-                        return right; // Use the result of the right parser for the new left
-                    } );
+                var rightResult = new ParseResult<T>();
 
-                var combinedResult = new ParseResult<T>();
-
-                if ( combinedParser.Parse( context, ref combinedResult ) )
+                if ( rightParser.Parse( context, ref rightResult ) )
                 {
-                    currentResult = combinedResult.Value;
+                    currentResult = rightResult.Value;
                     matched = true;
                     break;
                 }
