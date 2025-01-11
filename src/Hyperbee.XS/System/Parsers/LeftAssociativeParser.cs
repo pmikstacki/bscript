@@ -53,7 +53,7 @@ public class LeftAssociativeParser<T> : Parser<T>
             return false;
         }
 
-        T currentResult = result.Value;
+        T leftResult = result.Value;
         var start = result.Start;
 
         while ( true )
@@ -62,12 +62,12 @@ public class LeftAssociativeParser<T> : Parser<T>
 
             foreach ( var factory in _rightFactories )
             {
-                var rightParser = factory( currentResult );
+                var rightParser = factory( leftResult );
                 var rightResult = new ParseResult<T>();
 
                 if ( rightParser.Parse( context, ref rightResult ) )
                 {
-                    currentResult = rightResult.Value;
+                    leftResult = rightResult.Value;
                     matched = true;
                     break;
                 }
@@ -77,7 +77,7 @@ public class LeftAssociativeParser<T> : Parser<T>
                 break;
         }
 
-        result.Set( start, context.Scanner.Cursor.Position.Offset, currentResult );
+        result.Set( start, context.Scanner.Cursor.Position.Offset, leftResult );
         context.ExitParser( this );
         return true;
     }
