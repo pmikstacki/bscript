@@ -41,7 +41,7 @@ public class AnswerToEverythingParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (config, expression, assignable, statement) = binder;
 
         return Always()
             .AndSkip( Terms.Char( ';' ) )
