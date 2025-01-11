@@ -2,120 +2,109 @@
 using System.Reflection;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
-using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
 
 public partial class XsParser
 {
+   
     // Member Parsers
 
-    private static Parser<Expression> IndexerAccessParser( Expression target, Parser<Expression> expression )
+    private static Parser<Expression> IndexerAccessParser( Expression targetExpression, Parser<Expression> expression )
     {
-        return
-            Between(
+        return Between(
                 Terms.Char( '[' ),
                 Separated( Terms.Char( ',' ), expression ),
                 Terms.Char( ']' )
             )
-        .Then<Expression>( indexes =>
-        {
-            // Retrieve all indexers on the target's type
-            var indexers = target.Type.GetProperties()
-                .Where( p => p.GetIndexParameters().Length == indexes.Count )
-                .ToArray();
-
-            if ( indexers.Length == 0 )
+            .Then<Expression>( indexes =>
             {
-                throw new InvalidOperationException(
-                    $"No indexers found on type '{target.Type}' with {indexes.Count} parameters." );
-            }
+                var indexers = targetExpression.Type.GetProperties()
+                    .Where( p => p.GetIndexParameters().Length == indexes.Count )
+                    .ToArray();
 
-            // Find the best match based on parameter types
-            var indexer = indexers.FirstOrDefault( p =>
-                p.GetIndexParameters()
-                    .Select( param => param.ParameterType )
-                    .SequenceEqual( indexes.Select( i => i.Type ) ) );
+                if ( indexers.Length == 0 )
+                {
+                    throw new InvalidOperationException(
+                        $"No indexers found on type '{targetExpression.Type}' with {indexes.Count} parameters." );
+                }
 
-            if ( indexer == null )
-            {
-                throw new InvalidOperationException(
-                    $"No matching indexer found on type '{target.Type}' with parameter types: " +
-                    $"{string.Join( ", ", indexes.Select( i => i.Type.Name ) )}." );
-            }
+                // Find the best match based on parameter types
+                var indexer = indexers.FirstOrDefault( p =>
+                    p.GetIndexParameters()
+                        .Select( param => param.ParameterType )
+                        .SequenceEqual( indexes.Select( i => i.Type ) ) );
 
-            // Generate the property access expression
-            return Expression.Property( target, indexer, indexes.ToArray() );
-        } );
+                if ( indexer == null )
+                {
+                    throw new InvalidOperationException(
+                        $"No matching indexer found on type '{targetExpression.Type}' with parameter types: " +
+                        $"{string.Join( ", ", indexes.Select( i => i.Type.Name ) )}." );
+                }
+
+                return Expression.Property( targetExpression, indexer, indexes.ToArray() );
+            } 
+        );
     }
 
-
-    private static Parser<Expression> MemberAccessParser( Expression baseExpression, Parser<Expression> expression )
+    private static Parser<Expression> MemberAccessParser( Expression targetExpression, Parser<Expression> expression )
     {
         return Terms.Char( '.' )
             .SkipAnd(
-                Separated(
-                    Terms.Char( '.' ),
-                    Terms.Identifier()
-                        .And(
-                            ZeroOrOne(
-                                Between(
-                                    Terms.Char( '<' ),
-                                    TypeArgsParser(),
-                                    Terms.Char( '>' )
-                                )
+                Terms.Identifier()
+                .And( 
+                    ZeroOrOne(
+                        ZeroOrOne(
+                            Between(
+                                Terms.Char( '<' ),
+                                TypeArgsParser(),
+                                Terms.Char( '>' )
                             )
                         )
                         .And(
-                            ZeroOrOne(
-                                Between(
-                                    Terms.Char( '(' ),
-                                    ArgumentsParser( expression ),
-                                    Terms.Char( ')' )
-                                )
+                            Between(
+                                Terms.Char( '(' ),
+                                ArgumentsParser( expression ),
+                                Terms.Char( ')' )
                             )
                         )
+                    )
                 )
             )
-            .Then( accesses =>
+            .Then<Expression>( parts =>
             {
-                var current = baseExpression;
+                var (memberName, (typeArgs, args)) = parts;
 
-                foreach ( var (memberName, typeArgs, args) in accesses )
+                var type = ConvertToType( targetExpression );
+                var name = memberName.ToString()!;
+
+                // method
+
+                if ( args != null )
                 {
-                    var type = ConvertToType( current );
-                    var name = memberName.ToString()!;
+                    var method = TypeResolver.FindMethod( type, name, typeArgs, args );
 
-                    if ( args != null )
-                    {
-                        // Resolve method call
-                        var methodInfo = TypeResolver.FindMethod( type, name, typeArgs, args );
+                    if ( method == null )
+                        throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." );
 
-                        current = methodInfo?.IsStatic switch
-                        {
-                            true => Call( methodInfo, args.ToArray() ),
-                            false => Call( current, methodInfo, args.ToArray() ),
-                            null => throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." )
-                        };
-                    }
-                    else
-                    {
-                        // Resolve property or field
-                        const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-                        var member = current.Type.GetMember( name, BindingAttr ).FirstOrDefault();
-
-                        current = member?.MemberType switch
-                        {
-                            MemberTypes.Property => Property( current, (PropertyInfo) member ),
-                            MemberTypes.Field => Field( current, (FieldInfo) member ),
-                            null => throw new InvalidOperationException( $"Member '{name}' not found on type '{current.Type}'." ),
-                            _ => throw new InvalidOperationException( $"Unsupported member type: {member.MemberType}." )
-                        };
-                    }
+                    return Expression.Call( targetExpression, method, args );
                 }
 
-                return current;
+                // property or field
+
+                const BindingFlags BindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+                var member = type.GetMember( name, BindingAttr ).FirstOrDefault();
+
+                if ( member == null )
+                    throw new InvalidOperationException( $"Member '{name}' not found on type '{type}'." );
+
+                return member switch
+                {
+                    PropertyInfo property => Expression.Property( targetExpression, property ),
+                    FieldInfo field => Expression.Field( targetExpression, field ),
+                    _ => throw new InvalidOperationException( $"Member '{name}' is not a property or field." )
+                };
             } );
     }
 }
