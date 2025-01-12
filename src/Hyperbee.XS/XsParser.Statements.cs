@@ -242,17 +242,14 @@ public partial class XsParser
             } )
         );
 
-        static Parser<string> CaseUntil()
-        {
-            return Terms.Text( "case" ).Or( Terms.Text( "default" ) ).Or( Terms.Text( "}" ) );
-        }
-
         static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
         {
             return Terms.Text( "case" )
                 .SkipAnd( expression )
                 .AndSkip( Terms.Char( ':' ) )
-                .And( XsParsers.ZeroOrManyUntil( statement, CaseUntil() ) )
+                .And( 
+                    ZeroOrMany( statement.StopBefore( EndCase() ) ) 
+                ) 
                 .Then( static parts =>
                 {
                     var (testExpression, statements) = parts;
@@ -272,6 +269,11 @@ public partial class XsParser
                     var body = ConvertToSingleExpression( statements );
                     return body;
                 } );
+        }
+
+        static Parser<string> EndCase()
+        {
+            return Terms.Text( "case" ).Or( Terms.Text( "default" ) ).Or( Terms.Text( "}" ) );
         }
     }
 
