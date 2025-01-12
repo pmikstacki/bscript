@@ -31,8 +31,8 @@ public class StopBeforeParser<T, U> : Parser<T>
 
     public StopBeforeParser( Parser<T> innerParser, Parser<U> stoppingCondition )
     {
-        _innerParser = innerParser ?? throw new ArgumentNullException( nameof(innerParser) );
-        _stoppingCondition = stoppingCondition ?? throw new ArgumentNullException( nameof(stoppingCondition) );
+        _innerParser = innerParser ?? throw new ArgumentNullException( nameof( innerParser ) );
+        _stoppingCondition = stoppingCondition ?? throw new ArgumentNullException( nameof( stoppingCondition ) );
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )
