@@ -9,15 +9,16 @@ nav_order: 3
 
 | Type      | Suffix | Example              |
 | --------- | ------ | -------------------- |
-| `int`     | `n`    | `let x = 42n`        |
-| `float`   | `f`    | `let pi = 3.14f`     |
-| `double`  | `d`    | `let e = 2.718d`     |
-| `long`    | `l`    | `let big = 10000l`   |
-| `short`   | `s`    | `let small = 123s`   |
-| `decimal` | `m`    | `let price = 19.99m` |
-| `string`  | N/A    | `let name = "hello"` |
-| `bool`    | N/A    | `let flag = true`    |
-| `null`    | N/A    | `let value = null`   |
+| `int`     | `n`    | `var x = 42n`        |
+| `float`   | `f`    | `var pi = 3.14f`     |
+| `double`  | `d`    | `var e = 2.718d`     |
+| `long`    | `l`    | `var big = 10000l`   |
+| `short`   | `s`    | `var small = 123s`   |
+| `decimal` | `m`    | `var price = 19.99m` |
+| `string`  | N/A    | `var name = "hello"` |
+| `char`    | N/A    | `var c = 'x`         |
+| `bool`    | N/A    | `var flag = true`    |
+| `null`    | N/A    | `var value = null`   |
 
 ### **Type Promotion Rules**
 

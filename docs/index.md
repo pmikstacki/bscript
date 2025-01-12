@@ -5,25 +5,15 @@ nav_order: 1
 ---
 # e***X***pression***S***cript (***XS***) :rocket:
 
-e***X***pression***S***cript (***XS***) is a minimalist scripting language designed to
-simplify c# Expression Trees.
+ExpressionScript (**XS**) is a minimalist scripting language designed to align directly with .NET Expression Trees. 
+Its purpose is to simplify the creation, evaluation, and manipulation of expressions by offering a scripting syntax 
+that mirrors Expression Tree constructs.
 
-## Summary of Objectives
+### **Key Features**
 
-## Summary of Objectives
-
-1. **Map directly to `System.Linq.Expressions`**:
-   - Constructs in XS align conceptually and functionally with `System.Linq.Expressions`.
-2. **Simplify Expression Tree Creation**:
-   - Avoid manually building expression trees by providing an intuitive scripting interface.
-3. **Support All Expression Types**:
-   - Fully support constructs like variables, blocks, conditionals, null-coalescing, method calls, loops, and try-catch.
-4. **Extensibility**:
-   - Allow custom expressions to plug into the language syntax.
-5. **Type Safety**:
-   - Provide clear type inference and explicit type promotion rules.
-6. **Readable and Writable Expressions**:
-   - Allow reverse generation of XS code from existing expression trees.
+1. **Alignment with Expression Trees**: XS constructs map to corresponding .NET Expression Tree constructs.
+2. **Simplified Syntax**: Write expression trees using a clean scripting language.
+3. **Extensibility**: Extend the language with custom parsers for specific domain needs.
 
 ## Credits
 

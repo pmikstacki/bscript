@@ -3,6 +3,11 @@ layout: default
 title: Grammar
 nav_order: 5
 ---
+---
+layout: default
+title: Grammar
+nav_order: 5
+---
 # Grammar
 
 ## ABNF Grammar Specification
@@ -34,7 +39,7 @@ expression-statement = declaration
 
 label-statement     = identifier ":"
 
-; Methods (Not Yet Implemented)
+; Methods
 method              = "def" identifier "(" [ parameter-list ] ")" block
 
 ; Declarations
@@ -53,12 +58,16 @@ expression          = literal
                     / new-expression
                     / lambda-expression
                     / method-call
+                    / string-interpolation
+                    / cast-expression
+
+cast-expression     = primary-expression ("is" typename / "as" typename / "as?" typename)
 
 grouped-expression  = "(" expression ")"
 
 ; Literals
 literal             = integer-literal / float-literal / double-literal
-                    / long-literal / string-literal / boolean-literal / "null"
+                    / long-literal / string-literal / boolean-literal / char-literal / "null"
 
 integer-literal     = DIGIT1 *(DIGIT) ["N"]
 float-literal       = DIGIT1 *(DIGIT) "." *(DIGIT) "F"
@@ -66,9 +75,15 @@ double-literal      = DIGIT1 *(DIGIT) "." *(DIGIT) "D"
 long-literal        = DIGIT1 *(DIGIT) "L"
 string-literal      = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
 boolean-literal     = "true" / "false"
+char-literal        = SQUOTE %x20-7E SQUOTE
+
+; String Interpolation
+string-interpolation = backtick *( interpolation-content ) backtick
+interpolation-content = (%x20-7E / "{" expression "}")
+backtick           = %x60
 
 ; Unary Expressions
-unary-expression    = ("!" / "-") primary-expression
+unary-expression    = ("!" / "-" / "++" / "--") primary-expression
 
 ; Binary Expressions
 binary-expression   = primary-expression binary-operator primary-expression
@@ -83,16 +98,20 @@ primary-expression  = literal
 ; New Expression
 new-expression      = "new" typename "(" [ argument-list ] ")"
 
-; Lambda Expressions (Not Yet Implemented)
-lambda-expression   = "(" [ parameter-list ] ")" "=>" expression
+; Lambda Expressions
+lambda-expression   = "lambda" "(" [ parameter-list ] ")" block
 parameter-list      = identifier *( "," identifier )
 
-; Method Calls (Not Yet Implemented)
+; Method Calls
 method-call         = identifier "(" [ argument-list ] ")"
+                    / generic-method-call
+
+generic-method-call = identifier "<" type-argument-list ">" "(" [ argument-list ] ")"
+type-argument-list  = typename *( "," typename )
 
 ; Control Flow
 conditional         = "if" "(" expression ")" block [ "else" block ]
-loop                = "loop" block
+loop                = ("loop" / "while" / "for" / "foreach") block
 break-statement     = "break"
 continue-statement  = "continue"
 goto-statement      = "goto" identifier
@@ -113,7 +132,8 @@ block               = "{" *statement "}"
 
 ; Identifiers and Typenames
 identifier          = ALPHA *(ALPHA / DIGIT / "_")
-typename            = identifier *( "." identifier )
+typename            = identifier *( "." identifier ) [generic-arguments]
+generic-arguments   = "<" typename *( "," typename ) ">"
 
 ; Arguments
 argument-list       = expression *( "," expression )
@@ -123,4 +143,7 @@ DIGIT               = %x30-39
 DIGIT1              = %x31-39
 ALPHA               = %x41-5A / %x61-7A
 DQUOTE              = %x22
+SQUOTE              = %x27
+
 ```
+
