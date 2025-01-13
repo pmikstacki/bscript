@@ -1,8 +1,9 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
+using static Hyperbee.XS.System.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
@@ -247,9 +248,9 @@ public partial class XsParser
             return Terms.Text( "case" )
                 .SkipAnd( expression )
                 .AndSkip( Terms.Char( ':' ) )
-                .And(
-                    ZeroOrMany( XsParsers.BreakOn( EndCase(), statement ) )
-                )
+                .And( 
+                    ZeroOrMany( BreakOn( EndCase(), statement ) ) 
+                ) 
                 .Then( static parts =>
                 {
                     var (testExpression, statements) = parts;

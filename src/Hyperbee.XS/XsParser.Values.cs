@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
+using static Hyperbee.XS.System.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
@@ -103,13 +103,13 @@ public partial class XsParser
                 var (bounds, initial) = parts;
 
                 return initial == null
-                    ? (ConstructorType.ArrayBounds, bounds, initial)
+                    ? (ConstructorType.ArrayBounds, bounds, null)
                     : (ConstructorType.ArrayInit, bounds, initial);
             } );
 
 
         return Terms.Text( "new" )
-            .SkipAnd( XsParsers.TypeRuntime() )
+            .SkipAnd( TypeRuntime() )
             .And( OneOf( objectConstructor, arrayConstructor ) )
             .Then<Expression>( static ( ctx, parts ) =>
             {

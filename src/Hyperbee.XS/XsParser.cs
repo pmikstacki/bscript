@@ -5,6 +5,7 @@ using Hyperbee.XS.System.Parsers;
 using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
+using static Hyperbee.XS.System.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
@@ -34,7 +35,7 @@ public partial class XsParser
     public Expression Parse( string script )
     {
         var scanner = new Scanner( script );
-        var context = new XsContext( _config, scanner ) { WhiteSpaceParser = XsParsers.WhitespaceOrNewLineOrComment() };
+        var context = new XsContext( _config, scanner ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
 
         return _xs.Parse( context );
     }
@@ -60,7 +61,7 @@ public partial class XsParser
 
         // Compose Statements
 
-        var statements = XsParsers.IdentifierLookup<Expression>();
+        var statements = IdentifierLookup<Expression>();
 
         var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
         var label = LabelParser();
@@ -89,7 +90,7 @@ public partial class XsParser
 
         // Create the final parser
 
-        return XsParsers.Bounded(
+        return Bounded(
             static ctx =>
             {
                 var (scope, _) = ctx;
@@ -187,8 +188,8 @@ public partial class XsParser
 
         // Identifiers
 
-        var variable = XsParsers.Variable();
-        var typeConstant = XsParsers.TypeConstant();
+        var variable = Variable();
+        var typeConstant = TypeConstant();
 
         var identifier = OneOf(
             variable,
@@ -344,7 +345,7 @@ public partial class XsParser
 
     private static Parser<IReadOnlyList<Type>> TypeArgsParser()
     {
-        return ZeroOrOne( Separated( Terms.Char( ',' ), XsParsers.TypeRuntime() ) )
+        return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ) )
             .Then( static typeArgs => typeArgs ?? Array.Empty<Type>() );
     }
 
