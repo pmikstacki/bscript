@@ -8,7 +8,7 @@ public sealed class CharQuotedLiteral : Parser<char>
 {
     private readonly StringLiteralQuotes _quotes;
 
-    public CharQuotedLiteral( StringLiteralQuotes quotes)
+    public CharQuotedLiteral( StringLiteralQuotes quotes )
     {
         _quotes = quotes;
         Name = "CharLiteral";
@@ -25,7 +25,7 @@ public sealed class CharQuotedLiteral : Parser<char>
         {
             StringLiteralQuotes.Single => scanner.ReadSingleQuotedString(),
             StringLiteralQuotes.Double => scanner.ReadDoubleQuotedString(),
-            _ => false 
+            _ => false
         };
 
         var end = scanner.Cursor.Offset;
