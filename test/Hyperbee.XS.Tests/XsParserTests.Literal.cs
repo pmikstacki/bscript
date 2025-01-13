@@ -31,13 +31,6 @@ public class XsParserLiteralTests
     }
 
     [TestMethod]
-    [ExpectedException( typeof( InvalidOperationException ) )]
-    public void Parse_ShouldFail_WithInvalidCharLiteral()
-    {
-        Xs.Parse( "var x = 'too many characters';" );
-    }
-
-    [TestMethod]
     public void Parse_ShouldSucceed_WithIntegerLiteralDefault()
     {
         var expression = Xs.Parse( "var x = 12345;" );

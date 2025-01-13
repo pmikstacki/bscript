@@ -157,14 +157,8 @@ public partial class XsParser
         var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) )
             .Then<Expression>( static value => Constant( bool.Parse( value ) ) );
 
-        var charaterLiteral = Terms.String( StringLiteralQuotes.Single )
-            .Then<Expression>( static value =>
-            {
-                if ( value.Length != 1 )
-                    throw new InvalidOperationException( "Character literal must be a single character." );
-
-                return Constant( value.Span[0] );
-            } );
+        var characterLiteral = Terms.CharQuoted( StringLiteralQuotes.Single )
+            .Then<Expression>( static value => Constant( value ) );
 
         var stringLiteral = Terms.String( StringLiteralQuotes.Double )
             .Then<Expression>( static value => Constant( value.ToString() ) );
@@ -176,7 +170,7 @@ public partial class XsParser
             doubleLiteral,
             floatLiteral,
             integerLiteral,
-            charaterLiteral,
+            characterLiteral,
             stringLiteral,
             booleanLiteral,
             nullLiteral
