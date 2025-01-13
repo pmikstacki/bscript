@@ -20,6 +20,8 @@ public partial class XsParser
                         .Or( Terms.Text( "-=" ) )
                         .Or( Terms.Text( "*=" ) )
                         .Or( Terms.Text( "/=" ) )
+                        .Or( Terms.Text( "%=" ) )
+                        .Or( Terms.Text( "^=" ) )
                         .Or( Terms.Text( "??=" ) )
                 )
             )
@@ -38,6 +40,8 @@ public partial class XsParser
                         "-=" => SubtractAssign( left, right ),
                         "*=" => MultiplyAssign( left, right ),
                         "/=" => DivideAssign( left, right ),
+                        "%=" => ModuloAssign( left, right ),
+                        "^=" => SafePowerAssign( left, right ),
                         "??=" => Assign( left, Coalesce( left, right ) ),
                         _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
                     };

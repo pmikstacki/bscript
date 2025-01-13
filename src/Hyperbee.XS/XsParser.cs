@@ -13,8 +13,6 @@ namespace Hyperbee.XS;
 // Parser TODO
 //
 // Add Async Await
-//
-// right-associative ^ and ^= operators
 // var (a,b) = (1, 2);
 
 public partial class XsParser
@@ -299,11 +297,18 @@ public partial class XsParser
             (Terms.Char( '-' ), Negate)
         ).Named( "unary" );
 
+        // Right-Associative Power Operator
+
+        var powerExpression = unaryExpression.RightAssociative(
+            (Terms.Text( "^" ), SafePower)
+        );
+
         // Binary Expressions
 
-        return expression.Parser = unaryExpression.LeftAssociative(
+        return expression.Parser = powerExpression.LeftAssociative(
             (Terms.Text( "*" ), Multiply),
             (Terms.Text( "/" ), Divide),
+            (Terms.Text( "%" ), Modulo),
             (Terms.Text( "+" ), Add),
             (Terms.Text( "-" ), Subtract),
             (Terms.Text( "==" ), Equal),
@@ -395,6 +400,32 @@ public partial class XsParser
             ConstantExpression ce => ce.Value as Type ?? ce.Type,
             Expression => expression.Type
         };
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Expression SafePowerAssign( Expression left, Expression right )
+    {
+        return Assign( left, SafePower( left, right ) );
+    }
+
+    private static Expression SafePower( Expression left, Expression right )
+    {
+        // we have to do some type conversion here because the Power
+        // method only accepts double, and we want to support all numeric
+        // types while preserving the type of the left-hand side variable.
+
+        var leftAsDouble = CastTo( left, typeof(double) );
+        var rightAsDouble = CastTo( right, typeof(double) );
+        var powerExpression = Power( leftAsDouble, rightAsDouble );
+
+        return left.Type == typeof(double)
+            ? powerExpression
+            : Convert( powerExpression, left.Type );
+
+        static Expression CastTo( Expression value, Type type )
+        {
+            return value.Type == type ? value : Convert( value, type );
+        }
     }
 }
 

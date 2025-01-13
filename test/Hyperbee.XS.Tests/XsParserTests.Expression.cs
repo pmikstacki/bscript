@@ -123,5 +123,31 @@ public class XsParserExpressionTests
 
         Assert.IsTrue( result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_BinaryExponentiation()
+    {
+        var expression = Xs.Parse( "2 ^ 3;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 8, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_BinaryExponentiation_WithGrouping()
+    {
+        var expression = Xs.Parse( "(2 + 3) ^ 2;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 25, result );
+    }
 }
 

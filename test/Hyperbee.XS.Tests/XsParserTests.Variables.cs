@@ -46,19 +46,6 @@ public class XsParserVariableTests
     }
 
     [TestMethod]
-    public void Compile_ShouldSucceed_WithVariableAddAssignmentResult()
-    {
-        var expression = Xs.Parse( "var x = 10; x += 32;" );
-
-        var lambda = Lambda<Func<int>>( expression );
-
-        var compiled = lambda.Compile();
-        var result = compiled();
-
-        Assert.AreEqual( 42, result );
-    }
-
-    [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndPostResult()
     {
         var expression = Xs.Parse( "var x = 10; x++;" );
@@ -82,5 +69,70 @@ public class XsParserVariableTests
         var result = compiled();
 
         Assert.AreEqual( 11, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableAddAssignment()
+    {
+        var expression = Xs.Parse( "var x = 10; x += 32; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableSubtractAssignment()
+    {
+        var expression = Xs.Parse( "var x = 42; x -= 32; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableMultiplyAssignment()
+    {
+        var expression = Xs.Parse( "var x = 10; x *= 4; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 40, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableDivideAssignment()
+    {
+        var expression = Xs.Parse( "var x = 40; x /= 4; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableExponentAssignment()
+    {
+        var expression = Xs.Parse( "var x = 2; x ^= 3; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 8, result );
     }
 }
