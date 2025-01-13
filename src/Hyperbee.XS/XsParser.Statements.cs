@@ -247,9 +247,9 @@ public partial class XsParser
             return Terms.Text( "case" )
                 .SkipAnd( expression )
                 .AndSkip( Terms.Char( ':' ) )
-                .And(
-                    ZeroOrMany( statement.StopBefore( EndCase() ) )
-                )
+                .And( 
+                    ZeroOrMany( XsParsers.BreakOn( EndCase(), statement ) ) 
+                ) 
                 .Then( static parts =>
                 {
                     var (testExpression, statements) = parts;

@@ -3,12 +3,12 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
 
-// StopBefore allows parsing a sequence of elements until a specific
-// stopping condition is encountered.
+// BreakOn allows parsing a sequence of elements until a specific
+// break condition is encountered.
 // 
-// It wraps an inner parser and a stopping condition parser. 
-// If the stopping condition matches at the current position in the input, 
-// parsing halts and the inner parser does not consume the stopping input.
+// It wraps an inner parser and a break condition parser. 
+// If the break condition matches at the current position in the input, 
+// parsing halts without consuming the break input.
 // 
 // This is particularly useful for scenarios like parsing statements 
 // in a block or case clauses in a switch, where the end of the sequence 
@@ -17,19 +17,19 @@ namespace Hyperbee.XS.System.Parsers;
 // Example Usage:
 // 
 // ZeroOrMany(
-//   statement.AssertBefore( CaseUntil() )
+//   BreakOn( CaseUntil(), statement )
 // )
 //
 // In this example:
 // - `statement` is parsed repeatedly.
-// - Parsing stops when `CaseUntil()` matches (e.g., "case", "default", or "}").
+// - Parsing stops when `CaseUntil()` matches.
 
-public class StopBeforeParser<T, U> : Parser<T>
+public class BreakOnParser<U,T> : Parser<T>
 {
     private readonly Parser<T> _innerParser;
     private readonly Parser<U> _stoppingCondition;
 
-    public StopBeforeParser( Parser<T> innerParser, Parser<U> stoppingCondition )
+    public BreakOnParser( Parser<U> stoppingCondition, Parser<T> innerParser )
     {
         _innerParser = innerParser ?? throw new ArgumentNullException( nameof( innerParser ) );
         _stoppingCondition = stoppingCondition ?? throw new ArgumentNullException( nameof( stoppingCondition ) );
@@ -55,10 +55,10 @@ public class StopBeforeParser<T, U> : Parser<T>
     }
 }
 
-public static class ParserExtensions
+public static partial class XsParsers
 {
-    public static Parser<T> StopBefore<T, U>( this Parser<T> parser, Parser<U> stoppingCondition )
+    public static Parser<T> BreakOn<U,T>( Parser<U> stoppingCondition, Parser<T> parser  )
     {
-        return new StopBeforeParser<T, U>( parser, stoppingCondition );
+        return new BreakOnParser<U,T>( stoppingCondition, parser );
     }
 }
