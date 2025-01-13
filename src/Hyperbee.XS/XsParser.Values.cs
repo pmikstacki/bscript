@@ -71,7 +71,7 @@ public partial class XsParser
         var objectConstructor =
             Between(
                 Terms.Char( '(' ),
-                ArgumentsParser( expression ),
+                ArgsParser( expression ),
                 Terms.Char( ')' )
             ).Then( static parts =>
                 (ConstructorType.Object, parts, (IReadOnlyList<Expression>) null)

@@ -101,7 +101,7 @@ public partial class XsParser
     {
         return Between(
                 Terms.Char( '(' ),
-                ArgumentsParser( expression ),
+                ArgsParser( expression ),
                 Terms.Char( ')' )
             )
             .Then<Expression>( args => Invoke( targetExpression, args )

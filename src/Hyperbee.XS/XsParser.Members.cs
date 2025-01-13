@@ -64,7 +64,7 @@ public partial class XsParser
                         .And(
                             Between(
                                 Terms.Char( '(' ),
-                                ArgumentsParser( expression ),
+                                ArgsParser( expression ),
                                 Terms.Char( ')' )
                             )
                         )

@@ -331,10 +331,10 @@ public partial class XsParser
 
     // Helper Parsers
 
-    private static Parser<IReadOnlyList<Expression>> ArgumentsParser( Parser<Expression> expression )
+    private static Parser<IReadOnlyList<Expression>> ArgsParser( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( static arguments => arguments ?? Array.Empty<Expression>() );
+            .Then( static args => args ?? Array.Empty<Expression>() );
     }
 
     private static Parser<IReadOnlyList<Type>> TypeArgsParser()
