@@ -403,7 +403,7 @@ public partial class XsParser
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression SafePowerAssign( Expression left, Expression right )
+    private static BinaryExpression SafePowerAssign( Expression left, Expression right )
     {
         return Assign( left, SafePower( left, right ) );
     }
