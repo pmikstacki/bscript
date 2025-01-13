@@ -414,11 +414,11 @@ public partial class XsParser
         // method only accepts double, and we want to support all numeric
         // types while preserving the type of the left-hand side variable.
 
-        var leftAsDouble = CastTo( left, typeof(double) );
-        var rightAsDouble = CastTo( right, typeof(double) );
+        var leftAsDouble = CastTo( left, typeof( double ) );
+        var rightAsDouble = CastTo( right, typeof( double ) );
         var powerExpression = Power( leftAsDouble, rightAsDouble );
 
-        return left.Type == typeof(double)
+        return left.Type == typeof( double )
             ? powerExpression
             : Convert( powerExpression, left.Type );
 
