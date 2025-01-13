@@ -13,6 +13,9 @@ namespace Hyperbee.XS;
 // Parser TODO
 //
 // Add Async Await
+//
+// right-associative ^ and ^= operators
+// var (a,b) = (1, 2);
 
 public partial class XsParser
 {
