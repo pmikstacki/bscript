@@ -24,7 +24,7 @@ namespace Hyperbee.XS.System.Parsers;
 // - `statement` is parsed repeatedly.
 // - Parsing stops when `CaseUntil()` matches.
 
-public class BreakOnParser<U,T> : Parser<T>
+public class BreakOnParser<U, T> : Parser<T>
 {
     private readonly Parser<T> _innerParser;
     private readonly Parser<U> _stoppingCondition;
@@ -57,8 +57,8 @@ public class BreakOnParser<U,T> : Parser<T>
 
 public static partial class XsParsers
 {
-    public static Parser<T> BreakOn<U,T>( Parser<U> stoppingCondition, Parser<T> parser  )
+    public static Parser<T> BreakOn<U, T>( Parser<U> stoppingCondition, Parser<T> parser )
     {
-        return new BreakOnParser<U,T>( stoppingCondition, parser );
+        return new BreakOnParser<U, T>( stoppingCondition, parser );
     }
 }
