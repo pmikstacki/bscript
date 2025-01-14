@@ -288,39 +288,41 @@ public partial class XsParser
         // Unary Expressions
 
         var unaryExpression = OneOf(
-            prefixExpression,
-            postfixExpression,
-            castExpression,
-            primaryExpression
-        ).Unary(
-            (Terms.Char( '!' ), Not),
-            (Terms.Char( '-' ), Negate)
-        ).Named( "unary" );
-
-        // Right-Associative Power Operator
-
-        var powerExpression = unaryExpression.RightAssociative(
-            (Terms.Text( "^" ), SafePower)
-        );
+                prefixExpression,
+                postfixExpression,
+                castExpression,
+                primaryExpression
+            ).Unary(
+                (Terms.Char( '!' ), Not),
+                (Terms.Char( '-' ), Negate)
+            )
+            .Named( "unary" );
 
         // Binary Expressions
 
-        return expression.Parser = powerExpression.LeftAssociative(
-            (Terms.Text( "*" ), Multiply),
-            (Terms.Text( "/" ), Divide),
-            (Terms.Text( "%" ), Modulo),
-            (Terms.Text( "+" ), Add),
-            (Terms.Text( "-" ), Subtract),
-            (Terms.Text( "==" ), Equal),
-            (Terms.Text( "!=" ), NotEqual),
-            (Terms.Text( "<" ), LessThan),
-            (Terms.Text( ">" ), GreaterThan),
-            (Terms.Text( "<=" ), LessThanOrEqual),
-            (Terms.Text( ">=" ), GreaterThanOrEqual),
-            (Terms.Text( "&&" ), AndAlso),
-            (Terms.Text( "||" ), OrElse),
-            (Terms.Text( "??" ), Coalesce)
-        ).Named( "expression" );
+        return expression.Parser = unaryExpression
+            .RightAssociative(
+                (Terms.Text( "^" ), SafePower)
+            )
+            .LeftAssociative(
+                (Terms.Text( "*" ), Multiply),
+                (Terms.Text( "/" ), Divide),
+                (Terms.Text( "%" ), Modulo),
+                (Terms.Text( "+" ), Add),
+                (Terms.Text( "-" ), Subtract),
+                (Terms.Text( "==" ), Equal),
+                (Terms.Text( "!=" ), NotEqual),
+                (Terms.Text( "<" ), LessThan),
+                (Terms.Text( ">" ), GreaterThan),
+                (Terms.Text( "<=" ), LessThanOrEqual),
+                (Terms.Text( ">=" ), GreaterThanOrEqual),
+                (Terms.Text( "&&" ), AndAlso),
+                (Terms.Text( "||" ), OrElse),
+                (Terms.Text( "??" ), Coalesce)
+            )
+            .Named( "expression" );
+
+        // Helpers
 
         static Parser<Expression>[] LiteralExtensions(
             XsConfig config,
