@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Parlot.Fluent;
+
 using static System.Linq.Expressions.Expression;
 using static Hyperbee.XS.System.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
@@ -46,7 +47,7 @@ public partial class XsParser
                         _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
                     };
                 }
-            );
+            ).Named( "assignment" );
     }
 
     private static Parser<Expression> DeclarationParser( Parser<Expression> expression )
@@ -67,7 +68,7 @@ public partial class XsParser
 
                 return Assign( variable, right );
             }
-        );
+        ).Named( "declaration" );
     }
 
     private static Parser<Expression> NewParser( Parser<Expression> expression )
@@ -111,7 +112,6 @@ public partial class XsParser
                     : (ConstructorType.ArrayInit, bounds, initial);
             } );
 
-
         return Terms.Text( "new" )
             .SkipAnd( TypeRuntime() )
             .And( OneOf( objectConstructor, arrayConstructor ) )
@@ -147,7 +147,7 @@ public partial class XsParser
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
             }
-        );
+        ).Named( "new" );
     }
 
     private enum ConstructorType
@@ -157,4 +157,3 @@ public partial class XsParser
         ArrayInit,
     }
 }
-

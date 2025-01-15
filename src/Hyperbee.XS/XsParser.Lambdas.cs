@@ -11,7 +11,7 @@ public partial class XsParser
 
     // Lambda Parsers
 
-    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> primaryExpression, Deferred<Expression> statement )
+    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> statement )
     {
         return Between(
                 Terms.Char( '(' ),
@@ -20,45 +20,36 @@ public partial class XsParser
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
-                OneOf(
-                    primaryExpression,
-                    Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
-                        .Then<Expression>( static ( ctx, body ) =>
-                        {
-                            var (scope, _) = ctx;
-                            var returnLabel = scope.Frame.ReturnLabel;
-
-                            if ( returnLabel != null )
-                            {
-                                return Block(
-                                    body.Concat(
-                                        [Label( returnLabel, Default( returnLabel.Type ) )]
-                                    )
-                                );
-                            }
-
-                            return Block( body );
-                        } )
-                )
-            )
-            .Then<Expression>( static ( ctx, parts ) =>
+                statement
+                .Then( static ( ctx, body ) =>
                 {
                     var (scope, _) = ctx;
-                    var (parameters, body) = parts;
+                    var returnLabel = scope.Frame.ReturnLabel;
 
-                    try
+                    if ( returnLabel != null )
                     {
-                        return Lambda( body, parameters );
+                        return Block(
+                            body,
+                            Label( returnLabel, Default( returnLabel.Type ) )
+                        );
                     }
-                    finally
-                    {
-                        scope.Pop();
-                    }
+                    return body;
+                } )
+            )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (scope, _) = ctx;
+                var (parameters, body) = parts;
+
+                try
+                {
+                    return Lambda( body, parameters );
                 }
+                finally
+                {
+                    scope.Pop();
+                }
+            }
             );
 
         static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )

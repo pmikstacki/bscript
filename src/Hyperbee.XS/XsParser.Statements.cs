@@ -123,39 +123,23 @@ public partial class XsParser
                 expression,
                 Terms.Char( ')' )
             )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
+            .And( statement )
             .And(
                 ZeroOrOne(
                     Terms.Text( "else" )
-                    .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
-                    )
+                    .SkipAnd( statement )
                 )
             )
             .Then<Expression>( static parts =>
             {
                 var (test, trueExprs, falseExprs) = parts;
 
-                var ifTrue = ConvertToSingleExpression( trueExprs );
-                var ifFalse = ConvertToSingleExpression( ifTrue?.Type, falseExprs );
-
-                var type = ifTrue!.Type;
-
-                return Condition( test, ifTrue, ifFalse, type );
+                var type = trueExprs.Type;
+                return Condition( test, trueExprs, falseExprs ?? Default( type ), type );
             } )
+            .Named( "if" )
         );
     }
-
     private static KeyParserPair<Expression> LoopParser( Deferred<Expression> statement )
     {
         return new( "loop",
@@ -170,21 +154,14 @@ public partial class XsParser
 
                 return (breakLabel, continueLabel);
             } )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
+            .And( statement )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
-                var ((breakLabel, continueLabel), exprs) = parts;
+                var ((breakLabel, continueLabel), body) = parts;
 
                 try
                 {
-                    var body = Block( exprs );
                     return Loop( body, breakLabel, continueLabel );
                 }
                 finally
@@ -192,6 +169,7 @@ public partial class XsParser
                     scope.Pop();
                 }
             } )
+            .Named( "loop" )
         );
     }
 
@@ -241,6 +219,7 @@ public partial class XsParser
                     scope.Pop();
                 }
             } )
+            .Named( "switch" )
         );
 
         static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
@@ -257,7 +236,8 @@ public partial class XsParser
                     var body = ConvertToSingleExpression( statements );
 
                     return SwitchCase( body, testExpression );
-                } );
+                } )
+                .Named( "case" );
         }
 
         static Parser<Expression> Default( Deferred<Expression> statement )
@@ -269,7 +249,8 @@ public partial class XsParser
                 {
                     var body = ConvertToSingleExpression( statements );
                     return body;
-                } );
+                } )
+                .Named( "default case" );
         }
 
         static Parser<string> EndCase()
@@ -281,11 +262,7 @@ public partial class XsParser
     private static KeyParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
     {
         return new( "try",
-            Between(
-                Terms.Char( '{' ),
-                ZeroOrMany( statement ),
-                Terms.Char( '}' )
-            )
+            statement
             .And(
                 ZeroOrMany(
                     Terms.Text( "catch" )
@@ -309,33 +286,21 @@ public partial class XsParser
 
                             return Parameter( type, name );
                         } )
-                        .And(
-                            Between(
-                                Terms.Char( '{' ),
-                                ZeroOrMany( statement ),
-                                Terms.Char( '}' )
-                            )
-                        )
+                        .And( statement )
                     )
                 )
             )
             .And(
                 ZeroOrOne(
                     Terms.Text( "finally" )
-                    .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
-                    )
+                    .SkipAnd( statement )
                 )
             )
             .Then<Expression>( static parts =>
             {
                 var (tryParts, catchParts, finallyParts) = parts;
 
-                var tryType = tryParts?[^1].Type ?? typeof( void );
+                var tryType = tryParts?.Type ?? typeof( void );
 
                 var catchBlocks = catchParts.Select( part =>
                 {
@@ -347,15 +312,14 @@ public partial class XsParser
                     );
                 } ).ToArray();
 
-                var tryBlock = ConvertToSingleExpression( tryType, tryParts );
-                var finallyBlock = ConvertToSingleExpression( finallyParts );
-
                 return TryCatchFinally(
-                    tryBlock,
-                    finallyBlock,
+                    tryParts,
+                    finallyParts,
                     catchBlocks
                 );
+
             } )
+            .Named( "try" )
         );
     }
 }

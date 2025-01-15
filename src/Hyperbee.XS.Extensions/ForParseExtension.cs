@@ -33,22 +33,16 @@ public class ForParseExtension : IParseExtension
                             .And( expression ),
                     Terms.Char( ')' )
                 )
-                .And(
-                    Between(
-                        Terms.Char( '{' ),
-                        ZeroOrMany( statement ),
-                        Terms.Char( '}' )
-                    )
-                )
+                .And( statement )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
 
+                    // Call ToArray to ensure the variables remain in scope for reduce.
                     var variables = scope.Variables.EnumerateValues( KeyScope.Current ).ToArray();
 
-                    var bodyBlock = Block( body );
-                    return ExpressionExtensions.For( variables, initializer, test, iteration, bodyBlock );
+                    return ExpressionExtensions.For( variables, initializer, test, iteration, body );
                 } ),
                 static ctx =>
                 {

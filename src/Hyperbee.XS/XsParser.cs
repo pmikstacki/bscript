@@ -46,10 +46,22 @@ public partial class XsParser
     private static Parser<Expression> CreateParser( XsConfig config )
     {
         var statement = Deferred<Expression>();
+        var expression = Deferred<Expression>();
 
         // Expressions
 
-        var expression = ExpressionParser( statement, config );
+        var baseExpression = ExpressionParser( statement, config );
+
+        // Complex expressions
+
+        var complexExpressions = IdentifierLookup<Expression>();
+
+        complexExpressions.Add(
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
+            SwitchParser( expression, statement )
+        );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
@@ -60,34 +72,38 @@ public partial class XsParser
             expression
         );
 
+        complexExpressions.Add(
+            StatementExtensions( config, baseExpression, assignableExpression, statement )
+        );
+
+        expression.Parser = OneOf(
+            complexExpressions,
+            baseExpression
+        );
+
         // Compose Statements
 
-        var statements = IdentifierLookup<Expression>();
+        var controlStatements = IdentifierLookup<Expression>();
 
-        var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
+        // TODO: This feels like a hack because we don't always know when to end with `;`
+        var expressionStatement = assignableExpression.Terminated();
+        //var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
+
         var label = LabelParser();
 
-        statements.Add(
+        controlStatements.Add(
             BreakParser(),
             ContinueParser(),
             GotoParser(),
-            ReturnParser( expression ),
-            ThrowParser( expression ),
-            ConditionalParser( expression, statement ),
-            LoopParser( statement ),
-            TryCatchParser( statement ),
-            SwitchParser( expression, statement )
-        );
-
-        statements.Add(
-            StatementExtensions( config, ExtensionType.Complex | ExtensionType.Terminated, expression, assignableExpression, statement )
+            ReturnParser( baseExpression ),
+            ThrowParser( baseExpression )
         );
 
         statement.Parser = OneOf(
             label,
-            statements,
+            controlStatements,
             expressionStatement
-        );
+        ).Named( "statement" );
 
         // Create the final parser
 
@@ -118,7 +134,6 @@ public partial class XsParser
 
         static KeyParserPair<Expression>[] StatementExtensions(
                 XsConfig config,
-                ExtensionType type,
                 Parser<Expression> expression,
                 Parser<Expression> assignableExpression,
                 Deferred<Expression> statement )
@@ -126,7 +141,7 @@ public partial class XsParser
             var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
 
             return binder.Config.Extensions
-                .Where( x => type.HasFlag( x.Type ) )
+                .Where( x => (ExtensionType.Complex | ExtensionType.Terminated).HasFlag( x.Type ) )
                 .OrderBy( x => x.Type )
                 .Select( x => new KeyParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
                 .ToArray();
@@ -199,22 +214,29 @@ public partial class XsParser
             Terms.Char( ')' )
         ).Named( "group" );
 
+        var blockExpression = Between(
+            Terms.Char( '{' ),
+            ZeroOrMany( statement ),
+            Terms.Char( '}' )
+        ).Then( static parts => ConvertToSingleExpression( parts ) )
+        .Named( "block" );
+
         // Primary Expressions
 
-        var primaryExpression = Deferred<Expression>();
-
         var newExpression = NewParser( expression );
-        var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
+
+        var lambdaExpression = LambdaParser( identifier, statement );
 
         var baseExpression = OneOf(
-            newExpression,
+            newExpression, // TODO: primary seems wrong here
             literal,
             identifier,
             groupedExpression,
-            lambdaExpression
+            blockExpression,
+            lambdaExpression // TODO: primary seems wrong here
         ).Named( "base" );
 
-        primaryExpression.Parser = baseExpression.LeftAssociative(
+        var primaryExpression = baseExpression.LeftAssociative(
             left => MemberAccessParser( left, expression ),
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
@@ -237,7 +259,7 @@ public partial class XsParser
                     "--" => PreDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported prefix operator: {op}." )
                 };
-            } );
+            } ).Named( "prefix" );
 
         var postfixExpression = variable
             .And(
@@ -256,7 +278,7 @@ public partial class XsParser
                     "--" => PostDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
                 };
-            } );
+            } ).Named( "postfix" );
 
         // Cast Expressions
 
@@ -283,20 +305,19 @@ public partial class XsParser
                     "is" => TypeIs( expr, type ),
                     _ => throw new NotImplementedException(),
                 };
-            } );
+            } ).Named( "cast" );
 
         // Unary Expressions
 
         var unaryExpression = OneOf(
-                prefixExpression,
-                postfixExpression,
-                castExpression,
-                primaryExpression
-            ).Unary(
-                (Terms.Char( '!' ), Not),
-                (Terms.Char( '-' ), Negate)
-            )
-            .Named( "unary" );
+            prefixExpression,
+            postfixExpression,
+            castExpression,
+            primaryExpression
+        ).Unary(
+            (Terms.Char( '!' ), Not),
+            (Terms.Char( '-' ), Negate)
+        ).Named( "unary" );
 
         // Binary Expressions
 
@@ -321,8 +342,6 @@ public partial class XsParser
                 (Terms.Text( "??" ), Coalesce)
             )
             .Named( "expression" );
-
-        // Helpers
 
         static Parser<Expression>[] LiteralExtensions(
             XsConfig config,
@@ -356,9 +375,13 @@ public partial class XsParser
     // Helpers
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
     {
-        return ConvertToSingleExpression( typeof( void ), expressions );
+        var type = (expressions?.Count == 0)
+            ? null
+            : expressions[^1].Type;
+
+        return ConvertToSingleExpression( type, expressions );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
