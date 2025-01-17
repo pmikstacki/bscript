@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
