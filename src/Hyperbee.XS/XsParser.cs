@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -49,7 +49,7 @@ public partial class XsParser
 
         var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // BF Complex-Expressions don't need a terminator
         var declarationStatement = declaration.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); //BF Complex-Expressions don't need a terminator
-        
+
         var label = LabelParser();
 
         // Compose Statements
@@ -216,7 +216,7 @@ public partial class XsParser
             left => IndexerAccessParser( left, expression )
         )
         .LeftAssociative( // casting
-            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof(Nullable<>).MakeGenericType( CastType( right ) ) )),
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
             (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
             (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
         )
