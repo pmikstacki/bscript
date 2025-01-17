@@ -28,7 +28,7 @@ public class AsyncParseExtension : IParseExtension
                 Terms.Char( '{' ),
                 ZeroOrMany( statement ),
                 Terms.Char( '}' )
-            )
+            ).Named( "async block" )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;

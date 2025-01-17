@@ -41,74 +41,53 @@ public partial class XsParser
     private static Parser<Expression> CreateParser( XsConfig config )
     {
         var statement = Deferred<Expression>();
-        var expression = Deferred<Expression>();
 
         // Expressions
 
-        var baseExpression = ExpressionParser( statement, config );
+        var expression = ExpressionParser( statement, out var keywordExpressions, config );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
 
-        // Complex expressions
-
-        var complexExpressions = IdentifierLookup<Expression>();
-
-        complexExpressions.Add(
-            ConditionalParser( expression, statement ),
-            LoopParser( statement ),
-            TryCatchParser( statement ),
-            SwitchParser( expression, statement )
-        );
-
-        complexExpressions.Add(
-            StatementExtensions( config, baseExpression, expression, statement )
-        );
-
-        var blockExpression = Between(
-            Terms.Char( '{' ),
-            ZeroOrMany( statement ),
-            Terms.Char( '}' )
-        ).Named( "block" )
-        .Then( static ( ctx, parts ) => ConvertToSingleExpression( parts ) );
-
-        expression.Parser = OneOf(
-            complexExpressions,
-            blockExpression,
-            declaration,
-            assignment,
-            baseExpression
-        );
-
         // Compose Statements
 
-        var controlStatements = IdentifierLookup<Expression>();
+        var statements = IdentifierLookup<Expression>( "statements" );
 
-        var expressionStatement = OneOf(
-                declaration,
-                assignment,
-                baseExpression
-            )
+        var assignableExpression = OneOf(
+            declaration,
+            assignment,
+            expression
+        );
+
+        var expressionStatement = assignableExpression
             .AndSkip( ZeroOrMany( Terms.Char( ';' ) ) )
             .Named( "terminated" );
 
         var label = LabelParser();
 
-        controlStatements.Add(
+        statements.Add(
             BreakParser(),
             ContinueParser(),
             GotoParser(),
-            ReturnParser( baseExpression ),
-            ThrowParser( baseExpression )
+            ReturnParser( expression ),
+            ThrowParser( expression )
         );
 
         statement.Parser = OneOf(
-            controlStatements,
-            complexExpressions,
+            statements,
             expressionStatement,
-            blockExpression,
             label
         ).Named( "statement" );
+
+        // Add extensions
+
+        statements.Add(
+            StatementExtensions( config, ExtensionType.Terminated, expression, assignableExpression, statement )
+        );
+
+        keywordExpressions.Add(
+            StatementExtensions( config, ExtensionType.Complex, expression, assignableExpression, statement )
+        );
 
         // Create the final parser
 
@@ -139,21 +118,23 @@ public partial class XsParser
 
         static KeyParserPair<Expression>[] StatementExtensions(
                 XsConfig config,
+                ExtensionType type,
                 Parser<Expression> expression,
                 Parser<Expression> assignableExpression,
                 Deferred<Expression> statement )
         {
+            // TODO: fix assignable type
             var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
 
             return binder.Config.Extensions
-                .Where( x => (ExtensionType.Complex | ExtensionType.Terminated).HasFlag( x.Type ) )
+                .Where( x => type.HasFlag( x.Type ) )
                 .OrderBy( x => x.Type )
                 .Select( x => new KeyParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
                 .ToArray();
         }
     }
 
-    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
+    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, out LookupParser<Expression> keywordExpressions, XsConfig config )
     {
         var expression = Deferred<Expression>();
 
@@ -219,18 +200,35 @@ public partial class XsParser
             Terms.Char( ')' )
         ).Named( "group" );
 
-        // Primary Expressions
+        // block Expressions
 
-        var newExpression = NewParser( expression );
+        var blockExpression = Between(
+            Terms.Char( '{' ),
+            ZeroOrMany( statement ),
+            Terms.Char( '}' )
+        ).Named( "block" )
+        .Then( static ( ctx, parts ) => ConvertToSingleExpression( parts ) );
+
+        // Primary Expressions
 
         var lambdaExpression = LambdaParser( identifier, statement );
 
+        keywordExpressions = IdentifierLookup<Expression>( "keyword" );
+        keywordExpressions.Add(
+            NewParser( expression ),
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
+            SwitchParser( expression, statement )
+        );
+
         var baseExpression = OneOf(
-            newExpression, // TODO: primary seems wrong here
             literal,
             identifier,
             groupedExpression,
-            lambdaExpression // TODO: primary seems wrong here
+            blockExpression,
+            lambdaExpression,
+            keywordExpressions
         ).Named( "base" );
 
         var primaryExpression = baseExpression.LeftAssociative(
