@@ -72,7 +72,7 @@ public partial class XsParser
         statement.Parser = OneOf(
             label,
             statements,
-            assignableExpression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ) 
+            assignableExpression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) )
         );
 
         // Add extensions
@@ -206,7 +206,7 @@ public partial class XsParser
             ConditionalParser( expression, statement ),
             LoopParser( statement ),
             TryCatchParser( statement ),
-            SwitchParser( expression, statement ) 
+            SwitchParser( expression, statement )
         );
 
         var baseExpression = OneOf(
@@ -226,9 +226,9 @@ public partial class XsParser
         // Cast Expressions
 
         var castExpression = primaryExpression.LeftAssociative(
-            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof(Nullable<>).MakeGenericType( CastType(right) ) )),
-            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) ) ),
-            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ) )
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
+            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
+            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
         ).Named( "cast" );
 
         // Prefix and Postfix Expressions
@@ -326,7 +326,7 @@ public partial class XsParser
         {
             if ( expression is not ConstantExpression ce || ce.Value is not Type type )
                 throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
- 
+
             return type;
         }
     }

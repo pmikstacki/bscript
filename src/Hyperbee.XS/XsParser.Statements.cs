@@ -306,7 +306,7 @@ public partial class XsParser
                             return Parameter( type, name );
                         } )
                         .And(
-                            BlockStatementParser( statement ) 
+                            BlockStatementParser( statement )
                         )
                     )
                 )
@@ -389,7 +389,7 @@ public partial class XsParser
             } );
 
 
-        return new ( "new",
+        return new( "new",
             //.SkipAnd( TypeRuntime() )
             TypeRuntime()
             .And( OneOf( objectConstructor, arrayConstructor ) )

@@ -21,7 +21,7 @@ public partial class XsParser
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    primaryExpression, 
+                    primaryExpression,
                     BlockStatementParser( statement )
                         .Then<Expression>( static ( ctx, body ) =>
                         {
@@ -38,7 +38,7 @@ public partial class XsParser
                             }
 
                             return Block( body );
-                        } 
+                        }
                     )
                 )
             )
