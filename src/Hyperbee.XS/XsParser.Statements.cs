@@ -130,7 +130,7 @@ public partial class XsParser
                     .SkipAnd( statement )
                 )
             )
-            .Then<Expression>( static (ctx, parts) =>
+            .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (test, trueExprs, falseExprs) = parts;
 
