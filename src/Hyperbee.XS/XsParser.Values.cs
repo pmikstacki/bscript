@@ -12,9 +12,9 @@ public partial class XsParser
 {
     // Value Parsers
 
-    private static Parser<Expression> AssignmentParser( Parser<Expression> expression )
+    private static Parser<Expression> AssignmentParser( Parser<Expression> variable, Parser<Expression> expression )
     {
-        return Terms.Identifier()
+        return variable
             .And(
                 SkipWhiteSpace(
                     Terms.Text( "=" )
@@ -31,9 +31,7 @@ public partial class XsParser
             .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
-                    var (ident, op, right) = parts;
-
-                    var left = scope.LookupVariable( ident );
+                    var (left, op, right) = parts;
 
                     return op switch
                     {

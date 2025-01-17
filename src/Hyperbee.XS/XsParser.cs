@@ -198,7 +198,7 @@ public partial class XsParser
 
         // Primary Expressions
 
-        var assignment = AssignmentParser( expression );
+        var assignment = AssignmentParser( variable, expression );
         var lambdaExpression = LambdaParser( identifier, statement );
 
         var primaryExpression = OneOf(
