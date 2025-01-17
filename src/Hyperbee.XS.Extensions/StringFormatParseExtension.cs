@@ -67,7 +67,7 @@ internal class BacktickLiteral : Parser<TextSpan>
 
             // Parlot has support for quoting strings with other characters
             [UnsafeAccessor( UnsafeAccessorKind.Method, Name = nameof( Scanner.ReadQuotedString ) )]
-            extern static bool ReadQuotedString( Scanner scanner, char quoteChar, out ReadOnlySpan<char> result );
+            static extern bool ReadQuotedString( Scanner scanner, char quoteChar, out ReadOnlySpan<char> result );
         }
     }
 }

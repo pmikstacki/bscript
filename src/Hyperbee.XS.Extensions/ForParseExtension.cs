@@ -5,7 +5,6 @@ using Hyperbee.XS;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
-using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
