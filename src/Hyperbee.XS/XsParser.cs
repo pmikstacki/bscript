@@ -213,15 +213,6 @@ public partial class XsParser
             SwitchParser( expression, statement )
         );
 
-        keywordExpressions = IdentifierLookup<Expression>();
-        keywordExpressions.Add(
-            NewParser( expression ),
-            ConditionalParser( expression, statement ),
-            LoopParser( statement ),
-            TryCatchParser( statement ),
-            SwitchParser( expression, statement )
-        );
-
         var assignment = AssignmentParser( expression );
 
         var baseExpression = OneOf(

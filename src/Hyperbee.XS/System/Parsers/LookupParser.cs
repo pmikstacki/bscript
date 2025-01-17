@@ -19,6 +19,7 @@ public sealed class LookupParser<T> : Parser<T>
         ArgumentNullException.ThrowIfNull( parser );
 
         _parsers[keyword] = parser;
+
         return this;
     }
 
