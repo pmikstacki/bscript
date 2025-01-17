@@ -8,6 +8,27 @@ public class XsParserConditionalTests
     public XsParser Xs { get; } = new();
 
     [TestMethod]
+    public void Compile_ShouldSucceed_Please()
+    {
+        var expression = Xs.Parse(
+            """
+            var x = if (true)
+                1;
+            else
+                2;
+            
+            x;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 1, result );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithConditional()
     {
         var expression = Xs.Parse(

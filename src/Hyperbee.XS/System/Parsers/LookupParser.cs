@@ -9,7 +9,7 @@ public sealed class LookupParser<T> : Parser<T>
 {
     private readonly Dictionary<string, Parser<T>> _parsers = new();
 
-    public void Add( string keyword, Parser<T> parser )
+    public LookupParser<T> Add( string keyword, Parser<T> parser )
     {
         if ( string.IsNullOrWhiteSpace( keyword ) )
         {
@@ -22,9 +22,10 @@ public sealed class LookupParser<T> : Parser<T>
         }
 
         _parsers[keyword] = parser;
+        return this;
     }
 
-    public void Add( params KeyParserPair<T>[] parsers )
+    public LookupParser<T> Add( params KeyParserPair<T>[] parsers )
     {
         if ( parsers == null )
         {
@@ -35,6 +36,8 @@ public sealed class LookupParser<T> : Parser<T>
         {
             Add( keyword, parser );
         }
+
+        return this;
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )

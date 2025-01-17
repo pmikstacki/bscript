@@ -21,12 +21,8 @@ public partial class XsParser
             .AndSkip( Terms.Text( "=>" ) )
             .And(
                 OneOf(
-                    primaryExpression,
-                    Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
+                    primaryExpression, 
+                    BlockStatementParser( statement )
                         .Then<Expression>( static ( ctx, body ) =>
                         {
                             var (scope, _) = ctx;
@@ -42,7 +38,8 @@ public partial class XsParser
                             }
 
                             return Block( body );
-                        } )
+                        } 
+                    )
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>

@@ -10,6 +10,18 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
+    private static Parser<IReadOnlyList<Expression>> BlockStatementParser( Deferred<Expression> statement )
+    {
+        return OneOf(
+            statement.Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } ), // Single statement as a sequence
+            Between(
+                Terms.Char( '{' ),
+                ZeroOrMany( statement ),
+                Terms.Char( '}' )
+            )
+        );
+    }
+
     // Terminated Statement Parsers
 
     private static KeyParserPair<Expression> BreakParser()
@@ -124,21 +136,13 @@ public partial class XsParser
                 Terms.Char( ')' )
             )
             .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
+                BlockStatementParser( statement )
             )
             .And(
                 ZeroOrOne(
                     Terms.Text( "else" )
                     .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
+                        BlockStatementParser( statement )
                     )
                 )
             )
@@ -171,11 +175,7 @@ public partial class XsParser
                 return (breakLabel, continueLabel);
             } )
             .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
+                BlockStatementParser( statement )
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
@@ -281,11 +281,7 @@ public partial class XsParser
     private static KeyParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
     {
         return new( "try",
-            Between(
-                Terms.Char( '{' ),
-                ZeroOrMany( statement ),
-                Terms.Char( '}' )
-            )
+            BlockStatementParser( statement )
             .And(
                 ZeroOrMany(
                     Terms.Text( "catch" )
@@ -310,11 +306,7 @@ public partial class XsParser
                             return Parameter( type, name );
                         } )
                         .And(
-                            Between(
-                                Terms.Char( '{' ),
-                                ZeroOrMany( statement ),
-                                Terms.Char( '}' )
-                            )
+                            BlockStatementParser( statement ) 
                         )
                     )
                 )
@@ -323,11 +315,7 @@ public partial class XsParser
                 ZeroOrOne(
                     Terms.Text( "finally" )
                     .SkipAnd(
-                        Between(
-                            Terms.Char( '{' ),
-                            ZeroOrMany( statement ),
-                            Terms.Char( '}' )
-                        )
+                        BlockStatementParser( statement )
                     )
                 )
             )
@@ -357,5 +345,93 @@ public partial class XsParser
                 );
             } )
         );
+    }
+
+    private static KeyParserPair<Expression> NewParser( Parser<Expression> expression )
+    {
+        var objectConstructor =
+            Between(
+                Terms.Char( '(' ),
+                ArgsParser( expression ),
+                Terms.Char( ')' )
+            ).Then( static parts =>
+                (ConstructorType.Object, parts, (IReadOnlyList<Expression>) null)
+            );
+
+        var arrayConstructor =
+            Between(
+                Terms.Char( '[' ),
+                ZeroOrOne( Separated(
+                    Terms.Char( ',' ),
+                    expression
+                ) ),
+                Terms.Char( ']' )
+            )
+            .And(
+                ZeroOrOne(
+                    Between(
+                        Terms.Char( '{' ),
+                        Separated(
+                            Terms.Char( ',' ),
+                            expression
+                        ),
+                        Terms.Char( '}' )
+                    )
+                )
+            )
+            .Then( static parts =>
+            {
+                var (bounds, initial) = parts;
+
+                return initial == null
+                    ? (ConstructorType.ArrayBounds, bounds, null)
+                    : (ConstructorType.ArrayInit, bounds, initial);
+            } );
+
+
+        return new ( "new",
+            //.SkipAnd( TypeRuntime() )
+            TypeRuntime()
+            .And( OneOf( objectConstructor, arrayConstructor ) )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (type, (constructorType, arguments, initial)) = parts;
+
+                switch ( constructorType )
+                {
+                    case ConstructorType.ArrayBounds:
+                        if ( arguments.Count == 0 )
+                            throw new InvalidOperationException( "Array bounds initializer requires at least one argument." );
+
+                        return NewArrayBounds( type, arguments );
+
+                    case ConstructorType.ArrayInit:
+                        var arrayType = initial[^1].Type;
+
+                        if ( type != arrayType && arrayType.IsArray && type != arrayType.GetElementType() )
+                            throw new InvalidOperationException( $"Array of type {type.Name} does not match type {arrayType.Name}." );
+
+                        return NewArrayInit( arrayType, initial );
+
+                    case ConstructorType.Object:
+                        var constructor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
+
+                        if ( constructor == null )
+                            throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
+
+                        return New( constructor, arguments );
+
+                    default:
+                        throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
+                }
+            }
+        ) );
+    }
+
+    private enum ConstructorType
+    {
+        Object,
+        ArrayBounds,
+        ArrayInit,
     }
 }

@@ -10,11 +10,6 @@ using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
 
-// Parser TODO
-//
-// Add Async Await
-// var (a,b) = (1, 2);
-
 public partial class XsParser
 {
     private readonly Parser<Expression> _xs;
@@ -49,7 +44,7 @@ public partial class XsParser
 
         // Expressions
 
-        var expression = ExpressionParser( statement, config );
+        var expression = ExpressionParser( statement, out var keywordExpressions, config );
 
         var declaration = DeclarationParser( expression );
         var assignment = AssignmentParser( expression );
@@ -64,7 +59,6 @@ public partial class XsParser
 
         var statements = IdentifierLookup<Expression>();
 
-        var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
         var label = LabelParser();
 
         statements.Add(
@@ -72,21 +66,23 @@ public partial class XsParser
             ContinueParser(),
             GotoParser(),
             ReturnParser( expression ),
-            ThrowParser( expression ),
-            ConditionalParser( expression, statement ),
-            LoopParser( statement ),
-            TryCatchParser( statement ),
-            SwitchParser( expression, statement )
-        );
-
-        statements.Add(
-            StatementExtensions( config, ExtensionType.Complex | ExtensionType.Terminated, expression, assignableExpression, statement )
+            ThrowParser( expression )
         );
 
         statement.Parser = OneOf(
             label,
             statements,
-            expressionStatement
+            assignableExpression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ) 
+        );
+
+        // Add extensions
+
+        statements.Add(
+            StatementExtensions( config, ExtensionType.Terminated, expression, assignableExpression, statement )
+        );
+
+        keywordExpressions.Add(
+            StatementExtensions( config, ExtensionType.Complex, expression, assignableExpression, statement )
         );
 
         // Create the final parser
@@ -133,7 +129,7 @@ public partial class XsParser
         }
     }
 
-    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
+    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, out LookupParser<Expression> keywordExpressions, XsConfig config )
     {
         var expression = Deferred<Expression>();
 
@@ -202,16 +198,23 @@ public partial class XsParser
         // Primary Expressions
 
         var primaryExpression = Deferred<Expression>();
-
-        var newExpression = NewParser( expression );
         var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
 
+        keywordExpressions = IdentifierLookup<Expression>();
+        keywordExpressions.Add(
+            NewParser( expression ),
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
+            SwitchParser( expression, statement ) 
+        );
+
         var baseExpression = OneOf(
-            newExpression,
             literal,
             identifier,
             groupedExpression,
-            lambdaExpression
+            lambdaExpression,
+            keywordExpressions
         ).Named( "base" );
 
         primaryExpression.Parser = baseExpression.LeftAssociative(
@@ -219,6 +222,14 @@ public partial class XsParser
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
         ).Named( "primary" );
+
+        // Cast Expressions
+
+        var castExpression = primaryExpression.LeftAssociative(
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof(Nullable<>).MakeGenericType( CastType(right) ) )),
+            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) ) ),
+            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ) )
+        ).Named( "cast" );
 
         // Prefix and Postfix Expressions
 
@@ -255,33 +266,6 @@ public partial class XsParser
                     "++" => PostIncrementAssign( variable ),
                     "--" => PostDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
-                };
-            } );
-
-        // Cast Expressions
-
-        var castExpression = baseExpression
-            .And(
-                OneOf(
-                    Terms.Text( "as?" ),
-                    Terms.Text( "as" ),
-                    Terms.Text( "is" )
-                )
-                .And( typeConstant )
-            )
-            .Then<Expression>( static parts =>
-            {
-                var (expr, (op, expression)) = parts;
-
-                if ( expression is not ConstantExpression constantExpression || constantExpression.Value is not Type type )
-                    throw new InvalidOperationException( $"The '{op}' operator must be followed by a valid type." );
-
-                return op switch
-                {
-                    "as?" => TypeAs( expr, typeof( Nullable<> ).MakeGenericType( type ) ),
-                    "as" => Convert( expr, type ),
-                    "is" => TypeIs( expr, type ),
-                    _ => throw new NotImplementedException(),
                 };
             } );
 
@@ -336,6 +320,14 @@ public partial class XsParser
                 .OrderBy( x => x.Type )
                 .Select( x => x.CreateParser( binder ) )
                 .ToArray();
+        }
+
+        static Type CastType( Expression expression )
+        {
+            if ( expression is not ConstantExpression ce || ce.Value is not Type type )
+                throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
+ 
+            return type;
         }
     }
 
