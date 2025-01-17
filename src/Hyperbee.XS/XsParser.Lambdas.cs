@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;

@@ -10,7 +10,7 @@ namespace Hyperbee.Xs.Extensions;
 
 public class AsyncParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "async";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )

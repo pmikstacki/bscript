@@ -6,7 +6,7 @@ namespace Hyperbee.XS.System;
 public record ExtensionBinder(
     XsConfig Config,
     Parser<Expression> ExpressionParser,
-    Parser<Expression> AssignableParser,
+    Parser<Expression> DeclarationParser,
     Deferred<Expression> StatementParser
 );
 
@@ -16,7 +16,7 @@ public enum ExtensionType
     None = 0,
     //Primary = 1 << 0,
     Literal = 1 << 1,
-    Complex = 1 << 2,
+    Expression = 1 << 2,
     Terminated = 1 << 3,
     //Binary = 1 << 4,
     //Unary = 1 << 5,

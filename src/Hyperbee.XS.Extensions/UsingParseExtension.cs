@@ -10,7 +10,7 @@ namespace Hyperbee.Xs.Extensions;
 
 public class UsingParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "using";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )

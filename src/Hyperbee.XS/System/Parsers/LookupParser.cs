@@ -1,4 +1,4 @@
-﻿using Parlot;
+using Parlot;
 using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
@@ -30,6 +30,7 @@ public sealed class LookupParser<T> : Parser<T>
         {
             Add( keyword, parser );
         }
+
         return this;
     }
 

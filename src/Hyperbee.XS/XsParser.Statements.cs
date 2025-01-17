@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
@@ -10,6 +10,18 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
+    private static Parser<IReadOnlyList<Expression>> BlockStatementParser( Deferred<Expression> statement )
+    {
+        return OneOf(
+            statement.Then<IReadOnlyList<Expression>>( x => new List<Expression> { x } ), // Single statement as a sequence
+            Between(
+                Terms.Char( '{' ),
+                ZeroOrMany( statement ),
+                Terms.Char( '}' )
+            )
+        );
+    }
+
     // Terminated Statement Parsers
 
     private static KeyParserPair<Expression> BreakParser()

@@ -11,7 +11,7 @@ namespace Hyperbee.Xs.Extensions;
 
 public class ForEachParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "foreach";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )

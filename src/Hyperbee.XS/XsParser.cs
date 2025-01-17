@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -45,23 +45,14 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, out var keywordExpressions, config );
+        var declaration = DeclarationParser( expression ); 
 
-        var declaration = DeclarationParser( expression );
-        var assignment = AssignmentParser( expression );
-
+        var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // BF ';'
+        var declarationStatement = declaration.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); //BF ';'
+        
         // Compose Statements
 
         var statements = IdentifierLookup<Expression>( "statements" );
-
-        var assignableExpression = OneOf(
-            declaration,
-            assignment,
-            expression
-        );
-
-        var expressionStatement = assignableExpression
-            .AndSkip( ZeroOrMany( Terms.Char( ';' ) ) )
-            .Named( "terminated" );
 
         var label = LabelParser();
 
@@ -74,6 +65,7 @@ public partial class XsParser
         );
 
         statement.Parser = OneOf(
+            declarationStatement,
             statements,
             expressionStatement,
             label
@@ -82,11 +74,11 @@ public partial class XsParser
         // Add extensions
 
         statements.Add(
-            StatementExtensions( config, ExtensionType.Terminated, expression, assignableExpression, statement )
+            StatementExtensions( config, ExtensionType.Terminated, expression, declaration, statement )
         );
 
         keywordExpressions.Add(
-            StatementExtensions( config, ExtensionType.Complex, expression, assignableExpression, statement )
+            StatementExtensions( config, ExtensionType.Expression, expression, declaration, statement )
         );
 
         // Create the final parser
@@ -120,11 +112,10 @@ public partial class XsParser
                 XsConfig config,
                 ExtensionType type,
                 Parser<Expression> expression,
-                Parser<Expression> assignableExpression,
+                Parser<Expression> declaration,
                 Deferred<Expression> statement )
         {
-            // TODO: fix assignable type
-            var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+            var binder = new ExtensionBinder( config, expression, declaration, statement );
 
             return binder.Config.Extensions
                 .Where( x => type.HasFlag( x.Type ) )
@@ -222,7 +213,19 @@ public partial class XsParser
             SwitchParser( expression, statement )
         );
 
+        keywordExpressions = IdentifierLookup<Expression>();
+        keywordExpressions.Add(
+            NewParser( expression ),
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
+            SwitchParser( expression, statement )
+        );
+
+        var assignment = AssignmentParser( expression );
+
         var baseExpression = OneOf(
+            assignment, 
             literal,
             identifier,
             groupedExpression,
@@ -235,7 +238,8 @@ public partial class XsParser
             left => MemberAccessParser( left, expression ),
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
-        ).Named( "primary" );
+        )
+        .Named( "primary" );
 
         // Cast Expressions
 

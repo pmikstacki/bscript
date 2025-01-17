@@ -12,12 +12,12 @@ namespace Hyperbee.Xs.Extensions;
 
 public class ForParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "for";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (_, expression, declaration, statement) = binder;
 
         return
             XsParsers.Bounded(
@@ -28,7 +28,7 @@ public class ForParseExtension : IParseExtension
                 },
                 Between(
                     Terms.Char( '(' ),
-                    assignable.AndSkip( Terms.Char( ';' ) )
+                    declaration.AndSkip( Terms.Char( ';' ) )
                             .And( expression ).AndSkip( Terms.Char( ';' ) )
                             .And( expression ),
                     Terms.Char( ')' )

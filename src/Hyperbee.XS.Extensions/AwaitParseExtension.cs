@@ -7,7 +7,7 @@ namespace Hyperbee.Xs.Extensions;
 
 public class AwaitParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "await";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )

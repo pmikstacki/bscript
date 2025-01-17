@@ -36,13 +36,11 @@ public class XsParserExtensionsTests
 
 public class AnswerToEverythingParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "answer";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (config, expression, assignable, statement) = binder;
-
         return Always()
             .AndSkip( Terms.Char( ';' ) )
             .Then<Expression>( static ( _, _ ) => Constant( 42 ) )
