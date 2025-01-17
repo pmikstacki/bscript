@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -45,11 +45,11 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, out var keywordExpressions, config );
-        var declaration = DeclarationParser( expression ); 
+        var declaration = DeclarationParser( expression );
 
         var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // BF ';'
         var declarationStatement = declaration.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); //BF ';'
-        
+
         // Compose Statements
 
         var statements = IdentifierLookup<Expression>( "statements" );
@@ -225,7 +225,7 @@ public partial class XsParser
         var assignment = AssignmentParser( expression );
 
         var baseExpression = OneOf(
-            assignment, 
+            assignment,
             literal,
             identifier,
             groupedExpression,
