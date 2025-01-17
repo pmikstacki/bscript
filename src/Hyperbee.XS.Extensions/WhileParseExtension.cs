@@ -10,12 +10,12 @@ namespace Hyperbee.Xs.Extensions;
 
 public class WhileParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "while";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (_, expression, _, statement) = binder;
 
         return
             Between(
@@ -23,20 +23,13 @@ public class WhileParseExtension : IParseExtension
                 expression,
                 Terms.Char( ')' )
             )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
+            .And( statement )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
                 var (test, body) = parts;
 
-                var bodyBlock = Block( body );
-                return ExpressionExtensions.While( test, bodyBlock );
+                return ExpressionExtensions.While( test, body );
             } ).Named( "while" );
     }
 }

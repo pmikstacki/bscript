@@ -12,12 +12,12 @@ namespace Hyperbee.Xs.Extensions;
 
 public class ForParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "for";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (_, expression, declaration, statement) = binder;
 
         return
             XsParsers.Bounded(
@@ -28,27 +28,21 @@ public class ForParseExtension : IParseExtension
                 },
                 Between(
                     Terms.Char( '(' ),
-                    assignable.AndSkip( Terms.Char( ';' ) )
+                    declaration.AndSkip( Terms.Char( ';' ) )
                             .And( expression ).AndSkip( Terms.Char( ';' ) )
                             .And( expression ),
                     Terms.Char( ')' )
                 )
-                .And(
-                    Between(
-                        Terms.Char( '{' ),
-                        ZeroOrMany( statement ),
-                        Terms.Char( '}' )
-                    )
-                )
+                .And( statement )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var (scope, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
 
+                    // Call ToArray to ensure the variables remain in scope for reduce.
                     var variables = scope.Variables.EnumerateValues( KeyScope.Current ).ToArray();
 
-                    var bodyBlock = Block( body );
-                    return ExpressionExtensions.For( variables, initializer, test, iteration, bodyBlock );
+                    return ExpressionExtensions.For( variables, initializer, test, iteration, body );
                 } ),
                 static ctx =>
                 {

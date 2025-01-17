@@ -1,4 +1,4 @@
-﻿using Parlot;
+using Parlot;
 using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
@@ -16,10 +16,7 @@ public sealed class LookupParser<T> : Parser<T>
             throw new ArgumentException( "Keyword cannot be null or whitespace.", nameof( keyword ) );
         }
 
-        if ( parser == null )
-        {
-            throw new ArgumentNullException( nameof( parser ) );
-        }
+        ArgumentNullException.ThrowIfNull( parser );
 
         _parsers[keyword] = parser;
         return this;
@@ -27,10 +24,7 @@ public sealed class LookupParser<T> : Parser<T>
 
     public LookupParser<T> Add( params KeyParserPair<T>[] parsers )
     {
-        if ( parsers == null )
-        {
-            throw new ArgumentNullException( nameof( parsers ) );
-        }
+        ArgumentNullException.ThrowIfNull( parsers );
 
         foreach ( var (keyword, parser) in parsers )
         {
@@ -67,8 +61,8 @@ public sealed class LookupParser<T> : Parser<T>
 
 public static partial class XsParsers
 {
-    public static LookupParser<T> IdentifierLookup<T>()
+    public static LookupParser<T> IdentifierLookup<T>( string name = "" )
     {
-        return new LookupParser<T>();
+        return new LookupParser<T>() { Name = name };
     }
 }

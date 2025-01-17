@@ -95,5 +95,29 @@ public class XsParserConditionalTests
 
         Assert.AreEqual( "hello", result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithConditionalAssignment()
+    {
+        var expression = Xs.Parse(
+            """
+            var result = if (true)
+            {
+                "hello";
+            } 
+            else
+            { 
+                "goodBye";
+            }
+            result;
+            """ );
+
+        var lambda = Lambda<Func<string>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( "hello", result );
+    }
 }
 

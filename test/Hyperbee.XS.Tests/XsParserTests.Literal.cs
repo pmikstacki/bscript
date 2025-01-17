@@ -152,6 +152,17 @@ public class XsParserLiteralTests
     }
 
     [TestMethod]
+    public void Parse_ShouldSucceed_WithLongAsIntFallback()
+    {
+        var expression = Xs.Parse( "var x = 12345L as? int ?? 10;" );
+        var lambda = Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 10, result );
+    }
+
+    [TestMethod]
     public void Parse_ShouldSucceed_WithLongIsLong()
     {
         var expression = Xs.Parse( "12345L is long;" );

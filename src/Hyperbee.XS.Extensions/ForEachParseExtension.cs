@@ -11,7 +11,7 @@ namespace Hyperbee.Xs.Extensions;
 
 public class ForEachParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "foreach";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
@@ -46,19 +46,12 @@ public class ForEachParseExtension : IParseExtension
 
                     return (elementVariable, collection);
                 } )
-                .And(
-                    Between(
-                        Terms.Char( '{' ),
-                        ZeroOrMany( statement ),
-                        Terms.Char( '}' )
-                    )
-                )
+                .And( statement )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
                     var ((element, collection), body) = parts;
 
-                    var bodyBlock = Block( body );
-                    return ExpressionExtensions.ForEach( collection, element, bodyBlock );
+                    return ExpressionExtensions.ForEach( collection, element, body );
                 } ),
                 static ctx =>
                 {

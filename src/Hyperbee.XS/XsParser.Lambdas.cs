@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
@@ -11,7 +11,7 @@ public partial class XsParser
 
     // Lambda Parsers
 
-    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Parser<Expression> primaryExpression, Deferred<Expression> statement )
+    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> statement )
     {
         return Between(
                 Terms.Char( '(' ),
@@ -20,42 +20,37 @@ public partial class XsParser
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
-                OneOf(
-                    primaryExpression,
-                    BlockStatementParser( statement )
-                        .Then<Expression>( static ( ctx, body ) =>
-                        {
-                            var (scope, _) = ctx;
-                            var returnLabel = scope.Frame.ReturnLabel;
-
-                            if ( returnLabel != null )
-                            {
-                                return Block(
-                                    body.Concat(
-                                        [Label( returnLabel, Default( returnLabel.Type ) )]
-                                    )
-                                );
-                            }
-
-                            return Block( body );
-                        }
-                    )
-                )
-            )
-            .Then<Expression>( static ( ctx, parts ) =>
+                statement
+                .Then( static ( ctx, body ) =>
                 {
                     var (scope, _) = ctx;
-                    var (parameters, body) = parts;
+                    var returnLabel = scope.Frame.ReturnLabel;
 
-                    try
+                    if ( returnLabel != null )
                     {
-                        return Lambda( body, parameters );
+                        return Block(
+                            body,
+                            Label( returnLabel, Default( returnLabel.Type ) )
+                        );
                     }
-                    finally
-                    {
-                        scope.Pop();
-                    }
+                    return body;
+                } )
+            )
+            .Named( "lambda" )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (scope, _) = ctx;
+                var (parameters, body) = parts;
+
+                try
+                {
+                    return Lambda( body, parameters );
                 }
+                finally
+                {
+                    scope.Pop();
+                }
+            }
             );
 
         static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
@@ -66,6 +61,7 @@ public partial class XsParser
                         identifier.And( Terms.Identifier() )
                     )
                 )
+                .Named( "parameters" )
                 .Then( static ( ctx, parts ) =>
                 {
                     var (scope, resolver) = ctx;
@@ -101,6 +97,7 @@ public partial class XsParser
                 ArgsParser( expression ),
                 Terms.Char( ')' )
             )
+            .Named( "invoke" )
             .Then<Expression>( args => Invoke( targetExpression, args )
         );
     }

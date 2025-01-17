@@ -10,12 +10,12 @@ namespace Hyperbee.Xs.Extensions;
 
 public class UsingParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "using";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, assignable, statement) = binder;
+        var (_, expression, _, statement) = binder;
 
         return
             Between(
@@ -39,19 +39,12 @@ public class UsingParseExtension : IParseExtension
 
                 return (variable, disposable);
             } )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
+            .And( statement )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var ((variable, disposable), body) = parts;
 
-                var bodyBlock = Block( body );
-                return ExpressionExtensions.Using( variable, disposable, bodyBlock );
+                return ExpressionExtensions.Using( variable, disposable, body );
             } ).Named( "using" );
     }
 }

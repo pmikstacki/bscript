@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 
 namespace Hyperbee.XS.System;
@@ -7,7 +6,7 @@ namespace Hyperbee.XS.System;
 public record ExtensionBinder(
     XsConfig Config,
     Parser<Expression> ExpressionParser,
-    Parser<Expression> AssignableParser,
+    Parser<Expression> DeclarationParser,
     Deferred<Expression> StatementParser
 );
 
@@ -15,11 +14,12 @@ public record ExtensionBinder(
 public enum ExtensionType
 {
     None = 0,
-    Literal = 1,
-    Complex = 2,
-    Terminated = 4,
-    Binary = 8,
-    //Unary = 16,
+    //Primary = 1 << 0,
+    Literal = 1 << 1,
+    Expression = 1 << 2,
+    Terminated = 1 << 3,
+    //Binary = 1 << 4,
+    //Unary = 1 << 5,
 }
 
 public interface IParseExtension

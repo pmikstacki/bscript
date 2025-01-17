@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -45,18 +45,18 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, out var keywordExpressions, config );
-        var declaration = DeclarationParser( expression );
-        
-        var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // YUCK!
+        var declaration = DeclarationParser( expression ); 
 
+        var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // BF ';'
+        var declarationStatement = declaration.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); //BF ';'
+        
         // Compose Statements
 
-        var statements = IdentifierLookup<Expression>();
+        var statements = IdentifierLookup<Expression>( "statements" );
 
         var label = LabelParser();
 
         statements.Add(
-            DeclarationParser1( expression ), // BF ZeroOrMany ';'
             BreakParser(),
             ContinueParser(),
             GotoParser(),
@@ -65,10 +65,11 @@ public partial class XsParser
         );
 
         statement.Parser = OneOf(
-            label,
+            declarationStatement,
             statements,
-            expressionStatement
-        );
+            expressionStatement,
+            label
+        ).Named( "statement" );
 
         // Add extensions
 
@@ -77,7 +78,7 @@ public partial class XsParser
         );
 
         keywordExpressions.Add(
-            StatementExtensions( config, ExtensionType.Complex, expression, declaration, statement )
+            StatementExtensions( config, ExtensionType.Expression, expression, declaration, statement )
         );
 
         // Create the final parser
@@ -111,10 +112,10 @@ public partial class XsParser
                 XsConfig config,
                 ExtensionType type,
                 Parser<Expression> expression,
-                Parser<Expression> assignableExpression,
+                Parser<Expression> declaration,
                 Deferred<Expression> statement )
         {
-            var binder = new ExtensionBinder( config, expression, assignableExpression, statement );
+            var binder = new ExtensionBinder( config, expression, declaration, statement );
 
             return binder.Config.Extensions
                 .Where( x => type.HasFlag( x.Type ) )
@@ -168,7 +169,7 @@ public partial class XsParser
             nullLiteral
         ).Or(
             OneOf(
-                LiteralExtensions( config, expression, statement )
+                LiteralExtensions( config, expression )
             )
         ).Named( "literal" );
 
@@ -190,10 +191,27 @@ public partial class XsParser
             Terms.Char( ')' )
         ).Named( "group" );
 
+        // block Expressions
+
+        var blockExpression = Between(
+            Terms.Char( '{' ),
+            ZeroOrMany( statement ),
+            Terms.Char( '}' )
+        ).Named( "block" )
+        .Then( static ( ctx, parts ) => ConvertToSingleExpression( parts ) );
+
         // Primary Expressions
 
-        var primaryExpression = Deferred<Expression>();
-        var lambdaExpression = LambdaParser( identifier, primaryExpression, statement );
+        var lambdaExpression = LambdaParser( identifier, statement );
+
+        keywordExpressions = IdentifierLookup<Expression>( "keyword" );
+        keywordExpressions.Add(
+            NewParser( expression ),
+            ConditionalParser( expression, statement ),
+            LoopParser( statement ),
+            TryCatchParser( statement ),
+            SwitchParser( expression, statement )
+        );
 
         keywordExpressions = IdentifierLookup<Expression>();
         keywordExpressions.Add(
@@ -207,15 +225,16 @@ public partial class XsParser
         var assignment = AssignmentParser( expression );
 
         var baseExpression = OneOf(
-            assignment, //BF?
+            assignment, 
             literal,
             identifier,
             groupedExpression,
+            blockExpression,
             lambdaExpression,
             keywordExpressions
         ).Named( "base" );
 
-        primaryExpression.Parser = baseExpression.LeftAssociative(
+        var primaryExpression = baseExpression.LeftAssociative(
             left => MemberAccessParser( left, expression ),
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
@@ -247,7 +266,7 @@ public partial class XsParser
                     "--" => PreDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported prefix operator: {op}." )
                 };
-            } );
+            } ).Named( "prefix" );
 
         var postfixExpression = variable
             .And(
@@ -266,20 +285,19 @@ public partial class XsParser
                     "--" => PostDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
                 };
-            } );
+            } ).Named( "postfix" );
 
         // Unary Expressions
 
         var unaryExpression = OneOf(
-                prefixExpression,
-                postfixExpression,
-                castExpression,
-                primaryExpression
-            ).Unary(
-                (Terms.Char( '!' ), Not),
-                (Terms.Char( '-' ), Negate)
-            )
-            .Named( "unary" );
+            prefixExpression,
+            postfixExpression,
+            castExpression,
+            primaryExpression
+        ).Unary(
+            (Terms.Char( '!' ), Not),
+            (Terms.Char( '-' ), Negate)
+        ).Named( "unary" );
 
         // Binary Expressions
 
@@ -305,14 +323,11 @@ public partial class XsParser
             )
             .Named( "expression" );
 
-        // Helpers
-
         static Parser<Expression>[] LiteralExtensions(
             XsConfig config,
-            Parser<Expression> expression,
-            Deferred<Expression> statement )
+            Parser<Expression> expression )
         {
-            var binder = new ExtensionBinder( config, expression, null, statement );
+            var binder = new ExtensionBinder( config, expression, null, null );
 
             return binder.Config.Extensions
                 .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
@@ -347,9 +362,13 @@ public partial class XsParser
     // Helpers
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyCollection<Expression> expressions )
+    private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
     {
-        return ConvertToSingleExpression( typeof( void ), expressions );
+        var type = (expressions?.Count == 0)
+            ? null
+            : expressions[^1].Type;
+
+        return ConvertToSingleExpression( type, expressions );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
