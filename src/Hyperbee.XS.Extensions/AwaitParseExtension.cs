@@ -16,6 +16,7 @@ public class AwaitParseExtension : IParseExtension
         var (_, expression, _, _) = binder;
 
         return expression
+            .AndSkip( Terms.Char(';') )
             .Then<Expression>( static parts =>
             {
                 return ExpressionExtensions.Await( parts );

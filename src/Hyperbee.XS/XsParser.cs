@@ -10,11 +10,6 @@ using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
 
-// Parser TODO
-//
-// Add Async Await
-// var (a,b) = (1, 2);
-
 public partial class XsParser
 {
     private readonly Parser<Expression> _xs;
@@ -52,6 +47,9 @@ public partial class XsParser
 
         var baseExpression = ExpressionParser( statement, config );
 
+        var declaration = DeclarationParser( expression );
+        var assignment = AssignmentParser( expression );
+
         // Complex expressions
 
         var complexExpressions = IdentifierLookup<Expression>();
@@ -63,21 +61,22 @@ public partial class XsParser
             SwitchParser( expression, statement )
         );
 
-        var declaration = DeclarationParser( expression );
-        var assignment = AssignmentParser( expression );
-
-        var assignableExpression = OneOf(
-            declaration,
-            assignment,
-            expression
-        );
-
         complexExpressions.Add(
-            StatementExtensions( config, baseExpression, assignableExpression, statement )
+            StatementExtensions( config, baseExpression, expression, statement )
         );
+
+        var blockExpression = Between(
+            Terms.Char( '{' ),
+            ZeroOrMany( statement ),
+            Terms.Char( '}' )
+        ).Named( "block" )
+        .Then( static ( ctx, parts ) => ConvertToSingleExpression( parts ) );
 
         expression.Parser = OneOf(
             complexExpressions,
+            blockExpression,
+            declaration,
+            assignment,
             baseExpression
         );
 
@@ -85,9 +84,13 @@ public partial class XsParser
 
         var controlStatements = IdentifierLookup<Expression>();
 
-        // TODO: This feels like a hack because we don't always know when to end with `;`
-        var expressionStatement = assignableExpression.Terminated();
-        //var expressionStatement = assignableExpression.AndSkip( Terms.Char( ';' ) );
+        var expressionStatement = OneOf(
+                declaration,
+                assignment,
+                baseExpression
+            )
+            .AndSkip( ZeroOrMany( Terms.Char( ';' ) ) )
+            .Named( "terminated" );
 
         var label = LabelParser();
 
@@ -100,9 +103,11 @@ public partial class XsParser
         );
 
         statement.Parser = OneOf(
-            label,
             controlStatements,
-            expressionStatement
+            complexExpressions,
+            expressionStatement,
+            blockExpression,
+            label
         ).Named( "statement" );
 
         // Create the final parser
@@ -192,7 +197,7 @@ public partial class XsParser
             nullLiteral
         ).Or(
             OneOf(
-                LiteralExtensions( config, expression, statement )
+                LiteralExtensions( config, expression )
             )
         ).Named( "literal" );
 
@@ -214,13 +219,6 @@ public partial class XsParser
             Terms.Char( ')' )
         ).Named( "group" );
 
-        var blockExpression = Between(
-            Terms.Char( '{' ),
-            ZeroOrMany( statement ),
-            Terms.Char( '}' )
-        ).Then( static parts => ConvertToSingleExpression( parts ) )
-        .Named( "block" );
-
         // Primary Expressions
 
         var newExpression = NewParser( expression );
@@ -232,7 +230,6 @@ public partial class XsParser
             literal,
             identifier,
             groupedExpression,
-            blockExpression,
             lambdaExpression // TODO: primary seems wrong here
         ).Named( "base" );
 
@@ -241,6 +238,14 @@ public partial class XsParser
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
         ).Named( "primary" );
+
+        // Cast Expressions
+
+        var castExpression = primaryExpression.LeftAssociative(
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
+            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
+            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
+        ).Named( "cast" );
 
         // Prefix and Postfix Expressions
 
@@ -280,33 +285,6 @@ public partial class XsParser
                 };
             } ).Named( "postfix" );
 
-        // Cast Expressions
-
-        var castExpression = baseExpression
-            .And(
-                OneOf(
-                    Terms.Text( "as?" ),
-                    Terms.Text( "as" ),
-                    Terms.Text( "is" )
-                )
-                .And( typeConstant )
-            )
-            .Then<Expression>( static parts =>
-            {
-                var (expr, (op, expression)) = parts;
-
-                if ( expression is not ConstantExpression constantExpression || constantExpression.Value is not Type type )
-                    throw new InvalidOperationException( $"The '{op}' operator must be followed by a valid type." );
-
-                return op switch
-                {
-                    "as?" => TypeAs( expr, typeof( Nullable<> ).MakeGenericType( type ) ),
-                    "as" => Convert( expr, type ),
-                    "is" => TypeIs( expr, type ),
-                    _ => throw new NotImplementedException(),
-                };
-            } ).Named( "cast" );
-
         // Unary Expressions
 
         var unaryExpression = OneOf(
@@ -345,16 +323,23 @@ public partial class XsParser
 
         static Parser<Expression>[] LiteralExtensions(
             XsConfig config,
-            Parser<Expression> expression,
-            Deferred<Expression> statement )
+            Parser<Expression> expression )
         {
-            var binder = new ExtensionBinder( config, expression, null, statement );
+            var binder = new ExtensionBinder( config, expression, null, null );
 
             return binder.Config.Extensions
                 .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
                 .OrderBy( x => x.Type )
                 .Select( x => x.CreateParser( binder ) )
                 .ToArray();
+        }
+
+        static Type CastType( Expression expression )
+        {
+            if ( expression is not ConstantExpression ce || ce.Value is not Type type )
+                throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
+
+            return type;
         }
     }
 

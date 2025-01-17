@@ -36,6 +36,7 @@ public partial class XsParser
                     return body;
                 } )
             )
+            .Named( "lambda" )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
@@ -60,6 +61,7 @@ public partial class XsParser
                         identifier.And( Terms.Identifier() )
                     )
                 )
+                .Named( "parameters" )
                 .Then( static ( ctx, parts ) =>
                 {
                     var (scope, resolver) = ctx;
@@ -95,6 +97,7 @@ public partial class XsParser
                 ArgsParser( expression ),
                 Terms.Char( ')' )
             )
+            .Named( "invoke" )
             .Then<Expression>( args => Invoke( targetExpression, args )
         );
     }

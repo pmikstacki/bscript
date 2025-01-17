@@ -1,4 +1,5 @@
-﻿using Hyperbee.XS.System;
+﻿using System.Xml.Linq;
+using Hyperbee.XS.System;
 using Parlot;
 using Parlot.Fluent;
 
@@ -8,11 +9,27 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
+#if DEBUG
+    public Stack<object> ParserStack { get; } = new();
+#endif
 
     public XsContext( XsConfig config, Scanner scanner, bool useNewLines = false )
         : base( scanner, useNewLines )
     {
         Resolver = new TypeResolver( config?.References );
+
+#if DEBUG
+        OnEnterParser += ( obj, ctx ) =>
+        {
+            ParserStack.Push( obj );
+        };
+
+        OnExitParser += ( obj, ctx ) =>
+        {
+            if ( ParserStack.Peek() == obj )
+                ParserStack.Pop();
+        };
+#endif
     }
 
     public void Deconstruct( out ParseScope scope, out TypeResolver resolver )

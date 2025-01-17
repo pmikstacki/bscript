@@ -23,7 +23,7 @@ public static partial class XsParsers
                 after( ctx );
                 return default;
             } )
-        );
+        ).Named( "bounded" );
     }
 
     public static Parser<T> Bounded<T>(
