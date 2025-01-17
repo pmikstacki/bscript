@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -45,15 +45,9 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, out var keywordExpressions, config );
-
         var declaration = DeclarationParser( expression );
-        var assignment = AssignmentParser( expression );
-
-        var assignableExpression = OneOf(
-            declaration,
-            assignment,
-            expression
-        );
+        
+        var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // YUCK!
 
         // Compose Statements
 
@@ -62,6 +56,7 @@ public partial class XsParser
         var label = LabelParser();
 
         statements.Add(
+            DeclarationParser1( expression ), // BF ZeroOrMany ';'
             BreakParser(),
             ContinueParser(),
             GotoParser(),
@@ -72,17 +67,17 @@ public partial class XsParser
         statement.Parser = OneOf(
             label,
             statements,
-            assignableExpression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) )
+            expressionStatement
         );
 
         // Add extensions
 
         statements.Add(
-            StatementExtensions( config, ExtensionType.Terminated, expression, assignableExpression, statement )
+            StatementExtensions( config, ExtensionType.Terminated, expression, declaration, statement )
         );
 
         keywordExpressions.Add(
-            StatementExtensions( config, ExtensionType.Complex, expression, assignableExpression, statement )
+            StatementExtensions( config, ExtensionType.Complex, expression, declaration, statement )
         );
 
         // Create the final parser
@@ -209,7 +204,10 @@ public partial class XsParser
             SwitchParser( expression, statement )
         );
 
+        var assignment = AssignmentParser( expression );
+
         var baseExpression = OneOf(
+            assignment, //BF?
             literal,
             identifier,
             groupedExpression,
@@ -221,7 +219,8 @@ public partial class XsParser
             left => MemberAccessParser( left, expression ),
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
-        ).Named( "primary" );
+        )
+        .Named( "primary" );
 
         // Cast Expressions
 

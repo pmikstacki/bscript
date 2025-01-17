@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Hyperbee.XS.System.Parsers.XsParsers;
@@ -67,6 +68,31 @@ public partial class XsParser
 
                 return Assign( variable, right );
             }
+        );
+    }
+
+    private static KeyParserPair<Expression> DeclarationParser1( Parser<Expression> expression )
+    {
+        return new ( "var",
+            Terms.Identifier()
+            .AndSkip( Terms.Char( '=' ) )
+            .And( expression )
+            .Then( e => e ) // check node type
+            .AndSkip( ZeroOrOne( Terms.Char( ';' ) ) )
+            //.AndSkip( Terms.Char( ';' ) ) // BF make this smarter??
+            .Then<Expression>( static ( ctx, parts ) =>
+                {
+                    var (scope, _) = ctx;
+                    var (ident, right) = parts;
+
+                    var left = ident.ToString()!;
+
+                    var variable = Variable( right.Type, left );
+                    scope.Variables.Add( left, variable );
+
+                    return Assign( variable, right );
+                }
+            )
         );
     }
 }
