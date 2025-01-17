@@ -364,7 +364,7 @@ public partial class XsParser
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
     {
-        var type = (expressions?.Count == 0)
+        var type = (expressions == null || expressions.Count == 0 )
             ? null
             : expressions[^1].Type;
 
