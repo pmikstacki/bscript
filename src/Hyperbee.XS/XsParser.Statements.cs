@@ -325,7 +325,7 @@ public partial class XsParser
 
     private static KeyParserPair<Expression> DeclarationParser( Parser<Expression> expression )
     {
-        return new("var",
+        return new( "var",
             Terms.Identifier()
                 .AndSkip( Terms.Char( '=' ) )
                 .And( expression )
