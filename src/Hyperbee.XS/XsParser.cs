@@ -49,7 +49,7 @@ public partial class XsParser
 
         var declaration = DeclarationParser( expression );
         var declarationStatement = WithTermination( declaration );
-        
+
         var label = LabelParser();
 
         // Compose Statements

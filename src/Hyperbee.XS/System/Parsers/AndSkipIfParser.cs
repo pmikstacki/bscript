@@ -13,10 +13,10 @@ public class AndSkipIfParser<T, U> : Parser<T>
 
     public AndSkipIfParser( Parser<T> firstParser, Func<ParseContext, T, bool> condition, Parser<U> trueParser, Parser<U> falseParser )
     {
-        _firstParser = firstParser ?? throw new ArgumentNullException( nameof(firstParser) );
-        _condition = condition ?? throw new ArgumentNullException( nameof(condition) );
-        _trueParser = trueParser ?? throw new ArgumentNullException( nameof(trueParser) );
-        _falseParser = falseParser ?? throw new ArgumentNullException( nameof(falseParser) );
+        _firstParser = firstParser ?? throw new ArgumentNullException( nameof( firstParser ) );
+        _condition = condition ?? throw new ArgumentNullException( nameof( condition ) );
+        _trueParser = trueParser ?? throw new ArgumentNullException( nameof( trueParser ) );
+        _falseParser = falseParser ?? throw new ArgumentNullException( nameof( falseParser ) );
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )
