@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -49,7 +49,7 @@ public partial class XsParser
 
         var declaration = DeclarationParser( expression );
         var declarationStatement = declaration.WithTermination();
-        
+
         var label = LabelParser();
 
         // Compose Statements
@@ -194,7 +194,7 @@ public partial class XsParser
 
         var expressionStatements = Always<Expression>()
             .RequireTermination( require: true )
-            .SkipAnd( 
+            .SkipAnd(
                 expressionStatementsBase.RequireTermination( require: false )
             );
 
@@ -318,7 +318,7 @@ public partial class XsParser
                 throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
 
             return type;
-        } 
+        }
     }
 
     // Extensions
