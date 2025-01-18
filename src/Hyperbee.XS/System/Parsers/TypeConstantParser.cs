@@ -39,4 +39,3 @@ public static partial class XsParsers
         return new TypeConstantParser( backtrack );
     }
 }
-

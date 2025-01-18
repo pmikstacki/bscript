@@ -45,11 +45,11 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, config );
+        var expressionStatement = WithTermination( expression );
+
         var declaration = DeclarationParser( expression );
-
-        var expressionStatement = expression.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); // BF Complex-Expressions don't need a terminator
-        var declarationStatement = declaration.AndSkip( ZeroOrOne( Terms.Char( ';' ) ) ); //BF Complex-Expressions don't need a terminator
-
+        var declarationStatement = WithTermination( declaration );
+        
         var label = LabelParser();
 
         // Compose Statements
@@ -62,9 +62,7 @@ public partial class XsParser
             GotoParser(),
             ReturnParser( expression ),
             ThrowParser( expression )
-        );
-
-        terminatedStatements.Add(
+        ).Add(
             StatementExtensions( config, ExtensionType.Terminated, expression, declaration, statement )
         );
 
@@ -101,6 +99,17 @@ public partial class XsParser
                     throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
             }
         );
+
+        // Helpers
+
+        static Parser<Expression> WithTermination( Parser<Expression> parser )
+        {
+            return parser.AndSkipIf(
+                ( ctx, _ ) => ((XsContext) ctx).ExpressionStatement,
+                ZeroOrMany( Terms.Char( ';' ) ),
+                OneOrMany( Terms.Char( ';' ) )
+            );
+        }
     }
 
     private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
@@ -180,21 +189,21 @@ public partial class XsParser
 
         // Expression statements
 
-        var expressionStatements = IdentifierLookup<Expression>( "expression-statements" );
+        var expressionStatementsBase = IdentifierLookup<Expression>( "expression-statements" )
+            .Add(
+                NewParser( expression ),
+                ConditionalParser( expression, statement ),
+                LoopParser( statement ),
+                TryCatchParser( statement ),
+                SwitchParser( expression, statement )
+            )
+            .Add(
+                StatementExtensions( config, ExtensionType.Expression, expression, DeclarationParser( expression ), statement )
+            );
 
-        expressionStatements.Add(
-            NewParser( expression ),
-            ConditionalParser( expression, statement ),
-            LoopParser( statement ),
-            TryCatchParser( statement ),
-            SwitchParser( expression, statement )
-        );
-
-        var declaration = DeclarationParser( expression );
-
-        expressionStatements.Add(
-            StatementExtensions( config, ExtensionType.Expression, expression, declaration, statement )
-        );
+        var expressionStatements = Always<Expression>()
+            .When( ClearFlag )
+            .SkipAnd( expressionStatementsBase.When( SetFlag ) );
 
         // Primary Expressions
 
@@ -215,11 +224,13 @@ public partial class XsParser
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
         )
+        .When( ClearFlag )
         .LeftAssociative( // casting
             (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
             (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
             (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
         )
+        .When( ClearFlag )
         .Named( "primary" );
 
         // Prefix and Postfix Expressions
@@ -258,7 +269,9 @@ public partial class XsParser
                     "--" => PostDecrementAssign( variable ),
                     _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
                 };
-            } ).Named( "postfix" );
+            } )
+            .When( ClearFlag )
+            .Named( "postfix" );
 
         // Unary Expressions
 
@@ -314,6 +327,20 @@ public partial class XsParser
                 throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
 
             return type;
+        }
+
+        static bool SetFlag( ParseContext context, Expression _ )
+        {
+            var xsContext = (XsContext) context;
+            xsContext.ExpressionStatement = true;
+            return true;
+        }
+
+        static bool ClearFlag( ParseContext context, Expression _ )
+        {
+            var xsContext = (XsContext) context;
+            xsContext.ExpressionStatement = true;
+            return true;
         }
     }
 

@@ -9,6 +9,8 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
+    public bool ExpressionStatement { get; set; }
+
 #if DEBUG
     public Stack<object> ParserStack { get; } = new();
 #endif
