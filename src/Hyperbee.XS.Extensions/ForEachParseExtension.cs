@@ -16,7 +16,7 @@ public class ForEachParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, _, statement) = binder;
+        var (_, expression, statement) = binder;
 
         return
             XsParsers.Bounded(

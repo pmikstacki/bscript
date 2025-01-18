@@ -6,7 +6,6 @@ namespace Hyperbee.XS.System;
 public record ExtensionBinder(
     XsConfig Config,
     Parser<Expression> ExpressionParser,
-    Parser<Expression> DeclarationParser,
     Deferred<Expression> StatementParser
 );
 

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -47,9 +47,6 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        var declaration = DeclarationParser( expression );
-        var declarationStatement = declaration.WithTermination();
-
         var label = LabelParser();
 
         // Compose Statements
@@ -63,11 +60,10 @@ public partial class XsParser
             ReturnParser( expression ),
             ThrowParser( expression )
         ).Add(
-            StatementExtensions( config, ExtensionType.Terminated, expression, declaration, statement )
+            StatementExtensions( config, ExtensionType.Terminated, expression, statement )
         );
 
         statement.Parser = OneOf(
-            declarationStatement,
             terminatedStatements,
             expressionStatement,
             label
@@ -182,6 +178,7 @@ public partial class XsParser
 
         var expressionStatementsBase = IdentifierLookup<Expression>( "expression-statements" )
             .Add(
+                DeclarationParser( expression ),
                 NewParser( expression ),
                 ConditionalParser( expression, statement ),
                 LoopParser( statement ),
@@ -189,7 +186,7 @@ public partial class XsParser
                 SwitchParser( expression, statement )
             )
             .Add(
-                StatementExtensions( config, ExtensionType.Expression, expression, DeclarationParser( expression ), statement )
+                StatementExtensions( config, ExtensionType.Expression, expression, statement )
             );
 
         var expressionStatements = Always<Expression>()
@@ -303,7 +300,7 @@ public partial class XsParser
             XsConfig config,
             Parser<Expression> expression )
         {
-            var binder = new ExtensionBinder( config, expression, null, null );
+            var binder = new ExtensionBinder( config, expression, default );
 
             return binder.Config.Extensions
                 .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
@@ -327,10 +324,9 @@ public partial class XsParser
         XsConfig config,
         ExtensionType type,
         Parser<Expression> expression,
-        Parser<Expression> declaration,
         Deferred<Expression> statement )
     {
-        var binder = new ExtensionBinder( config, expression, declaration, statement );
+        var binder = new ExtensionBinder( config, expression, statement );
 
         return binder.Config.Extensions
             .Where( x => type.HasFlag( x.Type ) )

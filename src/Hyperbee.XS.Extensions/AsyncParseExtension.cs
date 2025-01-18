@@ -15,7 +15,7 @@ public class AsyncParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, _, _, statement) = binder;
+        var (_, _, statement) = binder;
 
         return XsParsers.Bounded(
             static ctx =>

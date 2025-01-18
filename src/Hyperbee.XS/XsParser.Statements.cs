@@ -313,13 +313,36 @@ public partial class XsParser
                 } ).ToArray();
 
                 return TryCatchFinally(
-                    tryParts,
+                    tryParts!,
                     finallyParts,
                     catchBlocks
                 );
 
             } )
             .Named( "try" )
+        );
+    }
+
+    private static KeyParserPair<Expression> DeclarationParser( Parser<Expression> expression )
+    {
+        return new("var",
+            Terms.Identifier()
+                .AndSkip( Terms.Char( '=' ) )
+                .And( expression )
+                .Then<Expression>( static ( ctx, parts ) =>
+                    {
+                        var (scope, _) = ctx;
+                        var (ident, right) = parts;
+
+                        var left = ident.ToString()!;
+
+                        var variable = Variable( right.Type, left );
+                        scope.Variables.Add( left, variable );
+
+                        return Assign( variable, right );
+                    }
+                )
+                .Named( "declaration" )
         );
     }
 

@@ -10,8 +10,6 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-    // Value Parsers
-
     private static Parser<Expression> AssignmentParser( Parser<Expression> variable, Parser<Expression> expression )
     {
         return variable
@@ -47,26 +45,5 @@ public partial class XsParser
                     };
                 }
             ).Named( "assignment" );
-    }
-
-    private static Parser<Expression> DeclarationParser( Parser<Expression> expression )
-    {
-        return Terms.Text( "var" )
-            .SkipAnd( Terms.Identifier() )
-            .AndSkip( Terms.Char( '=' ) )
-            .And( expression )
-            .Then<Expression>( static ( ctx, parts ) =>
-            {
-                var (scope, _) = ctx;
-                var (ident, right) = parts;
-
-                var left = ident.ToString()!;
-
-                var variable = Variable( right.Type, left );
-                scope.Variables.Add( left, variable );
-
-                return Assign( variable, right );
-            }
-        ).Named( "declaration" );
     }
 }

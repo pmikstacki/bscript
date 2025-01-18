@@ -16,7 +16,7 @@ public class ForParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, declaration, statement) = binder;
+        var (_, expression, statement) = binder;
 
         return
             XsParsers.Bounded(
@@ -27,7 +27,7 @@ public class ForParseExtension : IParseExtension
                 },
                 Between(
                     Terms.Char( '(' ),
-                    declaration.AndSkip( Terms.Char( ';' ) )
+                    expression.AndSkip( Terms.Char( ';' ) )
                             .And( expression ).AndSkip( Terms.Char( ';' ) )
                             .And( expression ),
                     Terms.Char( ')' )
