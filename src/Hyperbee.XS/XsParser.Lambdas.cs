@@ -11,7 +11,7 @@ public partial class XsParser
 
     // Lambda Parsers
 
-    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> statement )
+    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> expression )
     {
         return Between(
                 Terms.Char( '(' ),
@@ -20,7 +20,7 @@ public partial class XsParser
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(
-                statement
+                expression
                 .Then( static ( ctx, body ) =>
                 {
                     var (scope, _) = ctx;

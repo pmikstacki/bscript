@@ -23,13 +23,20 @@ public class AndSkipIfParser<T, U> : Parser<T>
     {
         context.EnterParser( this );
 
+        var scanner = context.Scanner;
+        var cursor = scanner.Cursor;
+
         var result1 = new ParseResult<T>();
-        var start = context.Scanner.Cursor.Position;
+
+        var start = cursor.Position;
+        scanner.SkipWhiteSpaceOrNewLine();
 
         if ( _firstParser.Parse( context, ref result1 ) )
         {
             var nextParser = _condition( context, result.Value ) ? _trueParser : _falseParser;
             var result2 = new ParseResult<U>();
+
+            scanner.SkipWhiteSpaceOrNewLine();
 
             if ( nextParser.Parse( context, ref result2 ) )
             {
@@ -39,7 +46,7 @@ public class AndSkipIfParser<T, U> : Parser<T>
                 return true;
             }
 
-            context.Scanner.Cursor.ResetPosition( start );
+            cursor.ResetPosition( start );
         }
 
         context.ExitParser( this );

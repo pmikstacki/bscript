@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
@@ -45,11 +45,11 @@ public partial class XsParser
         // Expressions
 
         var expression = ExpressionParser( statement, config );
-        var expressionStatement = WithTermination( expression );
+        var expressionStatement = expression.WithTermination();
 
         var declaration = DeclarationParser( expression );
-        var declarationStatement = WithTermination( declaration );
-
+        var declarationStatement = declaration.WithTermination();
+        
         var label = LabelParser();
 
         // Compose Statements
@@ -99,17 +99,6 @@ public partial class XsParser
                     throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
             }
         );
-
-        // Helpers
-
-        static Parser<Expression> WithTermination( Parser<Expression> parser )
-        {
-            return parser.AndSkipIf(
-                ( ctx, _ ) => ((XsContext) ctx).ExpressionStatement,
-                ZeroOrMany( Terms.Char( ';' ) ),
-                OneOrMany( Terms.Char( ';' ) )
-            );
-        }
     }
 
     private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
@@ -184,8 +173,10 @@ public partial class XsParser
             Terms.Char( '{' ),
             ZeroOrMany( statement ),
             Terms.Char( '}' )
-        ).Named( "block" )
-        .Then( static parts => ConvertToSingleExpression( parts ) );
+        )
+        .Named( "block" )
+        .Then( static parts => ConvertToSingleExpression( parts ) )
+        .RequireTermination( require: false );
 
         // Expression statements
 
@@ -202,13 +193,15 @@ public partial class XsParser
             );
 
         var expressionStatements = Always<Expression>()
-            .When( ClearFlag )
-            .SkipAnd( expressionStatementsBase.When( SetFlag ) );
+            .RequireTermination( require: true )
+            .SkipAnd( 
+                expressionStatementsBase.RequireTermination( require: false )
+            );
 
         // Primary Expressions
 
         var assignment = AssignmentParser( variable, expression );
-        var lambdaExpression = LambdaParser( identifier, statement );
+        var lambdaExpression = LambdaParser( identifier, expression );
 
         var primaryExpression = OneOf(
             assignment,
@@ -224,13 +217,11 @@ public partial class XsParser
             left => LambdaInvokeParser( left, expression ),
             left => IndexerAccessParser( left, expression )
         )
-        .When( ClearFlag )
         .LeftAssociative( // casting
             (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
             (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
             (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
         )
-        .When( ClearFlag )
         .Named( "primary" );
 
         // Prefix and Postfix Expressions
@@ -270,7 +261,7 @@ public partial class XsParser
                     _ => throw new InvalidOperationException( $"Unsupported postfix operator: {op}." )
                 };
             } )
-            .When( ClearFlag )
+            .RequireTermination( require: true )
             .Named( "postfix" );
 
         // Unary Expressions
@@ -327,21 +318,7 @@ public partial class XsParser
                 throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
 
             return type;
-        }
-
-        static bool SetFlag( ParseContext context, Expression _ )
-        {
-            var xsContext = (XsContext) context;
-            xsContext.ExpressionStatement = true;
-            return true;
-        }
-
-        static bool ClearFlag( ParseContext context, Expression _ )
-        {
-            var xsContext = (XsContext) context;
-            xsContext.ExpressionStatement = true;
-            return true;
-        }
+        } 
     }
 
     // Extensions
@@ -455,6 +432,28 @@ public partial class XsParser
         {
             return value.Type == type ? value : Convert( value, type );
         }
+    }
+}
+
+internal static class TerminationExtensions
+{
+    public static Parser<Expression> RequireTermination( this Parser<Expression> parser, bool require )
+    {
+        return parser.When( ( context, _ ) =>
+        {
+            var xsContext = (XsContext) context;
+            xsContext.RequireTermination = require;
+            return true;
+        } );
+    }
+
+    public static Parser<Expression> WithTermination( this Parser<Expression> parser )
+    {
+        return parser.AndSkipIf(
+            ( ctx, _ ) => ((XsContext) ctx).RequireTermination,
+            OneOrMany( Terms.Char( ';' ) ),
+            ZeroOrMany( Terms.Char( ';' ) )
+        );
     }
 }
 

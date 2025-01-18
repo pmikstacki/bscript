@@ -1,4 +1,5 @@
-﻿using Parlot;
+﻿using System.Diagnostics;
+using Parlot;
 using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
@@ -46,6 +47,9 @@ public sealed class LookupParser<T> : Parser<T>
 
         if ( scanner.ReadIdentifier( out var identifier ) && _parsers.TryGetValue( identifier.ToString(), out var parser ) )
         {
+            if ( identifier.ToString() == "if" )
+                Debugger.Break();
+
             if ( parser.Parse( context, ref result ) )
             {
                 scanner.SkipWhiteSpaceOrNewLine();

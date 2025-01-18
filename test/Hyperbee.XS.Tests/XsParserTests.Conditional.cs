@@ -34,13 +34,13 @@ public class XsParserConditionalTests
         var expression = Xs.Parse(
             """
             if (true)
-            {
+            //{
                 "hello";
-            } 
+            //} 
             else
-            { 
+            //{ 
                 "goodBye";
-            }
+            //}
             """ );
 
         var lambda = Lambda<Func<string>>( expression );
