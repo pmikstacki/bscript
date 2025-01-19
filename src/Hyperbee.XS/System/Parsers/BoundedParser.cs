@@ -14,13 +14,13 @@ public static partial class XsParsers
         return Between(
             Always().Then<Expression>( ( ctx, _ ) =>
             {
-                before( ctx );
+                before?.Invoke( ctx );
                 return default;
             } ),
             parser,
             Always().Then<Expression>( ( ctx, _ ) =>
             {
-                after( ctx );
+                after?.Invoke( ctx );
                 return default;
             } )
         ).Named( "bounded" );
@@ -30,13 +30,13 @@ public static partial class XsParsers
         Action<ParseContext> before,
         Parser<T> parser )
     {
-        return Bounded( before, parser, _ => { } );
+        return Bounded( before, parser, null );
     }
 
     public static Parser<T> Bounded<T>(
         Parser<T> parser,
         Action<ParseContext> after )
     {
-        return Bounded( _ => { }, parser, after );
+        return Bounded( null, parser, after );
     }
 }

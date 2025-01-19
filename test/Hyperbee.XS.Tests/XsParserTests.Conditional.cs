@@ -8,7 +8,7 @@ public class XsParserConditionalTests
     public XsParser Xs { get; } = new();
 
     [TestMethod]
-    public void Compile_ShouldSucceed_Please()
+    public void Compile_ShouldSucceed_WithoutBraces()
     {
         var expression = Xs.Parse(
             """

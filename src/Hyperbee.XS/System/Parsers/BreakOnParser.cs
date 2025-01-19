@@ -41,12 +41,13 @@ public class BreakOnParser<U, T> : Parser<T>
     {
         context.EnterParser( this );
 
-        var current = context.Scanner.Cursor.Position;
+        var cursor = context.Scanner.Cursor;
+        var current = cursor.Position;
 
         var stoppingCheck = new ParseResult<U>();
         if ( _stoppingCondition.Parse( context, ref stoppingCheck ) )
         {
-            context.Scanner.Cursor.ResetPosition( current );
+            cursor.ResetPosition( current );
             context.ExitParser( this );
             return false;
         }

@@ -65,12 +65,12 @@ public class LeftAssociativeParser<T> : Parser<T>
                 var rightParser = factory( leftResult );
                 var rightResult = new ParseResult<T>();
 
-                if ( rightParser.Parse( context, ref rightResult ) )
-                {
-                    leftResult = rightResult.Value;
-                    matched = true;
-                    break;
-                }
+                if ( !rightParser.Parse( context, ref rightResult ) )
+                    continue;
+
+                leftResult = rightResult.Value;
+                matched = true;
+                break;
             }
 
             if ( !matched )

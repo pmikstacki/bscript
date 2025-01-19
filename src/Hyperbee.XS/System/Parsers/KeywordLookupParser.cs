@@ -46,7 +46,9 @@ public sealed class KeywordLookupParser<T> : Parser<T>
         context.EnterParser( this );
 
         var scanner = context.Scanner;
-        var start = scanner.Cursor.Position;
+        var cursor = scanner.Cursor;
+
+        var start = cursor.Position;
 
         scanner.SkipWhiteSpaceOrNewLine();
 
@@ -63,7 +65,7 @@ public sealed class KeywordLookupParser<T> : Parser<T>
             }
         }
 
-        scanner.Cursor.ResetPosition( start );
+        cursor.ResetPosition( start );
         context.ExitParser( this );
         return false;
     }

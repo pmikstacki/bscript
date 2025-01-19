@@ -31,14 +31,11 @@ public class AndSkipIfParser<T, U> : Parser<T>
         var result1 = new ParseResult<T>();
 
         var start = cursor.Position;
-        scanner.SkipWhiteSpaceOrNewLine();
 
         if ( _firstParser.Parse( context, ref result1 ) )
         {
             var nextParser = _condition( context, result.Value ) ? _trueParser : _falseParser;
             var result2 = new ParseResult<U>();
-
-            scanner.SkipWhiteSpaceOrNewLine();
 
             if ( nextParser.Parse( context, ref result2 ) )
             {

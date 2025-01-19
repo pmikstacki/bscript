@@ -39,6 +39,7 @@
     <None Include="..\..\assets\icon.png" Pack="true" Visible="false" PackagePath="/" />
     <None Include="..\..\README.md" Pack="true" Visible="true" PackagePath="/" Link="README.md" />
     <None Include="..\..\LICENSE" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="..\..\NOTICES" Pack="true" Visible="false" PackagePath="/" />
     <PackageReference Include="Hyperbee.Collections" Version="2.3.0" />
     <PackageReference Include="Hyperbee.Expressions" Version="1.1.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
