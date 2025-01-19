@@ -11,6 +11,7 @@ internal class TypeRuntimeParser : Parser<Type>
     public TypeRuntimeParser( bool backtrack )
     {
         _backtrack = backtrack;
+        Name = "TypeRuntime";
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<Type> result )

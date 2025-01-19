@@ -33,6 +33,8 @@ public class BreakOnParser<U, T> : Parser<T>
     {
         _innerParser = innerParser ?? throw new ArgumentNullException( nameof( innerParser ) );
         _stoppingCondition = stoppingCondition ?? throw new ArgumentNullException( nameof( stoppingCondition ) );
+
+        Name = $"BreakOn({innerParser.Name})";
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )

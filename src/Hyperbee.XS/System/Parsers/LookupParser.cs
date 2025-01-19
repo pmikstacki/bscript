@@ -10,6 +10,11 @@ public sealed class LookupParser<T> : Parser<T>
 {
     private readonly Dictionary<string, Parser<T>> _parsers = new();
 
+    public LookupParser()
+    {
+        Name = "Lookup";
+    }
+
     public LookupParser<T> Add( string keyword, Parser<T> parser )
     {
         if ( string.IsNullOrWhiteSpace( keyword ) )

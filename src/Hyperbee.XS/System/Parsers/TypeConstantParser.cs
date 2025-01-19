@@ -11,6 +11,7 @@ internal class TypeConstantParser : Parser<Expression>
     public TypeConstantParser( bool backtrack )
     {
         _backtrack = backtrack;
+        Name = "TypeConstant";
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )

@@ -47,26 +47,23 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        var label = LabelParser();
-
         // Compose Statements
 
-        var terminatedStatements = IdentifierLookup<Expression>( "terminated" );
-
-        terminatedStatements.Add(
-            BreakParser(),
-            ContinueParser(),
-            GotoParser(),
-            ReturnParser( expression ),
-            ThrowParser( expression )
-        ).Add(
-            StatementExtensions( config, ExtensionType.Terminated, expression, statement )
-        );
+        var terminatedStatements = IdentifierLookup<Expression>( "terminated" )
+            .Add(
+                BreakParser(),
+                ContinueParser(),
+                GotoParser(),
+                ReturnParser( expression ),
+                ThrowParser( expression )
+            ).Add(
+                StatementExtensions( config, ExtensionType.Terminated, expression, statement )
+            );
 
         statement.Parser = OneOf(
             terminatedStatements,
             expressionStatement,
-            label
+            LabelParser()
         ).Named( "statement" );
 
         // Create the final parser
@@ -172,7 +169,7 @@ public partial class XsParser
         )
         .Named( "block" )
         .Then( static parts => ConvertToSingleExpression( parts ) )
-        .RequireTermination( require: false );
+        .RequireTermination( false );
 
         // Expression statements
 
@@ -190,9 +187,9 @@ public partial class XsParser
             );
 
         var expressionStatements = Always<Expression>()
-            .RequireTermination( require: true )
+            .RequireTermination( true )
             .SkipAnd(
-                expressionStatementsBase.RequireTermination( require: false )
+                expressionStatementsBase.RequireTermination( false )
             );
 
         // Primary Expressions
@@ -295,6 +292,8 @@ public partial class XsParser
                 (Terms.Text( "??" ), Coalesce)
             )
             .Named( "expression" );
+
+        // Helpers
 
         static Parser<Expression>[] LiteralExtensions(
             XsConfig config,
@@ -430,26 +429,3 @@ public partial class XsParser
         }
     }
 }
-
-internal static class TerminationExtensions
-{
-    public static Parser<Expression> RequireTermination( this Parser<Expression> parser, bool require )
-    {
-        return parser.When( ( context, _ ) =>
-        {
-            var xsContext = (XsContext) context;
-            xsContext.RequireTermination = require;
-            return true;
-        } );
-    }
-
-    public static Parser<Expression> WithTermination( this Parser<Expression> parser )
-    {
-        return parser.AndSkipIf(
-            ( ctx, _ ) => ((XsContext) ctx).RequireTermination,
-            OneOrMany( Terms.Char( ';' ) ),
-            ZeroOrMany( Terms.Char( ';' ) )
-        );
-    }
-}
-

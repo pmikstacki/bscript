@@ -6,6 +6,11 @@ namespace Hyperbee.XS.System.Parsers;
 
 internal class VariableParser : Parser<Expression>
 {
+    public VariableParser()
+    {
+        Name = "Variable";
+    }
+
     public override bool Parse( ParseContext context, ref ParseResult<Expression> result )
     {
         context.EnterParser( this );

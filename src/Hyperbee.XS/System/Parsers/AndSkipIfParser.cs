@@ -17,6 +17,8 @@ public class AndSkipIfParser<T, U> : Parser<T>
         _condition = condition ?? throw new ArgumentNullException( nameof( condition ) );
         _trueParser = trueParser ?? throw new ArgumentNullException( nameof( trueParser ) );
         _falseParser = falseParser ?? throw new ArgumentNullException( nameof( falseParser ) );
+
+        Name = $"AndSkipIf({firstParser.Name})";
     }
 
     public override bool Parse( ParseContext context, ref ParseResult<T> result )
