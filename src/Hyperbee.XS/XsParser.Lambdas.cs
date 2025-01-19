@@ -50,8 +50,7 @@ public partial class XsParser
                 {
                     scope.Pop();
                 }
-            }
-            );
+            } );
 
         static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
         {

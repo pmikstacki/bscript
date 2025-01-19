@@ -4,18 +4,18 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS.System.Parsers;
 
-public record KeyParserPair<T>( string Key, Parser<T> Parser );
+public record KeywordParserPair<T>( string Key, Parser<T> Parser );
 
-public sealed class LookupParser<T> : Parser<T>
+public sealed class KeywordLookupParser<T> : Parser<T>
 {
     private readonly Dictionary<string, Parser<T>> _parsers = new();
 
-    public LookupParser()
+    public KeywordLookupParser()
     {
-        Name = "Lookup";
+        Name = "KeywordLookup";
     }
 
-    public LookupParser<T> Add( string keyword, Parser<T> parser )
+    public KeywordLookupParser<T> Add( string keyword, Parser<T> parser )
     {
         if ( string.IsNullOrWhiteSpace( keyword ) )
         {
@@ -29,7 +29,7 @@ public sealed class LookupParser<T> : Parser<T>
         return this;
     }
 
-    public LookupParser<T> Add( params KeyParserPair<T>[] parsers )
+    public KeywordLookupParser<T> Add( params KeywordParserPair<T>[] parsers )
     {
         ArgumentNullException.ThrowIfNull( parsers );
 
@@ -71,8 +71,13 @@ public sealed class LookupParser<T> : Parser<T>
 
 public static partial class XsParsers
 {
-    public static LookupParser<T> IdentifierLookup<T>( string name = "" )
+    public static KeywordLookupParser<T> KeywordLookup<T>()
     {
-        return new LookupParser<T>() { Name = name };
+        return new KeywordLookupParser<T>();
+    }
+
+    public static KeywordLookupParser<T> KeywordLookup<T>( string name )
+    {
+        return new KeywordLookupParser<T> { Name = name };
     }
 }

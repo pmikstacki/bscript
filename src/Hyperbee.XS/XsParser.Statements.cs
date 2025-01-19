@@ -12,7 +12,7 @@ public partial class XsParser
 {
     // Terminated Statement Parsers
 
-    private static KeyParserPair<Expression> BreakParser()
+    private static KeywordParserPair<Expression> BreakParser()
     {
         return new( "break",
             Always()
@@ -30,7 +30,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> ContinueParser()
+    private static KeywordParserPair<Expression> ContinueParser()
     {
         return new( "continue",
             Always().Then<Expression>( static ( ctx, _ ) =>
@@ -47,7 +47,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> GotoParser()
+    private static KeywordParserPair<Expression> GotoParser()
     {
         return new( "goto",
             Terms.Identifier()
@@ -76,7 +76,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> ReturnParser( Parser<Expression> expression )
+    private static KeywordParserPair<Expression> ReturnParser( Parser<Expression> expression )
     {
         return new( "return",
             ZeroOrOne( expression )
@@ -95,7 +95,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> ThrowParser( Parser<Expression> expression )
+    private static KeywordParserPair<Expression> ThrowParser( Parser<Expression> expression )
     {
         return new( "throw",
             ZeroOrOne( expression )
@@ -115,7 +115,7 @@ public partial class XsParser
 
     // Compound Statement Parsers
 
-    private static KeyParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static KeywordParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         return new( "if",
             Between(
@@ -140,7 +140,7 @@ public partial class XsParser
             .Named( "if" )
         );
     }
-    private static KeyParserPair<Expression> LoopParser( Deferred<Expression> statement )
+    private static KeywordParserPair<Expression> LoopParser( Deferred<Expression> statement )
     {
         return new( "loop",
             Always().Then( ( ctx, _ ) =>
@@ -173,7 +173,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
+    private static KeywordParserPair<Expression> SwitchParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         return new( "switch",
             Always().Then( static ( ctx, _ ) =>
@@ -259,7 +259,7 @@ public partial class XsParser
         }
     }
 
-    private static KeyParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
+    private static KeywordParserPair<Expression> TryCatchParser( Deferred<Expression> statement )
     {
         return new( "try",
             statement
@@ -323,7 +323,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> DeclarationParser( Parser<Expression> expression )
+    private static KeywordParserPair<Expression> DeclarationParser( Parser<Expression> expression )
     {
         return new( "var",
             Terms.Identifier()
@@ -346,7 +346,7 @@ public partial class XsParser
         );
     }
 
-    private static KeyParserPair<Expression> NewParser( Parser<Expression> expression )
+    private static KeywordParserPair<Expression> NewParser( Parser<Expression> expression )
     {
         var objectConstructor =
             Between(

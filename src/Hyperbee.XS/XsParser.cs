@@ -49,7 +49,7 @@ public partial class XsParser
 
         // Compose Statements
 
-        var terminatedStatements = IdentifierLookup<Expression>( "terminated" )
+        var terminatedStatements = KeywordLookup<Expression>( "lookup(terminated-statements)" )
             .Add(
                 BreakParser(),
                 ContinueParser(),
@@ -100,47 +100,7 @@ public partial class XsParser
 
         // Literals
 
-        var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign )
-            .AndSkip( ZeroOrOne( Terms.Text( "N", caseInsensitive: true ) ) )
-            .Then<Expression>( static value => Constant( value ) );
-
-        var longLiteral = Terms.Number<long>( NumberOptions.AllowLeadingSign )
-            .AndSkip( Terms.Text( "L", caseInsensitive: true ) )
-            .Then<Expression>( static value => Constant( value ) );
-
-        var floatLiteral = Terms.Number<float>( NumberOptions.Float )
-            .AndSkip( Terms.Text( "F", caseInsensitive: true ) )
-            .Then<Expression>( static value => Constant( value ) );
-
-        var doubleLiteral = Terms.Number<double>( NumberOptions.Float )
-            .AndSkip( Terms.Text( "D", caseInsensitive: true ) )
-            .Then<Expression>( static value => Constant( value ) );
-
-        var booleanLiteral = Terms.Text( "true" ).Or( Terms.Text( "false" ) )
-            .Then<Expression>( static value => Constant( bool.Parse( value ) ) );
-
-        var characterLiteral = Terms.CharQuoted( StringLiteralQuotes.Single )
-            .Then<Expression>( static value => Constant( value ) );
-
-        var stringLiteral = Terms.String( StringLiteralQuotes.Double )
-            .Then<Expression>( static value => Constant( value.ToString() ) );
-
-        var nullLiteral = Terms.Text( "null" ).Then<Expression>( static _ => Constant( null ) );
-
-        var literal = OneOf(
-            longLiteral,
-            doubleLiteral,
-            floatLiteral,
-            integerLiteral,
-            characterLiteral,
-            stringLiteral,
-            booleanLiteral,
-            nullLiteral
-        ).Or(
-            OneOf(
-                LiteralExtensions( config, expression )
-            )
-        ).Named( "literal" );
+        var literal = LiteralParser( config, expression );
 
         // Identifiers
 
@@ -168,12 +128,12 @@ public partial class XsParser
             Terms.Char( '}' )
         )
         .Named( "block" )
-        .Then( static parts => ConvertToSingleExpression( parts ) )
-        .RequireTermination( false );
+        .RequireTermination( false )
+        .Then( static parts => ConvertToSingleExpression( parts ) );
 
         // Expression statements
 
-        var expressionStatementsBase = IdentifierLookup<Expression>( "expression-statements" )
+        var expressionStatementsBase = KeywordLookup<Expression>()
             .Add(
                 DeclarationParser( expression ),
                 NewParser( expression ),
@@ -190,7 +150,8 @@ public partial class XsParser
             .RequireTermination( true )
             .SkipAnd(
                 expressionStatementsBase.RequireTermination( false )
-            );
+            )
+            .Named( "expression-statements" );
 
         // Primary Expressions
 
@@ -295,19 +256,6 @@ public partial class XsParser
 
         // Helpers
 
-        static Parser<Expression>[] LiteralExtensions(
-            XsConfig config,
-            Parser<Expression> expression )
-        {
-            var binder = new ExtensionBinder( config, expression, default );
-
-            return binder.Config.Extensions
-                .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
-                .OrderBy( x => x.Type )
-                .Select( x => x.CreateParser( binder ) )
-                .ToArray();
-        }
-
         static Type CastType( Expression expression )
         {
             if ( expression is not ConstantExpression ce || ce.Value is not Type type )
@@ -319,7 +267,7 @@ public partial class XsParser
 
     // Extensions
 
-    private static KeyParserPair<Expression>[] StatementExtensions(
+    private static KeywordParserPair<Expression>[] StatementExtensions(
         XsConfig config,
         ExtensionType type,
         Parser<Expression> expression,
@@ -330,7 +278,20 @@ public partial class XsParser
         return binder.Config.Extensions
             .Where( x => type.HasFlag( x.Type ) )
             .OrderBy( x => x.Type )
-            .Select( x => new KeyParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
+            .Select( x => new KeywordParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
+            .ToArray();
+    }
+
+    private static Parser<Expression>[] LiteralExtensions(
+        XsConfig config,
+        Parser<Expression> expression )
+    {
+        var binder = new ExtensionBinder( config, expression, default );
+
+        return binder.Config.Extensions
+            .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
+            .OrderBy( x => x.Type )
+            .Select( x => x.CreateParser( binder ) )
             .ToArray();
     }
 
