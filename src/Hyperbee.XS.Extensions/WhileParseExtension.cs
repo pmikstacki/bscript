@@ -3,7 +3,6 @@ using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
-using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
@@ -15,7 +14,7 @@ public class WhileParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, statement) = binder;
+        var (expression, statement) = binder;
 
         return
             Between(

@@ -4,7 +4,6 @@ using Parlot.Fluent;
 namespace Hyperbee.XS.System;
 
 public record ExtensionBinder(
-    XsConfig Config,
     Parser<Expression> ExpressionParser,
     Deferred<Expression> StatementParser
 );

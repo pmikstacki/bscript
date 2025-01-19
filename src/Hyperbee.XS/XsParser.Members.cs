@@ -8,8 +8,6 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-    // Member Parsers
-
     private static Parser<Expression> IndexerAccessParser( Expression targetExpression, Parser<Expression> expression )
     {
         return Between(
@@ -75,7 +73,7 @@ public partial class XsParser
             {
                 var (memberName, (typeArgs, args)) = parts;
 
-                var type = ConvertToType( targetExpression );
+                var type = TypeOf( targetExpression );
                 var name = memberName.ToString()!;
 
                 // method

@@ -140,6 +140,29 @@ public partial class XsParser
             .Named( "if" )
         );
     }
+
+    private static KeywordParserPair<Expression> DeclarationParser( Parser<Expression> expression )
+    {
+        return new( "var",
+            Terms.Identifier()
+            .AndSkip( Terms.Char( '=' ) )
+            .And( expression )
+            .Then<Expression>( static ( ctx, parts ) =>
+            {
+                var (scope, _) = ctx;
+                var (ident, right) = parts;
+
+                var left = ident.ToString()!;
+
+                var variable = Variable( right.Type, left );
+                scope.Variables.Add( left, variable );
+
+                return Assign( variable, right );
+            } )
+            .Named( "declaration" )
+        );
+    }
+
     private static KeywordParserPair<Expression> LoopParser( Deferred<Expression> statement )
     {
         return new( "loop",
@@ -323,29 +346,6 @@ public partial class XsParser
         );
     }
 
-    private static KeywordParserPair<Expression> DeclarationParser( Parser<Expression> expression )
-    {
-        return new( "var",
-            Terms.Identifier()
-                .AndSkip( Terms.Char( '=' ) )
-                .And( expression )
-                .Then<Expression>( static ( ctx, parts ) =>
-                    {
-                        var (scope, _) = ctx;
-                        var (ident, right) = parts;
-
-                        var left = ident.ToString()!;
-
-                        var variable = Variable( right.Type, left );
-                        scope.Variables.Add( left, variable );
-
-                        return Assign( variable, right );
-                    }
-                )
-                .Named( "declaration" )
-        );
-    }
-
     private static KeywordParserPair<Expression> NewParser( Parser<Expression> expression )
     {
         var objectConstructor =
@@ -422,8 +422,8 @@ public partial class XsParser
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
-            }
-        ) );
+            } ) 
+        );
     }
 
     private enum ConstructorType

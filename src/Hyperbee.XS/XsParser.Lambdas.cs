@@ -8,9 +8,6 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-
-    // Lambda Parsers
-
     private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> expression )
     {
         return Between(

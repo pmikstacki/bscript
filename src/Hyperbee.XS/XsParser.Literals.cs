@@ -48,7 +48,7 @@ public partial class XsParser
             nullLiteral
         ).Or(
             OneOf(
-                LiteralExtensions( config, expression )
+                config.Extensions.Literals( expression )
             )
         ).Named( "literal" );
 

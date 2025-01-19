@@ -12,7 +12,7 @@ public class AwaitParseExtension : IParseExtension
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (_, expression, _) = binder;
+        var (expression, _) = binder;
 
         return expression
             .Then<Expression>( static parts => ExpressionExtensions.Await( parts ) )

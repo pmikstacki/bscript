@@ -26,7 +26,7 @@ public class StringFormatParseExtension : IParseExtension
 
                 var (format, variables) = StringFormatHelper.PrepareFormat(
                     value.ToString(),
-                    scope.Variables.EnumerateValues( Collections.KeyScope.Closest )
+                    scope.Variables.EnumerateValues()
                 );
 
                 return ExpressionExtensions.StringFormat( format, variables );
@@ -67,6 +67,7 @@ internal class BacktickLiteral : Parser<TextSpan>
 
             // Parlot has support for quoting strings with other characters
             [UnsafeAccessor( UnsafeAccessorKind.Method, Name = nameof( Scanner.ReadQuotedString ) )]
+            // ReSharper disable once LocalFunctionHidesMethod
             static extern bool ReadQuotedString( Scanner scanner, char quoteChar, out ReadOnlySpan<char> result );
         }
     }

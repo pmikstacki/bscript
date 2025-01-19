@@ -57,7 +57,7 @@ public partial class XsParser
                 ReturnParser( expression ),
                 ThrowParser( expression )
             ).Add(
-                StatementExtensions( config, ExtensionType.Terminated, expression, statement )
+                config.Extensions.Statements( ExtensionType.Terminated, expression, statement )
             );
 
         statement.Parser = OneOf(
@@ -112,7 +112,7 @@ public partial class XsParser
             typeConstant
         ).Named( "identifier" );
 
-        // Grouped Expressions
+        // Grouped
 
         var groupedExpression = Between(
             Terms.Char( '(' ),
@@ -120,7 +120,7 @@ public partial class XsParser
             Terms.Char( ')' )
         ).Named( "group" );
 
-        // block Expressions
+        // Block
 
         var blockExpression = Between(
             Terms.Char( '{' ),
@@ -130,6 +130,41 @@ public partial class XsParser
         .Named( "block" )
         .RequireTermination( false )
         .Then( static parts => ConvertToSingleExpression( parts ) );
+
+        // Assignment
+
+        var assignment = variable
+            .And(
+                SkipWhiteSpace(
+                    Terms.Text( "=" )
+                        .Or( Terms.Text( "+=" ) )
+                        .Or( Terms.Text( "-=" ) )
+                        .Or( Terms.Text( "*=" ) )
+                        .Or( Terms.Text( "/=" ) )
+                        .Or( Terms.Text( "%=" ) )
+                        .Or( Terms.Text( "^=" ) )
+                        .Or( Terms.Text( "??=" ) )
+                )
+            )
+            .And( expression )
+            .Then<Expression>( static parts =>
+                {
+                    var (left, op, right) = parts;
+
+                    return op switch
+                    {
+                        "=" => Assign( left, right ),
+                        "+=" => AddAssign( left, right ),
+                        "-=" => SubtractAssign( left, right ),
+                        "*=" => MultiplyAssign( left, right ),
+                        "/=" => DivideAssign( left, right ),
+                        "%=" => ModuloAssign( left, right ),
+                        "^=" => SafePowerAssign( left, right ),
+                        "??=" => Assign( left, Coalesce( left, right ) ),
+                        _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
+                    };
+                }
+            ).Named( "assignment" );
 
         // Expression statements
 
@@ -143,7 +178,7 @@ public partial class XsParser
                 SwitchParser( expression, statement )
             )
             .Add(
-                StatementExtensions( config, ExtensionType.Expression, expression, statement )
+                config.Extensions.Statements( ExtensionType.Expression, expression, statement )
             );
 
         var expressionStatements = Always<Expression>()
@@ -155,7 +190,6 @@ public partial class XsParser
 
         // Primary Expressions
 
-        var assignment = AssignmentParser( variable, expression );
         var lambdaExpression = LambdaParser( identifier, expression );
 
         var primaryExpression = OneOf(
@@ -173,9 +207,9 @@ public partial class XsParser
             left => IndexerAccessParser( left, expression )
         )
         .LeftAssociative( // casting
-            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastType( right ) ) )),
-            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastType( right ) )),
-            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastType( right ) ))
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastToType( right ) ) )),
+            (Terms.Text( "as" ), ( left, right ) => Convert( left, CastToType( right ) )),
+            (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastToType( right ) ))
         )
         .Named( "primary" );
 
@@ -253,49 +287,9 @@ public partial class XsParser
                 (Terms.Text( "??" ), Coalesce)
             )
             .Named( "expression" );
-
-        // Helpers
-
-        static Type CastType( Expression expression )
-        {
-            if ( expression is not ConstantExpression ce || ce.Value is not Type type )
-                throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
-
-            return type;
-        }
     }
 
-    // Extensions
-
-    private static KeywordParserPair<Expression>[] StatementExtensions(
-        XsConfig config,
-        ExtensionType type,
-        Parser<Expression> expression,
-        Deferred<Expression> statement )
-    {
-        var binder = new ExtensionBinder( config, expression, statement );
-
-        return binder.Config.Extensions
-            .Where( x => type.HasFlag( x.Type ) )
-            .OrderBy( x => x.Type )
-            .Select( x => new KeywordParserPair<Expression>( x.Key, x.CreateParser( binder ) ) )
-            .ToArray();
-    }
-
-    private static Parser<Expression>[] LiteralExtensions(
-        XsConfig config,
-        Parser<Expression> expression )
-    {
-        var binder = new ExtensionBinder( config, expression, default );
-
-        return binder.Config.Extensions
-            .Where( x => ExtensionType.Literal.HasFlag( x.Type ) )
-            .OrderBy( x => x.Type )
-            .Select( x => x.CreateParser( binder ) )
-            .ToArray();
-    }
-
-    // Helper Parsers
+    // Helpers
 
     private static Parser<IReadOnlyList<Expression>> ArgsParser( Parser<Expression> expression )
     {
@@ -308,8 +302,6 @@ public partial class XsParser
         return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ) )
             .Then( static typeArgs => typeArgs ?? Array.Empty<Type>() );
     }
-
-    // Helpers
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
@@ -353,7 +345,7 @@ public partial class XsParser
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Type ConvertToType( Expression expression )
+    private static Type TypeOf( Expression expression )
     {
         ArgumentNullException.ThrowIfNull( expression, nameof( expression ) );
 
@@ -362,6 +354,15 @@ public partial class XsParser
             ConstantExpression ce => ce.Value as Type ?? ce.Type,
             Expression => expression.Type
         };
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static Type CastToType( Expression expression )
+    {
+        if ( expression is not ConstantExpression ce || ce.Value is not Type type )
+            throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
+
+        return type;
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
