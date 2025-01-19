@@ -1,8 +1,8 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
-using static Parlot.Fluent.Parsers;
 using static System.Linq.Expressions.Expression;
+using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
 
