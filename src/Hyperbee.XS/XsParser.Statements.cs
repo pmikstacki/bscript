@@ -422,7 +422,7 @@ public partial class XsParser
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
-            } ) 
+            } )
         );
     }
 
