@@ -131,41 +131,6 @@ public partial class XsParser
         .RequireTermination( false )
         .Then( static parts => ConvertToSingleExpression( parts ) );
 
-        // Assignment
-
-        var assignment = variable
-            .And(
-                SkipWhiteSpace(
-                    Terms.Text( "=" )
-                        .Or( Terms.Text( "+=" ) )
-                        .Or( Terms.Text( "-=" ) )
-                        .Or( Terms.Text( "*=" ) )
-                        .Or( Terms.Text( "/=" ) )
-                        .Or( Terms.Text( "%=" ) )
-                        .Or( Terms.Text( "^=" ) )
-                        .Or( Terms.Text( "??=" ) )
-                )
-            )
-            .And( expression )
-            .Then<Expression>( static parts =>
-                {
-                    var (left, op, right) = parts;
-
-                    return op switch
-                    {
-                        "=" => Assign( left, right ),
-                        "+=" => AddAssign( left, right ),
-                        "-=" => SubtractAssign( left, right ),
-                        "*=" => MultiplyAssign( left, right ),
-                        "/=" => DivideAssign( left, right ),
-                        "%=" => ModuloAssign( left, right ),
-                        "^=" => SafePowerAssign( left, right ),
-                        "??=" => Assign( left, Coalesce( left, right ) ),
-                        _ => throw new InvalidOperationException( $"Unsupported operator: {op}." )
-                    };
-                }
-            ).Named( "assignment" );
-
         // Expression statements
 
         var complexExpression = KeywordLookup<Expression>()
@@ -186,7 +151,7 @@ public partial class XsParser
         var lambdaExpression = LambdaParser( typeConstant, expression );
 
         var primaryExpression = OneOf(
-            assignment,
+            variable,
             literal,
             identifier,
             groupedExpression,
@@ -263,7 +228,7 @@ public partial class XsParser
             .RightAssociative(
                 (Terms.Text( "^" ), SafePower)
             )
-            .LeftAssociative(
+            .LeftAssociative( // operator
                 (Terms.Text( "*" ), Multiply),
                 (Terms.Text( "/" ), Divide),
                 (Terms.Text( "%" ), Modulo),
@@ -278,6 +243,16 @@ public partial class XsParser
                 (Terms.Text( "&&" ), AndAlso),
                 (Terms.Text( "||" ), OrElse),
                 (Terms.Text( "??" ), Coalesce)
+            )
+            .RightAssociative( // assignment
+                (Terms.Text( "=" ), Assign),
+                (Terms.Text( "+=" ), AddAssign),
+                (Terms.Text( "-=" ), SubtractAssign),
+                (Terms.Text( "*=" ), MultiplyAssign),
+                (Terms.Text( "/=" ), DivideAssign),
+                (Terms.Text( "%=" ), ModuloAssign),
+                (Terms.Text( "^=" ), SafePowerAssign),
+                (Terms.Text( "??=" ), CoalesceAssign)
             )
             .Named( "expression" );
     }
@@ -359,6 +334,12 @@ public partial class XsParser
             return typeof( Nullable<> ).MakeGenericType( type );
 
         return type;
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static BinaryExpression CoalesceAssign( Expression left, Expression right )
+    {
+        return Assign( left, Coalesce( left, right ) );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
