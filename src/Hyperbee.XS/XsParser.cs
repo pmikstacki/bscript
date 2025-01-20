@@ -355,7 +355,7 @@ public partial class XsParser
         if ( expression is not ConstantExpression ce || ce.Value is not Type type )
             throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
 
-        if( nullable )
+        if ( nullable )
             return typeof( Nullable<> ).MakeGenericType( type );
 
         return type;
