@@ -96,7 +96,26 @@ public class XsParserLambdaTests
 
         Assert.AreEqual( "42", result );
     }
-    /*
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithLambdaArgument()
+    {
+        var expression = Xs.Parse(
+            """
+            var x = 0;
+            var myClass = new Hyperbee.XS.Tests.Runnable( () => { x += 41; } );
+            myClass.Run();
+            ++x;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
     [TestMethod]
     public void Compile_ShouldSucceed_WithLambdaInvokeChaining()
     {
@@ -104,10 +123,7 @@ public class XsParserLambdaTests
             """
             var myLambda = ( int x ) => 
             { 
-                return ( int y ) => 
-                { 
-                    return x + y + 1; 
-                };
+                return ( int y ) => x + y + 1; 
             };
             myLambda(20)(21);
             """ );
@@ -119,5 +135,10 @@ public class XsParserLambdaTests
 
         Assert.AreEqual( 42, result );
     }
-    */
+
+}
+
+public class Runnable( Func<int> run )
+{
+    public int Run() => run();
 }

@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using Hyperbee.XS.System;
+﻿using Hyperbee.XS.System;
 using Parlot;
 using Parlot.Fluent;
 
@@ -9,7 +8,7 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
-    public bool RequireTermination { get; set; }
+    public bool RequireTermination { get; set; } = true;
 
 #if DEBUG
     public Stack<object> ParserStack { get; } = new();

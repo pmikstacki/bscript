@@ -8,11 +8,11 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-    private static Parser<Expression> LambdaParser( Parser<Expression> identifier, Deferred<Expression> expression )
+    private static Parser<Expression> LambdaParser( Parser<Expression> typeConstant, Deferred<Expression> expression )
     {
         return Between(
                 Terms.Char( '(' ),
-                Parameters( identifier ),
+                Parameters( typeConstant ),
                 Terms.Char( ')' )
             )
             .AndSkip( Terms.Text( "=>" ) )
@@ -49,12 +49,12 @@ public partial class XsParser
                 }
             } );
 
-        static Parser<ParameterExpression[]> Parameters( Parser<Expression> identifier )
+        static Parser<ParameterExpression[]> Parameters( Parser<Expression> typeConstant )
         {
             return ZeroOrOne(
                     Separated(
                         Terms.Char( ',' ),
-                        identifier.And( Terms.Identifier() )
+                        typeConstant.And( Terms.Identifier() )
                     )
                 )
                 .Named( "parameters" )

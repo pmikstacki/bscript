@@ -20,7 +20,7 @@ public static partial class XsParsers
         return parser.AndSkipIf(
             ( ctx, _ ) => ((XsContext) ctx).RequireTermination,
             OneOrMany( Terms.Char( ';' ) ),
-            ZeroOrMany( Terms.Char( ';' ) )
+            ZeroOrMany( Terms.Char( ';' ) ).RequireTermination( true )
         ).Named( "Termination" );
     }
 }

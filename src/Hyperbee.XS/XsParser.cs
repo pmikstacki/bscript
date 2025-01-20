@@ -168,7 +168,7 @@ public partial class XsParser
 
         // Expression statements
 
-        var expressionStatementsBase = KeywordLookup<Expression>()
+        var complexExpression = KeywordLookup<Expression>()
             .Add(
                 DeclarationParser( expression ),
                 NewParser( expression ),
@@ -179,18 +179,11 @@ public partial class XsParser
             )
             .Add(
                 config.Extensions.Statements( ExtensionType.Expression, expression, statement )
-            );
-
-        var expressionStatements = Always<Expression>()
-            .RequireTermination( true )
-            .SkipAnd(
-                expressionStatementsBase.RequireTermination( false )
-            )
-            .Named( "expression-statements" );
+            ).RequireTermination( false );
 
         // Primary Expressions
 
-        var lambdaExpression = LambdaParser( identifier, expression );
+        var lambdaExpression = LambdaParser( typeConstant, expression );
 
         var primaryExpression = OneOf(
             assignment,
@@ -199,7 +192,7 @@ public partial class XsParser
             groupedExpression,
             blockExpression,
             lambdaExpression,
-            expressionStatements
+            complexExpression
         )
         .LeftAssociative( // accessors
             left => MemberAccessParser( left, expression ),
@@ -207,7 +200,7 @@ public partial class XsParser
             left => IndexerAccessParser( left, expression )
         )
         .LeftAssociative( // casting
-            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, typeof( Nullable<> ).MakeGenericType( CastToType( right ) ) )),
+            (Terms.Text( "as?" ), ( left, right ) => TypeAs( left, CastToType( right, nullable: true ) )),
             (Terms.Text( "as" ), ( left, right ) => Convert( left, CastToType( right ) )),
             (Terms.Text( "is" ), ( left, right ) => TypeIs( left, CastToType( right ) ))
         )
@@ -357,10 +350,13 @@ public partial class XsParser
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Type CastToType( Expression expression )
+    private static Type CastToType( Expression expression, bool nullable = false )
     {
         if ( expression is not ConstantExpression ce || ce.Value is not Type type )
             throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
+
+        if( nullable )
+            return typeof( Nullable<> ).MakeGenericType( type );
 
         return type;
     }
