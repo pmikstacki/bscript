@@ -50,6 +50,49 @@ public class XsParserVariableTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableShiftLeftResult()
+    {
+        var expression = Xs.Parse( "var x = 32; x <<= 2; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 8, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableShiftRightResult()
+    {
+        var expression = Xs.Parse( "var x = 8; x >>= 2; x;" );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 32, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithVariableComplementResult()
+    {
+        var expression = Xs.Parse(
+            """
+            var x = 8;
+            x + (~x) + 1;
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 0, result );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithVariableAndPostResult()
     {
         var expression = Xs.Parse( "var x = 10; x++;" );

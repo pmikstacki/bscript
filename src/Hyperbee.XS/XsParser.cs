@@ -219,7 +219,8 @@ public partial class XsParser
             primaryExpression
         ).Unary(
             (Terms.Char( '!' ), Not),
-            (Terms.Char( '-' ), Negate)
+            (Terms.Char( '-' ), Negate),
+            (Terms.Char( '~' ), OnesComplement)
         ).Named( "unary" );
 
         // Binary Expressions
@@ -232,8 +233,8 @@ public partial class XsParser
                 (Terms.Text( "*" ), Multiply),
                 (Terms.Text( "/" ), Divide),
                 (Terms.Text( "%" ), Modulo),
-                (Terms.Text( "+" ), Add),
-                (Terms.Text( "-" ), Subtract),
+                (Terms.Text( "+" ), Add),       // peek and use increment
+                (Terms.Text( "-" ), Subtract),  // peek and use decrement
                 (Terms.Text( "==" ), Equal),
                 (Terms.Text( "!=" ), NotEqual),
                 (Terms.Text( "<" ), LessThan),
@@ -242,7 +243,13 @@ public partial class XsParser
                 (Terms.Text( ">=" ), GreaterThanOrEqual),
                 (Terms.Text( "&&" ), AndAlso),
                 (Terms.Text( "||" ), OrElse),
-                (Terms.Text( "??" ), Coalesce)
+                (Terms.Text( "??" ), Coalesce),
+
+                // bitwise
+                (Terms.Text( "&" ), And),
+                (Terms.Text( "|" ), Or),
+                (Terms.Text( ">>" ), LeftShift),
+                (Terms.Text( "<<" ), RightShift)
             )
             .RightAssociative( // assignment
                 (Terms.Text( "=" ), Assign),
@@ -252,7 +259,13 @@ public partial class XsParser
                 (Terms.Text( "/=" ), DivideAssign),
                 (Terms.Text( "%=" ), ModuloAssign),
                 (Terms.Text( "^=" ), SafePowerAssign),
-                (Terms.Text( "??=" ), CoalesceAssign)
+                (Terms.Text( "??=" ), CoalesceAssign),
+
+                // bitwise
+                (Terms.Text( "&=" ), AndAssign),
+                (Terms.Text( "|=" ), OrAssign),
+                (Terms.Text( ">>=" ), LeftShiftAssign),
+                (Terms.Text( "<<=" ), RightShiftAssign)
             )
             .Named( "expression" );
     }
