@@ -366,12 +366,13 @@ public partial class XsParser
                     )
                 )
             )
-            .Then( static parts => {
+            .Then( static parts =>
+            {
                 var (bounds, initial) = parts;
 
                 return initial == null
                     ? (ConstructorType.Object, bounds, null)
-                    : (ConstructorType.ArrayInit, bounds, initial); 
+                    : (ConstructorType.ArrayInit, bounds, initial);
             } );
 
         var arrayConstructor =
