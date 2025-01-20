@@ -50,7 +50,7 @@ public class ScriptBenchmarks
     public static int NativeTestAsync()
     {
         var x = 5;
-        var result = ( x > 10 ) 
+        var result = (x > 10)
             ? x *= 2
             : x -= 2;
 
