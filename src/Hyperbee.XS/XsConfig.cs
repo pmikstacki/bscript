@@ -13,7 +13,7 @@ public class XsConfig
 
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
 
-    internal Lazy<TypeResolver> Resolver => new ( new TypeResolver( References ) );
+    internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
 }
 
 internal static class XsConfigExtensions

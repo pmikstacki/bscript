@@ -70,7 +70,7 @@ public partial class XsParser
                     )
                 )
             )
-            .Then<Expression>( (ctx, parts) =>
+            .Then<Expression>( ( ctx, parts ) =>
             {
                 var (memberName, (typeArgs, args)) = parts;
 
@@ -81,13 +81,13 @@ public partial class XsParser
 
                 if ( args != null )
                 {
-                    var (_,resolver) = ctx;
+                    var (_, resolver) = ctx;
                     var method = resolver.FindMethod( type, name, typeArgs, args );
 
                     if ( method == null )
                         throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." );
 
-                    var extension = method.IsDefined( typeof(ExtensionAttribute), false );
+                    var extension = method.IsDefined( typeof( ExtensionAttribute ), false );
                     var arguments = extension ? new[] { targetExpression }.Concat( args ) : args;
 
                     return method.IsStatic

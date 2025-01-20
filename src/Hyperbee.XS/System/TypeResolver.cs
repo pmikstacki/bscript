@@ -34,7 +34,7 @@ public class TypeResolver
 
                 foreach ( var method in type.GetMethods( BindingFlags.Static | BindingFlags.Public ) )
                 {
-                    if ( !method.IsDefined( typeof(ExtensionAttribute), false ) )
+                    if ( !method.IsDefined( typeof( ExtensionAttribute ), false ) )
                         continue;
 
                     if ( !_extensionMethodCache.TryGetValue( method.Name, out var methods ) )
@@ -105,7 +105,7 @@ public class TypeResolver
 
         foreach ( var method in methods )
         {
-            var extension = method.IsDefined( typeof(ExtensionAttribute), false );
+            var extension = method.IsDefined( typeof( ExtensionAttribute ), false );
             var argumentTypes = extension ? types : types[1..];
 
             if ( !TryResolveMethod( method, typeArgs, argumentTypes, out var resolvedMethod ) )
@@ -146,11 +146,11 @@ public class TypeResolver
     {
         var span = new Type[args.Count + 1].AsSpan();
         span[0] = type; // Add `this` for extensions
- 
+
         for ( var i = 0; i < args.Count; i++ )
         {
-            span[i+1] = args[i] is ConstantExpression constant 
-                ? constant.Value?.GetType() 
+            span[i + 1] = args[i] is ConstantExpression constant
+                ? constant.Value?.GetType()
                 : args[i].Type;
         }
 
@@ -219,7 +219,7 @@ public class TypeResolver
 
             if ( parameterType == argumentType )
                 exactMatches++;
-            
+
             else if ( parameterType.IsAssignableFrom( argumentType ) )
                 compatibleMatches++; // Compatible match
 
@@ -275,7 +275,7 @@ public class TypeResolver
 
             if ( inferredTypes[index] == null )
                 inferredTypes[index] = argumentType; // Infer the type
- 
+
             else if ( inferredTypes[index] != argumentType )
                 return false; // Ambiguous inference
 
@@ -285,7 +285,7 @@ public class TypeResolver
         // Handle array types explicitly for IEnumerable<T>
 
         if ( parameterType.IsGenericType &&
-             parameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>) &&
+             parameterType.GetGenericTypeDefinition() == typeof( IEnumerable<> ) &&
              argumentType.IsArray )
         {
             var elementType = argumentType.GetElementType();
