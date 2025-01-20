@@ -1,30 +1,38 @@
 ﻿using BenchmarkDotNet.Attributes;
-
+using static System.Linq.Expressions.Expression;
 namespace Hyperbee.XS.Benchmark;
 
 public class ScriptBenchmarks
 {
+    public XsParser Xs { get; set; }
 
     [GlobalSetup]
     public void Setup()
     {
-
+        Xs = new();
     }
 
     // Compile
 
-    [BenchmarkCategory( "Compile" )]
-    [Benchmark( Description = "Hyperbee Compile" )]
+    [BenchmarkCategory( "Execute" )]
+    [Benchmark( Description = "XS Execute" )]
     public void Hyperbee_Script_Compile()
     {
-        //var script = @"
-        //    let result = if (x > 10) {
-        //            x * 2;
-        //        } else {
-        //            x - 2;
-        //        };";
+        var expression = Xs.Parse(
+            """
+            var x = 5;
+            var result = if (x > 10)
+                x *= 2;
+            else
+                x -= 2;
 
-        // ExpressionScript.Compile( script );
+            result;
+            """ );
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+
+        compiled();
     }
 
 
@@ -37,30 +45,15 @@ public class ScriptBenchmarks
         NativeTestAsync();
     }
 
-    [BenchmarkCategory( "Execute" )]
-    [Benchmark( Description = "Hyperbee Execute" )]
-    public void Hyperbee_Script_Execute()
-    {
-        //var script = @"
-        //    let result = if (x > 10) {
-        //            x * 2;
-        //        } else {
-        //            x - 2;
-        //        };";
-
-        // ExpressionScript.Execute( script );
-    }
-
     // Helpers
 
     public static int NativeTestAsync()
     {
-        var i = 1;
-        if ( true )
-        {
-            i++;
-        }
+        var x = 5;
+        var result = ( x > 10 ) 
+            ? x *= 2
+            : x -= 2;
 
-        return i;
+        return result;
     }
 }
