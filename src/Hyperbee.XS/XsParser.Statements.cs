@@ -353,9 +353,26 @@ public partial class XsParser
                 Terms.Char( '(' ),
                 ArgsParser( expression ),
                 Terms.Char( ')' )
-            ).Then( static parts =>
-                (ConstructorType.Object, parts, (IReadOnlyList<Expression>) null)
-            );
+            )
+            .And(
+                ZeroOrOne(
+                    Between(
+                        Terms.Char( '{' ),
+                        Separated(
+                            Terms.Char( ',' ),
+                            expression
+                        ),
+                        Terms.Char( '}' )
+                    )
+                )
+            )
+            .Then( static parts => {
+                var (bounds, initial) = parts;
+
+                return initial == null
+                    ? (ConstructorType.Object, bounds, null)
+                    : (ConstructorType.ArrayInit, bounds, initial); 
+            } );
 
         var arrayConstructor =
             Between(
@@ -419,6 +436,15 @@ public partial class XsParser
 
                         return New( constructor, arguments );
 
+                    case ConstructorType.ListInit:
+                        var listCtor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
+                        var addMethod = type.GetMethod( "Add" );
+
+                        if ( listCtor == null )
+                            throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
+
+                        return ListInit( New( listCtor, arguments ), addMethod, initial );
+
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
                 }
@@ -429,6 +455,7 @@ public partial class XsParser
     private enum ConstructorType
     {
         Object,
+        ListInit,
         ArrayBounds,
         ArrayInit,
     }

@@ -227,7 +227,7 @@ public partial class XsParser
 
         return expression.Parser = unaryExpression
             .RightAssociative(
-                (Terms.Text( "^" ), SafePower)
+                (Terms.Text( "**" ), SafePower)
             )
             .LeftAssociative( // operator
                 (Terms.Text( "*" ), Multiply),
@@ -246,6 +246,7 @@ public partial class XsParser
                 (Terms.Text( "??" ), Coalesce),
 
                 // bitwise
+                (Terms.Text( "^" ), ExclusiveOr),
                 (Terms.Text( "&" ), And),
                 (Terms.Text( "|" ), Or),
                 (Terms.Text( ">>" ), LeftShift),
@@ -258,10 +259,11 @@ public partial class XsParser
                 (Terms.Text( "*=" ), MultiplyAssign),
                 (Terms.Text( "/=" ), DivideAssign),
                 (Terms.Text( "%=" ), ModuloAssign),
-                (Terms.Text( "^=" ), SafePowerAssign),
+                (Terms.Text( "**=" ), SafePowerAssign),
                 (Terms.Text( "??=" ), CoalesceAssign),
 
                 // bitwise
+                (Terms.Text( "^=" ), ExclusiveOrAssign),
                 (Terms.Text( "&=" ), AndAssign),
                 (Terms.Text( "|=" ), OrAssign),
                 (Terms.Text( ">>=" ), LeftShiftAssign),

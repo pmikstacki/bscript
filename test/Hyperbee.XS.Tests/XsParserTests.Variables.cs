@@ -173,7 +173,7 @@ public class XsParserVariableTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithVariableExponentAssignment()
     {
-        var expression = Xs.Parse( "var x = 2; x ^= 3; x;" );
+        var expression = Xs.Parse( "var x = 2; x **= 3; x;" );
 
         var lambda = Lambda<Func<int>>( expression );
 

@@ -127,7 +127,7 @@ public class XsParserExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryExponentiation()
     {
-        var expression = Xs.Parse( "2 ^ 3;" );
+        var expression = Xs.Parse( "2 ** 3;" );
 
         var lambda = Lambda<Func<int>>( expression );
 
@@ -140,7 +140,7 @@ public class XsParserExpressionTests
     [TestMethod]
     public void Compile_ShouldSucceed_BinaryExponentiation_WithGrouping()
     {
-        var expression = Xs.Parse( "(2 + 3) ^ 2;" );
+        var expression = Xs.Parse( "(2 + 3) ** 2;" );
 
         var lambda = Lambda<Func<int>>( expression );
 
