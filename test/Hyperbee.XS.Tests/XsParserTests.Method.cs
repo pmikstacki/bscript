@@ -121,5 +121,23 @@ public class XsParserMethodTests
 
         Assert.AreEqual( 42, result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithExtensionMethods()
+    {
+        var parser = new XsParser();
+
+        var expression = parser.Parse(
+            """
+            var x = new int[] {1,2,3,4,5};
+            x.Select( ( int i ) => i * 10 ).Sum();
+            """ );
+
+        var lambda = Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+        Assert.AreEqual( 150, result );
+    }
 }
 

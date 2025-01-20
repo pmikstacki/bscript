@@ -12,6 +12,8 @@ public class XsConfig
     public IReadOnlyCollection<IParseExtension> Extensions { get; set; } = ReadOnlyCollection<IParseExtension>.Empty;
 
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
+
+    internal Lazy<TypeResolver> Resolver => new ( new TypeResolver( References ) );
 }
 
 internal static class XsConfigExtensions

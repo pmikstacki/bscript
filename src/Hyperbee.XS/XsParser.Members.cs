@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
 using static Parlot.Fluent.Parsers;
@@ -69,7 +70,7 @@ public partial class XsParser
                     )
                 )
             )
-            .Then<Expression>( parts =>
+            .Then<Expression>( (ctx, parts) =>
             {
                 var (memberName, (typeArgs, args)) = parts;
 
@@ -80,14 +81,18 @@ public partial class XsParser
 
                 if ( args != null )
                 {
-                    var method = TypeResolver.FindMethod( type, name, typeArgs, args );
+                    var (_,resolver) = ctx;
+                    var method = resolver.FindMethod( type, name, typeArgs, args );
 
                     if ( method == null )
                         throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." );
 
+                    var extension = method.IsDefined( typeof(ExtensionAttribute), false );
+                    var arguments = extension ? new[] { targetExpression }.Concat( args ) : args;
+
                     return method.IsStatic
-                        ? Expression.Call( method, args )
-                        : Expression.Call( targetExpression, method, args );
+                        ? Expression.Call( method, arguments )
+                        : Expression.Call( targetExpression, method, arguments );
                 }
 
                 // property or field

@@ -17,7 +17,7 @@ public class XsContext : ParseContext
     public XsContext( XsConfig config, Scanner scanner, bool useNewLines = false )
         : base( scanner, useNewLines )
     {
-        Resolver = new TypeResolver( config?.References );
+        Resolver = config.Resolver.Value;
 
 #if DEBUG
         OnEnterParser += ( obj, ctx ) =>
