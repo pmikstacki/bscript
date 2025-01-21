@@ -8,7 +8,7 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
-    public List<string> Namespaces { get; } = new();
+    public List<string> Namespaces { get; } = [];
 
     public bool RequireTermination { get; set; } = true;
 

@@ -427,7 +427,12 @@ public partial class XsParser
 
         return new( "new",
             TypeRuntime()
-            .And( OneOf( objectConstructor, arrayConstructor ) )
+            .And( 
+                OneOf( 
+                    objectConstructor, 
+                    arrayConstructor 
+                ) 
+            )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (type, (constructorType, arguments, initial)) = parts;
