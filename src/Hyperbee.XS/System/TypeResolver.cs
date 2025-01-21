@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -89,40 +89,67 @@ public class TypeResolver
         }
     }
 
-    public MethodInfo FindMethod(
-        Type type,
-        string methodName,
-        IReadOnlyList<Type> typeArgs,
-        IReadOnlyList<Expression> args )
+    public MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args )
     {
-        var methods = GetCandidateMethods( methodName, type );
-        var types = GetCandidateTypes( type, args );
+        var candidateMethods = GetCandidateMethods( methodName, type );
+        var callTypes = GetCallTypes( type, args );
 
         // find best match
 
         MethodInfo bestMatch = null;
         var bestScore = int.MaxValue;
+        var ambiguousMatch = false;
 
-        foreach ( var method in methods )
+        foreach ( var candidate in candidateMethods )
         {
-            var extension = method.IsDefined( typeof( ExtensionAttribute ), false );
-            var argumentTypes = extension ? types : types[1..];
+            var extension = candidate.IsDefined( typeof(ExtensionAttribute), false );
 
-            if ( !TryResolveMethod( method, typeArgs, argumentTypes, out var resolvedMethod ) )
+            // Handle extension-specific slicing and type validation
+
+            var argumentTypes = extension ? callTypes : callTypes[1..]; // extensions have an extra `this` parameter
+
+            // Resolve open generic methods
+
+            MethodInfo method = candidate;
+
+            if ( candidate.IsGenericMethodDefinition )
+            {
+                if ( !TryResolveGenericMethod( candidate, typeArgs, argumentTypes, out method ) )
+                    continue;
+            }
+
+            // Early out if the extension method 'this' is not assignable
+            //
+            var parameters = method.GetParameters();
+
+            if ( extension )
+            {
+                var paramType = parameters[0].ParameterType;
+
+                if ( callTypes[0] != paramType && !paramType.IsAssignableFrom( callTypes[0] ) )
+                    continue;
+            }
+
+            // Compute match score
+
+            var score = ComputeScore( argumentTypes, parameters, bestScore );
+
+            if ( score == int.MaxValue )
                 continue;
 
-            if ( !TryScoreMethod( resolvedMethod, argumentTypes, out var score ) )
-                continue;
-
-            if ( score == bestScore )
-                throw new AmbiguousMatchException( $"Ambiguous match for method '{methodName}'. Unable to resolve method." );
+            if ( score == bestScore ) // Current best is ambiguous
+                ambiguousMatch = true;
 
             if ( score >= bestScore )
                 continue;
 
             bestScore = score;
-            bestMatch = resolvedMethod;
+            bestMatch = method;
+            ambiguousMatch = false;
         }
+
+        if ( ambiguousMatch )
+            throw new AmbiguousMatchException( $"Ambiguous match for method '{methodName}'. Unable to resolve method." );
 
         return bestMatch;
 
@@ -131,38 +158,37 @@ public class TypeResolver
 
     private IEnumerable<MethodInfo> GetCandidateMethods( string methodName, Type type )
     {
-        const BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-
         var extensionMethods = _extensionMethodCache.TryGetValue( methodName, out var extensions )
             ? extensions
             : Enumerable.Empty<MethodInfo>();
 
-        return type.GetMethods( bindingAttr )
+        return type.GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
             .Where( method => method.Name == methodName )
             .Concat( extensionMethods );
     }
 
-    private static Span<Type> GetCandidateTypes( Type type, IReadOnlyList<Expression> args )
+    private static Span<Type> GetCallTypes( Type type, IReadOnlyList<Expression> args )
     {
         var span = new Type[args.Count + 1].AsSpan();
-        span[0] = type; // Add `this` for extensions
 
+        span[0] = type; // Add `this` for extension methods
+ 
         for ( var i = 0; i < args.Count; i++ )
         {
-            span[i + 1] = args[i] is ConstantExpression constant
-                ? constant.Value?.GetType()
+            // unwrap types from expressions
+            span[i+1] = args[i] is ConstantExpression constant 
+                ? constant.Value?.GetType() 
                 : args[i].Type;
         }
 
         return span;
     }
 
-    private static bool TryResolveMethod( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
+    private static bool TryResolveGenericMethod( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
     {
-        resolvedMethod = method;
+        // Resolve generic methods, with type inference, if needed
 
-        if ( !method.IsGenericMethodDefinition )
-            return true;
+        resolvedMethod = method;
 
         var methodTypeArgs = typeArgs?.ToArray() ?? [];
 
@@ -171,11 +197,15 @@ public class TypeResolver
             methodTypeArgs = InferGenericArguments( method, argumentTypes );
 
             if ( methodTypeArgs == null )
+            {
                 return false;
+            }
         }
 
         if ( method.GetGenericArguments().Length != methodTypeArgs.Length )
+        {
             return false;
+        }
 
         try
         {
@@ -189,46 +219,71 @@ public class TypeResolver
         return true;
     }
 
-    private static bool TryScoreMethod( MethodInfo method, ReadOnlySpan<Type> argumentTypes, out int score )
+    private static int ComputeScore( ReadOnlySpan<Type> argumentTypes, ParameterInfo[] parameters, int bestScore )
     {
-        var parameters = method.GetParameters();
+        double averagePenalty = 0.0; // Compute average penalty for all arguments using incremental average
+        var paramCount = parameters.Length;
 
-        score = 0;
-
-        if ( parameters.Length != argumentTypes.Length )
-            return false;
-
-        int exactMatches = 0;
-        int compatibleMatches = 0;
-        int nullMatches = 0;
-
-        for ( var i = 0; i < parameters.Length; i++ )
+        for ( var i = 0; i < argumentTypes.Length; i++ )
         {
-            var argumentType = argumentTypes[i];
+            if ( averagePenalty >= bestScore )
+                return int.MaxValue; // Early exit if average penalty exceeds the best score
 
-            var parameterType = parameters[i].ParameterType;
-
-            if ( argumentType == null )
+            if ( i >= paramCount )
             {
-                if ( !parameterType.IsClass && Nullable.GetUnderlyingType( parameterType ) == null )
-                    return false;
+                // Handle `params` case
+                if ( !parameters[^1].IsDefined( typeof(ParamArrayAttribute), false ) )
+                    return int.MaxValue; // No `params` to absorb extra arguments
 
-                nullMatches++;
+                var paramsElementType = parameters[^1].ParameterType.GetElementType()!;
+                if ( argumentTypes[i] != null && !paramsElementType.IsAssignableFrom( argumentTypes[i] ) )
+                    return int.MaxValue; // Argument not compatible with `params` array element type
+
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 5 ); // Penalize for using `params`
                 continue;
             }
 
-            if ( parameterType == argumentType )
-                exactMatches++;
+            var paramType = parameters[i].ParameterType;
+            var argType = argumentTypes[i];
 
-            else if ( parameterType.IsAssignableFrom( argumentType ) )
-                compatibleMatches++; // Compatible match
+            if ( argType == null )
+            {
+                // Handle null argument
+                if ( paramType.IsValueType && Nullable.GetUnderlyingType( paramType ) == null )
+                    return int.MaxValue; // Null incompatible with non-nullable value types
 
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 2 ); // Compatible match with null
+                continue;
+            }
+
+            if ( paramType == argType )
+            {
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 0 ); // Exact match
+            }
+            else if ( paramType.IsAssignableFrom( argType ) )
+            {
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 1 ); // Compatible match
+            }
             else
-                return false;
+            {
+                return int.MaxValue; // No match
+            }
         }
 
-        score = (nullMatches * 10) + (compatibleMatches * 5) + exactMatches;
-        return true;
+        // Handle additional parameters that are not matched by the arguments
+        for ( var i = argumentTypes.Length; i < paramCount; i++ )
+        {
+            if ( !parameters[i].IsOptional )
+                return int.MaxValue; // Missing required parameter
+
+            averagePenalty = ((averagePenalty * i) + 2) / (i + 1); // Penalize for using a default value
+        }
+
+        return (int) Math.Round( averagePenalty );
+
+        // Helpers
+
+        static double ComputePenalty( double current, int count, int penalty ) => ((current * count) + penalty) / (count + 1);
     }
 
     private static Type[] InferGenericArguments( MethodInfo method, ReadOnlySpan<Type> argumentTypes )
@@ -264,58 +319,60 @@ public class TypeResolver
 
     private static bool TryInferTypes( Type parameterType, Type argumentType, Type[] genericParameters, Type[] inferredTypes )
     {
-        // Handle direct generic parameters
-
-        if ( parameterType.IsGenericParameter )
+        while ( true )
         {
-            var index = Array.IndexOf( genericParameters, parameterType );
+            // Handle direct generic parameters
 
-            if ( index < 0 )
-                return true; // Not relevant
+            if ( parameterType.IsGenericParameter )
+            {
+                var index = Array.IndexOf( genericParameters, parameterType );
 
-            if ( inferredTypes[index] == null )
-                inferredTypes[index] = argumentType; // Infer the type
+                if ( index < 0 ) 
+                    return true; // Not relevant
 
-            else if ( inferredTypes[index] != argumentType )
-                return false; // Ambiguous inference
+                if ( inferredTypes[index] == null )
+                    inferredTypes[index] = argumentType; // Infer the type
+
+                else if ( inferredTypes[index] != argumentType ) 
+                    return false; // Ambiguous inference
+
+                return true;
+            }
+
+            // Handle array types explicitly for IEnumerable<T>
+
+            if ( parameterType.IsGenericType && parameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>) && argumentType!.IsArray )
+            {
+                var elementType = argumentType.GetElementType();
+                var genericArg = parameterType.GetGenericArguments()[0];
+
+                parameterType = genericArg;
+                argumentType = elementType;
+                continue;
+            }
+
+            // Handle nested generic types
+
+            if ( !parameterType.ContainsGenericParameters ) 
+                return true; // Non-generic parameter, no inference needed
+
+            if ( !parameterType.IsGenericType || !argumentType!.IsGenericType || parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
+            {
+                return false;
+            }
+
+            var parameterArgs = parameterType.GetGenericArguments();
+            var argumentArgs = argumentType.GetGenericArguments();
+
+            for ( var i = 0; i < parameterArgs.Length; i++ )
+            {
+                if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) ) 
+                    continue;
+
+                return false;
+            }
 
             return true;
         }
-
-        // Handle array types explicitly for IEnumerable<T>
-
-        if ( parameterType.IsGenericType &&
-             parameterType.GetGenericTypeDefinition() == typeof( IEnumerable<> ) &&
-             argumentType.IsArray )
-        {
-            var elementType = argumentType.GetElementType();
-            var genericArg = parameterType.GetGenericArguments()[0];
-
-            return TryInferTypes( genericArg, elementType, genericParameters, inferredTypes );
-        }
-
-        // Handle nested generic types
-
-        if ( !parameterType.ContainsGenericParameters )
-            return true; // Non-generic parameter, no inference needed
-
-        if ( !parameterType.IsGenericType || !argumentType.IsGenericType ||
-             parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
-        {
-            return false;
-        }
-
-        var parameterArgs = parameterType.GetGenericArguments();
-        var argumentArgs = argumentType.GetGenericArguments();
-
-        for ( var i = 0; i < parameterArgs.Length; i++ )
-        {
-            if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) )
-                continue;
-
-            return false;
-        }
-
-        return true;
     }
 }
