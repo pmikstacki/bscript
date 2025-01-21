@@ -1,8 +1,9 @@
-﻿using Parlot;
+﻿using System.Text.RegularExpressions;
+using Parlot;
 
 namespace Hyperbee.XS;
 
-public class SyntaxException : Exception
+public partial class SyntaxException : Exception
 {
     public int Line { get; }
     public int Column { get; }
@@ -31,7 +32,7 @@ public class SyntaxException : Exception
             if ( Buffer == null || Line <= 0 || Column <= 0 )
                 return base.Message;
 
-            var lines = Buffer.Split( ['\r', '\n'], StringSplitOptions.RemoveEmptyEntries );
+            var lines = SplitLinesRegex().Split( Buffer );
 
             if ( Line > lines.Length )
                 return base.Message;
@@ -43,4 +44,7 @@ public class SyntaxException : Exception
             return $"{base.Message} (Line: {Line}, Column: {Column})\n{errorLine}\n{caretLine}";
         }
     }
+
+    [GeneratedRegex( @"\r\n|\n|\r" )]
+    private static partial Regex SplitLinesRegex();
 }

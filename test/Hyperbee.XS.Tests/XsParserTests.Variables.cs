@@ -240,4 +240,19 @@ public class XsParserVariableTests
         Assert.AreEqual( 42, result );
     }
 
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithDefaultInvalid()
+    {
+        try
+        {
+            Xs.Parse( "var x ~ 10;" );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
 }

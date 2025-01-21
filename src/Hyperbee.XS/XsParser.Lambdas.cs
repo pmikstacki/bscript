@@ -54,7 +54,7 @@ public partial class XsParser
             return ZeroOrOne(
                     Separated(
                         Terms.Char( ',' ),
-                        typeConstant.And( Terms.Identifier() )
+                        typeConstant.And( Terms.Identifier().InvalidIdentifier() )
                     )
                 )
                 .Named( "parameters" )

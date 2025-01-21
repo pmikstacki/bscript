@@ -202,7 +202,7 @@ public class XsParserNewExpressionTests
             Xs.Parse(
                 """
                 var x = 5;
-                var y = default( integer );
+                var y = default(wrong};
                 x + y;
                 """ );
         }

@@ -26,7 +26,7 @@ public partial class XsParser
 
                 return Break( breakLabel );
             } )
-            .AndSkip( Terms.Char( ';' ) )
+            .AndSkip( Terminator )
         );
     }
 
@@ -43,7 +43,7 @@ public partial class XsParser
 
                 return Continue( continueLabel );
             } )
-            .AndSkip( Terms.Char( ';' ) )
+            .AndSkip( Terminator )
         );
     }
 
@@ -57,14 +57,14 @@ public partial class XsParser
                 var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
             } )
-            .AndSkip( Terms.Char( ';' ) )
+            .AndSkip( Terminator )
         );
     }
 
     private static Parser<Expression> LabelParser()
     {
         return Terms.Identifier()
-            .AndSkip( Terms.Char( ':' ) )
+            .AndSkip( Colon )
             .AndSkip( Literals.WhiteSpace( includeNewLines: true ) )
             .Then<Expression>( static ( ctx, labelName ) =>
             {
@@ -91,7 +91,7 @@ public partial class XsParser
                     ? Return( returnLabel )
                     : Return( returnLabel, returnValue, returnType );
             } )
-            .AndSkip( Terms.Char( ';' ) )
+            .AndSkip( Terminator )
         );
     }
 
@@ -109,7 +109,7 @@ public partial class XsParser
 
                 return Throw( exceptionExpression );
             } )
-            .AndSkip( Terms.Char( ';' ) )
+            .AndSkip( Terminator )
         );
     }
 
@@ -119,15 +119,15 @@ public partial class XsParser
     {
         return new( "if",
             Between(
-                Terms.Char( '(' ),
-                expression,
-                Terms.Char( ')' )
+                OpenParen,
+                expression.InvalidExpression(),
+                CloseParen
             )
             .And( statement )
             .And(
                 ZeroOrOne(
                     Terms.Text( "else" )
-                    .SkipAnd( statement )
+                    .SkipAnd( statement.InvalidStatement() )
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>
@@ -145,9 +145,9 @@ public partial class XsParser
     {
         return new( "default",
             Between(
-                Terms.Char( '(' ),
-                typeConstant,
-                Terms.Char( ')' )
+                OpenParen,
+                typeConstant.InvalidType(),
+                CloseParen
             )
             .Then<Expression>( static ( ctx, typeConstant ) =>
             {
@@ -156,7 +156,6 @@ public partial class XsParser
 
                 return Default( type );
             } )
-            .ElseError( "Invalid type provided for default." )
             .Named( "default" )
         );
     }
@@ -164,8 +163,8 @@ public partial class XsParser
     {
         return new( "var",
             Terms.Identifier()
-            .AndSkip( Terms.Char( '=' ) )
-            .And( expression )
+            .AndSkip( Assignment )
+            .And( expression.InvalidExpression() )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
@@ -196,7 +195,7 @@ public partial class XsParser
 
                 return (breakLabel, continueLabel);
             } )
-            .And( statement )
+            .And( statement.InvalidStatement() )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var (scope, _) = ctx;
@@ -229,17 +228,17 @@ public partial class XsParser
             } )
             .And(
                 Between(
-                    Terms.Char( '(' ),
+                    OpenParen,
                     expression,
-                    Terms.Char( ')' )
+                    CloseParen
                 )
             )
             .And(
                 Between(
-                    Terms.Char( '{' ),
+                    OpenBrace,
                     ZeroOrMany( Case( expression, statement ) )
                         .And( ZeroOrOne( Default( statement ) ) ),
-                    Terms.Char( '}' )
+                    CloseBrace
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>
@@ -267,8 +266,8 @@ public partial class XsParser
         static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
         {
             return Terms.Text( "case" )
-                .SkipAnd( expression )
-                .AndSkip( Terms.Char( ':' ) )
+                .SkipAnd( expression.InvalidExpression() )
+                .AndSkip( Colon )
                 .And(
                     ZeroOrMany( BreakOn( EndCase(), statement ) )
                 )
@@ -285,7 +284,7 @@ public partial class XsParser
         static Parser<Expression> Default( Deferred<Expression> statement )
         {
             return Terms.Text( "default" )
-                .SkipAnd( Terms.Char( ':' ) )
+                .SkipAnd( Colon )
                 .SkipAnd( ZeroOrMany( statement ) )
                 .Then( static statements =>
                 {
@@ -310,9 +309,9 @@ public partial class XsParser
                     Terms.Text( "catch" )
                     .SkipAnd(
                         Between(
-                            Terms.Char( '(' ),
+                            OpenParen,
                             Terms.Identifier().And( ZeroOrOne( Terms.Identifier() ) ),
-                            Terms.Char( ')' )
+                            CloseParen
                         )
                         .Then( static ( ctx, parts ) =>
                         {
@@ -328,14 +327,14 @@ public partial class XsParser
 
                             return Parameter( type, name );
                         } )
-                        .And( statement )
+                        .And( statement.InvalidStatement() )
                     )
                 )
             )
             .And(
                 ZeroOrOne(
                     Terms.Text( "finally" )
-                    .SkipAnd( statement )
+                    .SkipAnd( statement.InvalidStatement() )
                 )
             )
             .Then<Expression>( static parts =>
@@ -369,9 +368,9 @@ public partial class XsParser
     {
         var objectConstructor =
             Between(
-                Terms.Char( '(' ),
+                OpenParen,
                 ArgsParser( expression ),
-                Terms.Char( ')' )
+                CloseParen
             )
             .And(
                 ZeroOrOne(
@@ -396,12 +395,12 @@ public partial class XsParser
 
         var arrayConstructor =
             Between(
-                Terms.Char( '[' ),
+                OpenBracket,
                 ZeroOrOne( Separated(
                     Terms.Char( ',' ),
                     expression
                 ) ),
-                Terms.Char( ']' )
+                CloseBracket
             )
             .And(
                 ZeroOrOne(
@@ -409,7 +408,7 @@ public partial class XsParser
                         Terms.Char( '{' ),
                         Separated(
                             Terms.Char( ',' ),
-                            expression
+                            expression.InvalidExpression()
                         ),
                         Terms.Char( '}' )
                     )

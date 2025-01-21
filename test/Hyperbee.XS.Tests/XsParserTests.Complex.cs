@@ -68,7 +68,7 @@ public class XsParserComplexTests
         }
         results.Add(l);
 
-        var calc = (int a, int b) => { return a * b; };
+        var calc = (int a, int b) => a * b;
         results.Add( calc(6, 7) );
 
         results;

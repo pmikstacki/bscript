@@ -164,8 +164,8 @@ public partial class XsParser
             identifier,
             groupedExpression,
             blockExpression,
-            lambdaExpression,
-            complexExpression
+            complexExpression,
+            lambdaExpression
         )
         .LeftAssociative( // accessors
             left => MemberAccessParser( left, expression ),
