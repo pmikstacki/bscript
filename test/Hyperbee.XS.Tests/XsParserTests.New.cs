@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Hyperbee.XS.Tests;
@@ -205,8 +205,8 @@ public class XsParserNewExpressionTests
                 var y = default( integer );
                 x + y;
                 """ );
-        } 
-        catch ( SyntaxException ex ) 
+        }
+        catch ( SyntaxException ex )
         {
             Console.WriteLine( ex.Message );
             throw;
