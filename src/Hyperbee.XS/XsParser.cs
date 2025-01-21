@@ -281,17 +281,17 @@ public partial class XsParser
     private static Parser<string> ImportParser()
     {
         return Terms.Text( "import" )
-            .SkipAnd( 
+            .SkipAnd(
                 Terms.Identifier()
-                .And( 
-                    ZeroOrMany( 
+                .And(
+                    ZeroOrMany(
                         Terms.Char( '.' )
-                        .SkipAnd( Terms.Identifier() ) 
+                        .SkipAnd( Terms.Identifier() )
                     )
-                ) 
+                )
             )
             .AndSkip( Terms.Char( ';' ) )
-            .Then( (ctx, parts) =>
+            .Then( ( ctx, parts ) =>
             {
                 var (first, rest) = parts;
                 var ns = rest.Aggregate( first, ( current, part ) => $"{current}.{part}" ).ToString();
@@ -300,7 +300,7 @@ public partial class XsParser
                     xsContext.Namespaces.Add( ns );
 
                 return ns;
-            });
+            } );
     }
 
     private static Parser<Expression> SynthesizeEntryPoint( SequenceSkipAnd<IReadOnlyList<string>, IReadOnlyList<Expression>> parser )

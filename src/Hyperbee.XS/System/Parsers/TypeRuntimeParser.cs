@@ -101,7 +101,7 @@ internal class TypeRuntimeParser : Parser<Type>
         // Try resolving the type-name directly
 
         var resolvedType = resolver.ResolveType( typeName );
-        
+
         if ( resolvedType == null )
         {
             // Check namespaces if any
@@ -125,7 +125,7 @@ internal class TypeRuntimeParser : Parser<Type>
         {
             cursor.ResetPosition( positions.Pop() );
             var lastDotIndex = typeName.LastIndexOf( '.' );
-            
+
             if ( lastDotIndex == -1 )
                 break;
 
