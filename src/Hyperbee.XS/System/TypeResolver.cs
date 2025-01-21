@@ -104,9 +104,9 @@ public class TypeResolver
         {
             var extension = candidate.IsDefined( typeof( ExtensionAttribute ), false );
 
-            // Handle extension-specific slicing and type validation
+            // Adjust argument types to account for extension `this` parameter.
 
-            var argumentTypes = extension ? callTypes : callTypes[1..]; // extensions have an extra `this` parameter
+            var argumentTypes = extension ? callTypes : callTypes[1..]; 
 
             // Resolve open generic methods
 
@@ -114,7 +114,7 @@ public class TypeResolver
 
             if ( candidate.IsGenericMethodDefinition )
             {
-                if ( !TryResolveGenericMethod( candidate, typeArgs, argumentTypes, out method ) )
+                if ( !TryResolveGenericDefinition( candidate, typeArgs, argumentTypes, out method ) )
                     continue;
             }
 
@@ -169,22 +169,25 @@ public class TypeResolver
 
     private static Span<Type> GetCallTypes( Type type, IReadOnlyList<Expression> args )
     {
-        var span = new Type[args.Count + 1].AsSpan();
+        // Extensions have an additional `this` parameter. By adding `type` to the span,
+        // we can account for this without additional allocations later on.
 
-        span[0] = type; // Add `this` for extension methods
+        var callTypes = new Type[args.Count + 1].AsSpan();
+
+        callTypes[0] = type; // Add `this` for extension methods
 
         for ( var i = 0; i < args.Count; i++ )
         {
             // unwrap types from expressions
-            span[i + 1] = args[i] is ConstantExpression constant
+            callTypes[i + 1] = args[i] is ConstantExpression constant
                 ? constant.Value?.GetType()
                 : args[i].Type;
         }
 
-        return span;
+        return callTypes;
     }
 
-    private static bool TryResolveGenericMethod( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
+    private static bool TryResolveGenericDefinition( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
     {
         // Resolve generic methods, with type inference, if needed
 
@@ -221,25 +224,29 @@ public class TypeResolver
 
     private static int ComputeScore( ReadOnlySpan<Type> argumentTypes, ParameterInfo[] parameters, int bestScore )
     {
-        double averagePenalty = 0.0; // Compute average penalty for all arguments using incremental average
+        const int ExactMatch = 0;
+        const int CompatibleMatch = 1;
+        const int CompatibleNullMatch = 2;
+        const int OptionalMatch = 2;
+        const int ParamsMatch = 5;
+        const int NoMatch = int.MaxValue;
+
+        double averagePenalty = 0.0; // Use incremental averaging to compute the penalty
         var paramCount = parameters.Length;
 
         for ( var i = 0; i < argumentTypes.Length; i++ )
         {
-            if ( averagePenalty >= bestScore )
-                return int.MaxValue; // Early exit if average penalty exceeds the best score
-
             if ( i >= paramCount )
             {
                 // Handle `params` case
                 if ( !parameters[^1].IsDefined( typeof( ParamArrayAttribute ), false ) )
-                    return int.MaxValue; // No `params` to absorb extra arguments
+                    return NoMatch; // No `params` to absorb extra arguments
 
                 var paramsElementType = parameters[^1].ParameterType.GetElementType()!;
                 if ( argumentTypes[i] != null && !paramsElementType.IsAssignableFrom( argumentTypes[i] ) )
-                    return int.MaxValue; // Argument not compatible with `params` array element type
+                    return NoMatch; // Argument not compatible with `params` array element type
 
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 5 ); // Penalize for using `params`
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ParamsMatch ); 
                 continue;
             }
 
@@ -248,25 +255,24 @@ public class TypeResolver
 
             if ( argType == null )
             {
-                // Handle null argument
                 if ( paramType.IsValueType && Nullable.GetUnderlyingType( paramType ) == null )
-                    return int.MaxValue; // Null incompatible with non-nullable value types
+                    return NoMatch; 
 
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 2 ); // Compatible match with null
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleNullMatch ); 
                 continue;
             }
 
             if ( paramType == argType )
             {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 0 ); // Exact match
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ExactMatch ); 
             }
             else if ( paramType.IsAssignableFrom( argType ) )
             {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: 1 ); // Compatible match
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleMatch ); 
             }
             else
             {
-                return int.MaxValue; // No match
+                return NoMatch;
             }
         }
 
@@ -274,15 +280,15 @@ public class TypeResolver
         for ( var i = argumentTypes.Length; i < paramCount; i++ )
         {
             if ( !parameters[i].IsOptional )
-                return int.MaxValue; // Missing required parameter
+                return NoMatch; // Missing required parameter
 
-            averagePenalty = ((averagePenalty * i) + 2) / (i + 1); // Penalize for using a default value
+            averagePenalty = ComputePenalty( averagePenalty, i, penalty: OptionalMatch );
         }
 
         return (int) Math.Round( averagePenalty );
 
         // Helpers
-
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static double ComputePenalty( double current, int count, int penalty ) => ((current * count) + penalty) / (count + 1);
     }
 

@@ -3,11 +3,6 @@ layout: default
 title: Grammar
 nav_order: 5
 ---
----
-layout: default
-title: Grammar
-nav_order: 5
----
 # Grammar
 
 ## ABNF Grammar Specification
@@ -18,36 +13,40 @@ script              = *statement
 
 ; Statements
 statement           = complex-statement
-                    / single-line-statement
-                    / expression-statement
+                    / terminated-statement
                     / label-statement
 
 complex-statement   = conditional
                     / loop
                     / try-catch
                     / switch
+                    / block
 
-single-line-statement = break-statement
+terminated-statement = break-statement
                       / continue-statement
                       / goto-statement
                       / return-statement
                       / throw-statement
+                      / expression-statement
 
-expression-statement = declaration
-                     / assignment
-                     / expression
+expression-statement = assignable-expression *( ";" )
 
 label-statement     = identifier ":"
 
 ; Methods
-method              = "def" identifier "(" [ parameter-list ] ")" block
+method              = ["async"] "function" identifier "(" [ parameter-list ] ")" block
+
+; Assignable Expressions
+assignable-expression = declaration
+                     / assignment
+                     / expression
 
 ; Declarations
-declaration         = "var" identifier "=" expression
+declaration         = "var" identifier [ "=" expression ]
 
 ; Assignments
 assignment          = identifier assignment-operator expression
-assignment-operator = "=" / "+=" / "-=" / "*=" / "/=" / "??="
+assignment-operator = "=" / "+=" / "-=" / "*=" / "/=" / "%=" / "**=" / "??="
 
 ; Expressions
 expression          = literal
@@ -63,6 +62,10 @@ expression          = literal
 
 cast-expression     = primary-expression ("is" typename / "as" typename / "as?" typename)
 
+string-interpolation = backtick *( interpolation-content ) backtick
+interpolation-content = (%x20-7E / "{" expression "}")
+backtick            = %x60
+
 grouped-expression  = "(" expression ")"
 
 ; Literals
@@ -77,30 +80,28 @@ string-literal      = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
 boolean-literal     = "true" / "false"
 char-literal        = SQUOTE %x20-7E SQUOTE
 
-; String Interpolation
-string-interpolation = backtick *( interpolation-content ) backtick
-interpolation-content = (%x20-7E / "{" expression "}")
-backtick           = %x60
-
 ; Unary Expressions
 unary-expression    = ("!" / "-" / "++" / "--") primary-expression
 
 ; Binary Expressions
 binary-expression   = primary-expression binary-operator primary-expression
-binary-operator     = "*" / "/" / "+" / "-" / "==" / "!="
-                    / "<" / ">" / "<=" / ">=" / "&&" / "||" / "??"
+binary-operator     = "**" / "%" / "*" / "/" / "+" / "-"
+                    / "==" / "!=" / "<" / ">" / "<=" / ">="
+                    / "&&" / "||" / "??"
+                    / "&" / "|" / "^" / "<<" / ">>"
 
 ; Primary Expressions
 primary-expression  = literal
                     / identifier
                     / grouped-expression
+                    / block
 
 ; New Expression
 new-expression      = "new" typename "(" [ argument-list ] ")"
 
 ; Lambda Expressions
-lambda-expression   = "lambda" "(" [ parameter-list ] ")" block
-parameter-list      = identifier *( "," identifier )
+lambda-expression   = "(" [ lambda-parameter-list ] ")" "=>" block
+lambda-parameter-list = typename identifier *( "," typename identifier )
 
 ; Method Calls
 method-call         = identifier "(" [ argument-list ] ")"
@@ -110,7 +111,7 @@ generic-method-call = identifier "<" type-argument-list ">" "(" [ argument-list 
 type-argument-list  = typename *( "," typename )
 
 ; Control Flow
-conditional         = "if" "(" expression ")" block [ "else" block ]
+conditional         = "if" "(" expression ")" (terminated-statement / block) [ "else" (terminated-statement / block) ]
 loop                = ("loop" / "while" / "for" / "foreach") block
 break-statement     = "break"
 continue-statement  = "continue"
@@ -133,7 +134,7 @@ block               = "{" *statement "}"
 ; Identifiers and Typenames
 identifier          = ALPHA *(ALPHA / DIGIT / "_")
 typename            = identifier *( "." identifier ) [generic-arguments]
-generic-arguments   = "<" typename *( "," typename ) ">"
+generic-arguments   = "<" typename *( "," typename ) ">
 
 ; Arguments
 argument-list       = expression *( "," expression )
@@ -144,6 +145,4 @@ DIGIT1              = %x31-39
 ALPHA               = %x41-5A / %x61-7A
 DQUOTE              = %x22
 SQUOTE              = %x27
-
 ```
-
