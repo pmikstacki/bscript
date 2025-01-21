@@ -98,26 +98,31 @@ internal class TypeRuntimeParser : Parser<Type>
         var (_, resolver) = context;
         var typeName = typeBuilder.ToString();
 
-        while ( true )
+        // Try resolving the type-name directly
+
+        var resolvedType = resolver.ResolveType( typeName );
+
+        if ( resolvedType == null )
         {
-            var resolvedType = resolver.ResolveType( typeName );
+            // Check namespaces if any
 
-            if ( resolvedType != null )
+            if ( context is XsContext xsContext )
             {
-                resolvedType = genericArgs.Count > 0
-                    ? resolvedType.MakeGenericType( genericArgs.ToArray() )
-                    : resolvedType;
+                foreach ( var ns in xsContext.Namespaces )
+                {
+                    var qualifiedName = $"{ns}.{typeName}";
+                    resolvedType = resolver.ResolveType( qualifiedName );
 
-                result.Set( start.Offset, cursor.Position.Offset, resolvedType );
-                context.ExitParser( this );
-                return true;
+                    if ( resolvedType != null )
+                        break;
+                }
             }
+        }
 
-            if ( !backtrack || positions.Count == 0 )
-                break;
+        // Apply fallback backtracking if enabled
 
-            // Adjust the span by removing the last segment
-
+        while ( resolvedType == null && backtrack && positions?.Count > 0 )
+        {
             cursor.ResetPosition( positions.Pop() );
             var lastDotIndex = typeName.LastIndexOf( '.' );
 
@@ -125,6 +130,18 @@ internal class TypeRuntimeParser : Parser<Type>
                 break;
 
             typeName = typeName[..lastDotIndex];
+            resolvedType = resolver.ResolveType( typeName );
+        }
+
+        if ( resolvedType != null )
+        {
+            resolvedType = genericArgs.Count > 0
+                ? resolvedType.MakeGenericType( genericArgs.ToArray() )
+                : resolvedType;
+
+            result.Set( start.Offset, cursor.Position.Offset, resolvedType );
+            context.ExitParser( this );
+            return true;
         }
 
         cursor.ResetPosition( start );

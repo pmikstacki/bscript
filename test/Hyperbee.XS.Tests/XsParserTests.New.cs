@@ -16,7 +16,8 @@ public class XsParserNewExpressionTests
     {
         var expression = Xs.Parse(
             """
-            new Hyperbee.XS.Tests.TestClass(42);
+            import Hyperbee.XS.Tests;
+            new TestClass(42);
             """ );
 
         var lambda = Expression.Lambda<Func<TestClass>>( expression );
@@ -34,7 +35,8 @@ public class XsParserNewExpressionTests
         {
             var expression = Xs.Parse(
                 """
-                new Hyperbee.XS.Tests.TestClass(42).PropertyThis.PropertyValue;
+                import Hyperbee.XS.Tests;
+                new TestClass(42).PropertyThis.PropertyValue;
                 """ );
 
             var lambda = Expression.Lambda<Func<int>>( expression );

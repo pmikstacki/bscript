@@ -54,6 +54,10 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
+        // Imports
+
+        var imports = ZeroOrMany( ImportParser() ).Named( "import-statements" );
+
         // Compose Statements
 
         var terminatedStatements = KeywordLookup<Expression>( "lookup(terminated-statements)" )
@@ -75,30 +79,9 @@ public partial class XsParser
 
         // Create the final parser
 
-        return Bounded(
-            static ctx =>
-            {
-                var (scope, _) = ctx;
-                scope.Push( FrameType.Parent );
-            },
-            ZeroOrMany( statement ).Then<Expression>( static ( ctx, statements ) =>
-            {
-                var (scope, _) = ctx;
-                return ConvertToFinalExpression( statements, scope );
-            } ),
-            static ctx =>
-            {
-                var (scope, _) = ctx;
-                scope.Pop();
+        var xs = imports.SkipAnd( ZeroOrMany( statement ) );
 
-                // Ensure we've reached the end of the script
-                var cursor = ctx.Scanner.Cursor;
-                ctx.SkipWhiteSpace();
-
-                if ( cursor.Eof == false )
-                    throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
-            }
-        );
+        return SynthesizeEntryPoint( xs );
     }
 
     private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
@@ -280,7 +263,7 @@ public partial class XsParser
             .Named( "expression" );
     }
 
-    // Helpers
+    // Helper parsers
 
     private static Parser<IReadOnlyList<Expression>> ArgsParser( Parser<Expression> expression )
     {
@@ -293,6 +276,62 @@ public partial class XsParser
         return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ) )
             .Then( static typeArgs => typeArgs ?? Array.Empty<Type>() );
     }
+
+
+    private static Parser<string> ImportParser()
+    {
+        return Terms.Text( "import" )
+            .SkipAnd(
+                Terms.Identifier()
+                .And(
+                    ZeroOrMany(
+                        Terms.Char( '.' )
+                        .SkipAnd( Terms.Identifier() )
+                    )
+                )
+            )
+            .AndSkip( Terms.Char( ';' ) )
+            .Then( ( ctx, parts ) =>
+            {
+                var (first, rest) = parts;
+                var ns = rest.Aggregate( first, ( current, part ) => $"{current}.{part}" ).ToString();
+
+                if ( ctx is XsContext xsContext )
+                    xsContext.Namespaces.Add( ns );
+
+                return ns;
+            } );
+    }
+
+    private static Parser<Expression> SynthesizeEntryPoint( SequenceSkipAnd<IReadOnlyList<string>, IReadOnlyList<Expression>> parser )
+    {
+        return Bounded(
+            static ctx =>
+            {
+                var (scope, _) = ctx;
+                scope.Push( FrameType.Parent );
+            },
+            parser.Then<Expression>( static ( ctx, statements ) =>
+            {
+                var (scope, _) = ctx;
+                return ConvertToFinalExpression( statements, scope );
+            } ),
+            static ctx =>
+            {
+                var (scope, _) = ctx;
+                scope.Pop();
+
+                // Ensure we've reached the end of the script
+                var cursor = ctx.Scanner.Cursor;
+                ctx.SkipWhiteSpace();
+
+                if ( cursor.Eof == false )
+                    throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
+            }
+        );
+    }
+
+    // Helper methods
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
