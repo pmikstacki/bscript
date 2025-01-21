@@ -197,15 +197,16 @@ public class XsParserNewExpressionTests
     [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldSucceed_WithDefaultInvalid()
     {
-        try 
-        { 
+        try
+        {
             Xs.Parse(
                 """
                 var x = 5;
                 var y = default( integer );
                 x + y;
                 """ );
-        } catch ( SyntaxException ex ) 
+        }
+        catch ( SyntaxException ex )
         {
             Console.WriteLine( ex.Message );
             throw;
