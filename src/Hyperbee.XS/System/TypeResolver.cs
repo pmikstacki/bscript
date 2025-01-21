@@ -106,7 +106,7 @@ public class TypeResolver
 
             // Adjust argument types to account for extension `this` parameter.
 
-            var argumentTypes = extension ? callTypes : callTypes[1..]; 
+            var argumentTypes = extension ? callTypes : callTypes[1..];
 
             // Resolve open generic methods
 
@@ -246,7 +246,7 @@ public class TypeResolver
                 if ( argumentTypes[i] != null && !paramsElementType.IsAssignableFrom( argumentTypes[i] ) )
                     return NoMatch; // Argument not compatible with `params` array element type
 
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ParamsMatch ); 
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ParamsMatch );
                 continue;
             }
 
@@ -256,19 +256,19 @@ public class TypeResolver
             if ( argType == null )
             {
                 if ( paramType.IsValueType && Nullable.GetUnderlyingType( paramType ) == null )
-                    return NoMatch; 
+                    return NoMatch;
 
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleNullMatch ); 
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleNullMatch );
                 continue;
             }
 
             if ( paramType == argType )
             {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ExactMatch ); 
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ExactMatch );
             }
             else if ( paramType.IsAssignableFrom( argType ) )
             {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleMatch ); 
+                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleMatch );
             }
             else
             {
