@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -102,7 +102,7 @@ public class TypeResolver
 
         foreach ( var candidate in candidateMethods )
         {
-            var extension = candidate.IsDefined( typeof(ExtensionAttribute), false );
+            var extension = candidate.IsDefined( typeof( ExtensionAttribute ), false );
 
             // Handle extension-specific slicing and type validation
 
@@ -172,12 +172,12 @@ public class TypeResolver
         var span = new Type[args.Count + 1].AsSpan();
 
         span[0] = type; // Add `this` for extension methods
- 
+
         for ( var i = 0; i < args.Count; i++ )
         {
             // unwrap types from expressions
-            span[i+1] = args[i] is ConstantExpression constant 
-                ? constant.Value?.GetType() 
+            span[i + 1] = args[i] is ConstantExpression constant
+                ? constant.Value?.GetType()
                 : args[i].Type;
         }
 
@@ -232,7 +232,7 @@ public class TypeResolver
             if ( i >= paramCount )
             {
                 // Handle `params` case
-                if ( !parameters[^1].IsDefined( typeof(ParamArrayAttribute), false ) )
+                if ( !parameters[^1].IsDefined( typeof( ParamArrayAttribute ), false ) )
                     return int.MaxValue; // No `params` to absorb extra arguments
 
                 var paramsElementType = parameters[^1].ParameterType.GetElementType()!;
@@ -327,13 +327,13 @@ public class TypeResolver
             {
                 var index = Array.IndexOf( genericParameters, parameterType );
 
-                if ( index < 0 ) 
+                if ( index < 0 )
                     return true; // Not relevant
 
                 if ( inferredTypes[index] == null )
                     inferredTypes[index] = argumentType; // Infer the type
 
-                else if ( inferredTypes[index] != argumentType ) 
+                else if ( inferredTypes[index] != argumentType )
                     return false; // Ambiguous inference
 
                 return true;
@@ -341,7 +341,7 @@ public class TypeResolver
 
             // Handle array types explicitly for IEnumerable<T>
 
-            if ( parameterType.IsGenericType && parameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>) && argumentType!.IsArray )
+            if ( parameterType.IsGenericType && parameterType.GetGenericTypeDefinition() == typeof( IEnumerable<> ) && argumentType!.IsArray )
             {
                 var elementType = argumentType.GetElementType();
                 var genericArg = parameterType.GetGenericArguments()[0];
@@ -353,7 +353,7 @@ public class TypeResolver
 
             // Handle nested generic types
 
-            if ( !parameterType.ContainsGenericParameters ) 
+            if ( !parameterType.ContainsGenericParameters )
                 return true; // Non-generic parameter, no inference needed
 
             if ( !parameterType.IsGenericType || !argumentType!.IsGenericType || parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
@@ -366,7 +366,7 @@ public class TypeResolver
 
             for ( var i = 0; i < parameterArgs.Length; i++ )
             {
-                if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) ) 
+                if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) )
                     continue;
 
                 return false;
