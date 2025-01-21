@@ -112,7 +112,7 @@ type-argument-list  = typename *( "," typename )
 
 ; Control Flow
 conditional         = "if" "(" expression ")" (terminated-statement / block) [ "else" (terminated-statement / block) ]
-loop                = ("loop" / "while" / "for" / "foreach") block
+loop                = "loop" block
 break-statement     = "break"
 continue-statement  = "continue"
 goto-statement      = "goto" identifier
