@@ -372,7 +372,7 @@ public partial class XsParser
 
                 return initial == null
                     ? (ConstructorType.Object, bounds, null)
-                    : (ConstructorType.ArrayInit, bounds, initial);
+                    : (ConstructorType.ListInit, bounds, initial);
             } );
 
         var arrayConstructor =

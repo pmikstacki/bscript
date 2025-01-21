@@ -101,6 +101,24 @@ public class XsParserNewExpressionTests
     }
 
     [TestMethod]
+    public void Compile_ShouldSucceed_WithNewListInit()
+    {
+        var parser = new XsParser();
+
+        var expression = parser.Parse(
+            """
+            new List<int>() {1,2};
+            """ );
+
+        var lambda = Expression.Lambda<Func<List<int>>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 2, result.Count );
+    }
+
+    [TestMethod]
     public void Compile_ShouldSucceed_WithNewJaggedArray()
     {
         var parser = new XsParser();
