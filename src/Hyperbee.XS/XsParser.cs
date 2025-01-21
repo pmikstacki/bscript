@@ -33,7 +33,14 @@ public partial class XsParser
         var scanner = new Scanner( script );
         var context = new XsContext( _config, scanner ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
 
-        return _xs.Parse( context );
+        try
+        {
+            return _xs.Parse( context );
+        }
+        catch ( ParseException ex )
+        {
+            throw new SyntaxException( ex.Message, context.Scanner.Cursor );
+        }
     }
 
     // Parsers
@@ -135,6 +142,7 @@ public partial class XsParser
 
         var complexExpression = KeywordLookup<Expression>()
             .Add(
+                DefaultParser( typeConstant ),
                 DeclarationParser( expression ),
                 NewParser( expression ),
                 ConditionalParser( expression, statement ),

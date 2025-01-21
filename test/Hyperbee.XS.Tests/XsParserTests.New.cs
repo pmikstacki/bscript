@@ -158,4 +158,57 @@ public class XsParserNewExpressionTests
 
         Assert.IsInstanceOfType<List<int>>( result );
     }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithDefaultValue()
+    {
+        var expression = Xs.Parse(
+            """
+            var x = default( int );
+            x;
+            """ );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 0, result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_WithDefaultReference()
+    {
+        var expression = Xs.Parse(
+            """
+            var x = default( Hyperbee.XS.Tests.TestClass );
+            x;
+            """ );
+
+        var lambda = Expression.Lambda<Func<TestClass>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.IsNull( result );
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldSucceed_WithDefaultInvalid()
+    {
+        try 
+        { 
+            Xs.Parse(
+                """
+                var x = 5;
+                var y = default( integer );
+                x + y;
+                """ );
+        } catch ( SyntaxException ex ) 
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
 }

@@ -24,5 +24,23 @@ public class SyntaxException : Exception
         Buffer = cursor.Buffer;
     }
 
-    public override string ToString() => $"({Line}:{Column} {Offset}) - {Message}";
+    public override string Message
+    {
+        get
+        {
+            if ( Buffer == null || Line <= 0 || Column <= 0 )
+                return base.Message;
+
+            var lines = Buffer.Split( ['\r', '\n'], StringSplitOptions.RemoveEmptyEntries );
+
+            if ( Line > lines.Length )
+                return base.Message;
+
+            var errorLine = lines[Line - 1];
+            var caretLine = new string( ' ', Column - 1 ) + "^";
+
+            // Create the formatted message
+            return $"{base.Message} (Line: {Line}, Column: {Column})\n{errorLine}\n{caretLine}";
+        }
+    }
 }

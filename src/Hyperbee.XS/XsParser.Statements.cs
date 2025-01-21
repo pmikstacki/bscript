@@ -141,6 +141,25 @@ public partial class XsParser
         );
     }
 
+    private static KeywordParserPair<Expression> DefaultParser( Parser<Expression> typeConstant )
+    {
+        return new( "default",
+            Between(
+                Terms.Char( '(' ),
+                typeConstant,
+                Terms.Char( ')' )
+            )
+            .Then<Expression>( static ( ctx, typeConstant ) =>
+            {
+                if ( typeConstant is not ConstantExpression constant || constant.Value is not Type type )
+                    throw new SyntaxException( "Unable to create default type.", ctx.Scanner.Cursor );
+
+                return Default( type );
+            } )
+            .ElseError( "Invalid type provided for default." )
+            .Named( "default" )
+        );
+    }
     private static KeywordParserPair<Expression> DeclarationParser( Parser<Expression> expression )
     {
         return new( "var",
