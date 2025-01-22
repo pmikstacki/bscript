@@ -15,11 +15,11 @@ public class TypeResolver
     private const int ConcurrencyLevel = -1;
     private const int Capacity = 32;
 
-    private readonly ConcurrentDictionary<string, Type> _typeCache = new(ConcurrencyLevel, Capacity);
-    private readonly ConcurrentDictionary<string, List<MethodInfo>> _extensionMethodCache = new(ConcurrencyLevel, Capacity);
-    private readonly ConcurrentDictionary<(MethodInfo, IReadOnlyList<Type>), MethodInfo> _genericResolutionCache = new(ConcurrencyLevel, Capacity);
-    
-    private static readonly ConcurrentDictionary<Type, bool> __nullableTypeCache = new(ConcurrencyLevel, Capacity);
+    private readonly ConcurrentDictionary<string, Type> _typeCache = new( ConcurrencyLevel, Capacity );
+    private readonly ConcurrentDictionary<string, List<MethodInfo>> _extensionMethodCache = new( ConcurrencyLevel, Capacity );
+    private readonly ConcurrentDictionary<(MethodInfo, IReadOnlyList<Type>), MethodInfo> _genericResolutionCache = new( ConcurrencyLevel, Capacity );
+
+    private static readonly ConcurrentDictionary<Type, bool> __nullableTypeCache = new( ConcurrencyLevel, Capacity );
 
     private static readonly Dictionary<Type, HashSet<Type>> WideningConversions = new()
     {
@@ -92,10 +92,10 @@ public class TypeResolver
 
         MethodInfo bestMatch = null;
         var ambiguousMatch = false;
-        
+
         foreach ( var candidate in candidateMethods )
         {
-            var isExtension = candidate.IsDefined( typeof(ExtensionAttribute), false );
+            var isExtension = candidate.IsDefined( typeof( ExtensionAttribute ), false );
 
             var argumentTypes = isExtension ? callerTypes : callerTypes[1..]; // extension methods have the first argument as the caller
             MethodInfo method = candidate;
@@ -154,7 +154,7 @@ public class TypeResolver
 
                 foreach ( var method in type.GetMethods( BindingFlags.Static | BindingFlags.Public ) )
                 {
-                    if ( !method.IsDefined( typeof(ExtensionAttribute), false ) )
+                    if ( !method.IsDefined( typeof( ExtensionAttribute ), false ) )
                         continue;
 
                     if ( !_extensionMethodCache.TryGetValue( method.Name, out var methods ) )
@@ -198,7 +198,7 @@ public class TypeResolver
         for ( var i = 0; i < argumentTypes.Length; i++ )
         {
             if ( i >= parameters.Length )
-                return parameters[^1].IsDefined( typeof(ParamArrayAttribute), false );
+                return parameters[^1].IsDefined( typeof( ParamArrayAttribute ), false );
 
             var paramType = parameters[i].ParameterType;
             var argType = argumentTypes[i];
@@ -331,7 +331,7 @@ public class TypeResolver
             if ( !parameterType.ContainsGenericParameters )
                 return true;
 
-            if ( !parameterType.IsGenericType || !argumentType!.IsGenericType || 
+            if ( !parameterType.IsGenericType || !argumentType!.IsGenericType ||
                  parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
                 return false;
 
