@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.XS.System;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -10,10 +11,13 @@ public partial class XsParser
 {
     private static Parser<Expression> LambdaParser( Parser<Expression> typeConstant, Deferred<Expression> expression )
     {
-        return Between(
-                Terms.Char( '(' ),
-                Parameters( typeConstant ),
-                Terms.Char( ')' )
+        return If(
+                ctx => ctx.StartsWith( "(" ),
+                Between(
+                    OpenParen,
+                    Parameters( typeConstant ),
+                    CloseParen
+                )
             )
             .AndSkip( Terms.Text( "=>" ) )
             .And(

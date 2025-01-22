@@ -117,26 +117,26 @@ public partial class XsParser
 
     private static Parser<Expression> BlockParser( Deferred<Expression> statement )
     {
-        return Between(
-                Terms.Char( '{' ).Then( static ( ctx, parts ) =>
-                {
-                    // make sure we're in a block scope by parsing '{' first
-                    ctx.EnterScope( FrameType.Block );
-                    return parts;
-                } ),
-                ZeroOrMany( statement ),
-                Terms.Char( '}' )
-            )
-            .Named( "block" )
-            .RequireTermination( false )
-            .Then( static ( ctx, parts ) =>
+        return BoundedIf(
+            ctx => ctx.StartsWith( "{" ),
+            static ctx =>
             {
-                var block = ConvertToSingleExpression( ctx, parts );
+                ctx.EnterScope( FrameType.Block );
+            },
+            Between(
+                OpenBrace,
+                ZeroOrMany( statement ),
+                CloseBrace
+            )
+            .Then( ConvertToSingleExpression )
+            .RequireTermination( false ),
+            static ctx =>
+            {
                 ctx.ExitScope();
-                return block;
-            } );
+            }
+        ).Named( "block" );
     }
-
+    
     private static KeywordParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         return new( "if",
