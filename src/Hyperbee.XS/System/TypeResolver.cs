@@ -12,8 +12,28 @@ public class TypeResolver
         typeof( Enumerable ).Assembly
     ];
 
-    private readonly ConcurrentDictionary<string, Type> _typeCache = new();
-    private readonly ConcurrentDictionary<string, List<MethodInfo>> _extensionMethodCache = new();
+    private const int ConcurrencyLevel = -1;
+    private const int Capacity = 32;
+
+    private readonly ConcurrentDictionary<string, Type> _typeCache = new(ConcurrencyLevel, Capacity);
+    private readonly ConcurrentDictionary<string, List<MethodInfo>> _extensionMethodCache = new(ConcurrencyLevel, Capacity);
+    private readonly ConcurrentDictionary<(MethodInfo, IReadOnlyList<Type>), MethodInfo> _genericResolutionCache = new(ConcurrencyLevel, Capacity);
+    
+    private static readonly ConcurrentDictionary<Type, bool> __nullableTypeCache = new(ConcurrencyLevel, Capacity);
+
+    private static readonly Dictionary<Type, HashSet<Type>> WideningConversions = new()
+    {
+        { typeof(byte), [typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(sbyte), [typeof(short), typeof(int), typeof(long), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(short), [typeof(int), typeof(long), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(ushort), [typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(int), [typeof(long), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(uint), [typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(long), [typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(ulong), [typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(char), [typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)] },
+        { typeof(float), [typeof(double)] }
+    };
 
     public TypeResolver( IReadOnlyCollection<Assembly> references )
     {
@@ -21,32 +41,6 @@ public class TypeResolver
             _references.AddRange( references );
 
         CacheExtensionMethods();
-    }
-
-    private void CacheExtensionMethods()
-    {
-        Parallel.ForEach( _references, assembly =>
-        {
-            foreach ( var type in assembly.GetTypes() )
-            {
-                if ( !type.IsPublic || !type.IsSealed || !type.IsAbstract ) // Only static classes
-                    continue;
-
-                foreach ( var method in type.GetMethods( BindingFlags.Static | BindingFlags.Public ) )
-                {
-                    if ( !method.IsDefined( typeof( ExtensionAttribute ), false ) )
-                        continue;
-
-                    if ( !_extensionMethodCache.TryGetValue( method.Name, out var methods ) )
-                    {
-                        methods = [];
-                        _extensionMethodCache[method.Name] = methods;
-                    }
-
-                    methods.Add( method );
-                }
-            }
-        } );
     }
 
     public Type ResolveType( string typeName )
@@ -89,71 +83,103 @@ public class TypeResolver
         }
     }
 
-    public MethodInfo FindMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args )
+    public MethodInfo ResolveMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args )
     {
         var candidateMethods = GetCandidateMethods( methodName, type );
-        var callTypes = GetCallTypes( type, args );
+        var callerTypes = GetCallerTypes( type, args );
 
-        // find best match
+        typeArgs ??= [];
 
         MethodInfo bestMatch = null;
-        var bestScore = int.MaxValue;
         var ambiguousMatch = false;
-
+        
         foreach ( var candidate in candidateMethods )
         {
-            var extension = candidate.IsDefined( typeof( ExtensionAttribute ), false );
+            var isExtension = candidate.IsDefined( typeof(ExtensionAttribute), false );
 
-            // Adjust argument types to account for extension `this` parameter.
-
-            var argumentTypes = extension ? callTypes : callTypes[1..];
-
-            // Resolve open generic methods
-
+            var argumentTypes = isExtension ? callerTypes : callerTypes[1..]; // extension methods have the first argument as the caller
             MethodInfo method = candidate;
 
             if ( candidate.IsGenericMethodDefinition )
             {
-                if ( !TryResolveGenericDefinition( candidate, typeArgs, argumentTypes, out method ) )
-                    continue;
+                if ( !_genericResolutionCache.TryGetValue( (candidate, typeArgs), out method ) )
+                {
+                    if ( !TryResolveGenericDefinition( candidate, typeArgs, argumentTypes, out method ) )
+                        continue;
+
+                    _genericResolutionCache[(candidate, typeArgs)] = method;
+                }
             }
 
-            // Early out if the extension method 'this' is not assignable
-            //
             var parameters = method.GetParameters();
 
-            if ( extension )
+            if ( !IsApplicable( parameters, argumentTypes ) )
+                continue;
+
+            if ( bestMatch != null )
             {
-                var paramType = parameters[0].ParameterType;
+                var compare = CompareMethods( bestMatch, method );
 
-                if ( callTypes[0] != paramType && !paramType.IsAssignableFrom( callTypes[0] ) )
-                    continue;
+                switch ( compare )
+                {
+                    case > 0:
+                        bestMatch = method;
+                        ambiguousMatch = false;
+                        break;
+                    case 0:
+                        ambiguousMatch = true;
+                        break;
+                }
             }
-
-            // Compute match score
-
-            var score = ComputeScore( argumentTypes, parameters, bestScore );
-
-            if ( score == int.MaxValue )
-                continue;
-
-            if ( score == bestScore ) // Current best is ambiguous
-                ambiguousMatch = true;
-
-            if ( score >= bestScore )
-                continue;
-
-            bestScore = score;
-            bestMatch = method;
-            ambiguousMatch = false;
+            else
+            {
+                bestMatch = method;
+            }
         }
 
         if ( ambiguousMatch )
-            throw new AmbiguousMatchException( $"Ambiguous match for method '{methodName}'. Unable to resolve method." );
+            throw new AmbiguousMatchException( $"Ambiguous match for method '{methodName}'." );
 
         return bestMatch;
+    }
 
-        // helper methods
+    private void CacheExtensionMethods()
+    {
+        Parallel.ForEach( _references, assembly =>
+        {
+            foreach ( var type in assembly.GetTypes() )
+            {
+                if ( !type.IsPublic || !type.IsSealed || !type.IsAbstract ) // Only static classes
+                    continue;
+
+                foreach ( var method in type.GetMethods( BindingFlags.Static | BindingFlags.Public ) )
+                {
+                    if ( !method.IsDefined( typeof(ExtensionAttribute), false ) )
+                        continue;
+
+                    if ( !_extensionMethodCache.TryGetValue( method.Name, out var methods ) )
+                    {
+                        methods = [];
+                        _extensionMethodCache[method.Name] = methods;
+                    }
+
+                    methods.Add( method );
+                }
+            }
+        } );
+    }
+
+    private static Span<Type> GetCallerTypes( Type type, IReadOnlyList<Expression> args )
+    {
+        var types = new Type[args.Count + 1].AsSpan();
+        types[0] = type;
+
+        for ( var i = 0; i < args.Count; i++ )
+        {
+            types[i + 1] = args[i] is ConstantExpression constant ? constant.Value?.GetType() : args[i].Type;
+        }
+
+        return types;
     }
 
     private IEnumerable<MethodInfo> GetCandidateMethods( string methodName, Type type )
@@ -167,157 +193,95 @@ public class TypeResolver
             .Concat( extensionMethods );
     }
 
-    private static Span<Type> GetCallTypes( Type type, IReadOnlyList<Expression> args )
+    private static bool IsApplicable( ParameterInfo[] parameters, ReadOnlySpan<Type> argumentTypes )
     {
-        // Extensions have an additional `this` parameter. By adding `type` to the span,
-        // we can account for this without additional allocations later on.
-
-        var callTypes = new Type[args.Count + 1].AsSpan();
-
-        callTypes[0] = type; // Add `this` for extension methods
-
-        for ( var i = 0; i < args.Count; i++ )
-        {
-            // unwrap types from expressions
-            callTypes[i + 1] = args[i] is ConstantExpression constant
-                ? constant.Value?.GetType()
-                : args[i].Type;
-        }
-
-        return callTypes;
-    }
-
-    private static bool TryResolveGenericDefinition( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
-    {
-        // Resolve generic methods, with type inference, if needed
-
-        resolvedMethod = method;
-
-        var methodTypeArgs = typeArgs?.ToArray() ?? [];
-
-        if ( methodTypeArgs.Length == 0 )
-        {
-            methodTypeArgs = InferGenericArguments( method, argumentTypes );
-
-            if ( methodTypeArgs == null )
-            {
-                return false;
-            }
-        }
-
-        if ( method.GetGenericArguments().Length != methodTypeArgs.Length )
-        {
-            return false;
-        }
-
-        try
-        {
-            resolvedMethod = method.MakeGenericMethod( methodTypeArgs );
-        }
-        catch
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static int ComputeScore( ReadOnlySpan<Type> argumentTypes, ParameterInfo[] parameters, int bestScore )
-    {
-        const int ExactMatch = 0;
-        const int CompatibleMatch = 1;
-        const int CompatibleNullMatch = 2;
-        const int OptionalMatch = 2;
-        const int ParamsMatch = 5;
-        const int NoMatch = int.MaxValue;
-
-        double averagePenalty = 0.0; // Use incremental averaging to compute the penalty
-        var paramCount = parameters.Length;
-
         for ( var i = 0; i < argumentTypes.Length; i++ )
         {
-            if ( i >= paramCount )
-            {
-                // Handle `params` case
-                if ( !parameters[^1].IsDefined( typeof( ParamArrayAttribute ), false ) )
-                    return NoMatch; // No `params` to absorb extra arguments
-
-                var paramsElementType = parameters[^1].ParameterType.GetElementType()!;
-                if ( argumentTypes[i] != null && !paramsElementType.IsAssignableFrom( argumentTypes[i] ) )
-                    return NoMatch; // Argument not compatible with `params` array element type
-
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ParamsMatch );
-                continue;
-            }
+            if ( i >= parameters.Length )
+                return parameters[^1].IsDefined( typeof(ParamArrayAttribute), false );
 
             var paramType = parameters[i].ParameterType;
             var argType = argumentTypes[i];
 
             if ( argType == null )
             {
-                if ( paramType.IsValueType && Nullable.GetUnderlyingType( paramType ) == null )
-                    return NoMatch;
-
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleNullMatch );
-                continue;
+                if ( !paramType.IsClass && !__nullableTypeCache.GetOrAdd( paramType, x => Nullable.GetUnderlyingType( x ) != null ) )
+                    return false;
             }
-
-            if ( paramType == argType )
+            else if ( !paramType.IsAssignableFrom( argType ) && !IsWideningConversion( argType, paramType ) )
             {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: ExactMatch );
-            }
-            else if ( paramType.IsAssignableFrom( argType ) )
-            {
-                averagePenalty = ComputePenalty( averagePenalty, i, penalty: CompatibleMatch );
-            }
-            else
-            {
-                return NoMatch;
+                return false;
             }
         }
 
-        // Handle additional parameters that are not matched by the arguments
-        for ( var i = argumentTypes.Length; i < paramCount; i++ )
+        for ( var i = argumentTypes.Length; i < parameters.Length; i++ )
         {
             if ( !parameters[i].IsOptional )
-                return NoMatch; // Missing required parameter
-
-            averagePenalty = ComputePenalty( averagePenalty, i, penalty: OptionalMatch );
+                return false;
         }
 
-        return (int) Math.Round( averagePenalty );
+        return true;
+    }
 
-        // Helpers
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static double ComputePenalty( double current, int count, int penalty ) => ((current * count) + penalty) / (count + 1);
+    private static bool IsWideningConversion( Type from, Type to )
+    {
+        return WideningConversions.TryGetValue( from, out var targets ) && targets.Contains( to );
+    }
+
+    private bool TryResolveGenericDefinition( MethodInfo method, IReadOnlyList<Type> typeArgs, ReadOnlySpan<Type> argumentTypes, out MethodInfo resolvedMethod )
+    {
+        resolvedMethod = method;
+
+        if ( _genericResolutionCache.TryGetValue( (method, typeArgs), out var cachedResult ) )
+        {
+            resolvedMethod = cachedResult;
+            return true;
+        }
+
+        if ( typeArgs.Count == 0 )
+        {
+            typeArgs = InferGenericArguments( method, argumentTypes );
+
+            if ( typeArgs == null )
+                return false;
+        }
+
+        if ( method.GetGenericArguments().Length != typeArgs.Count )
+        {
+            return false;
+        }
+
+        try
+        {
+            resolvedMethod = method.MakeGenericMethod( typeArgs.ToArray() );
+        }
+        catch
+        {
+            return false;
+        }
+
+        _genericResolutionCache[(method, typeArgs)] = resolvedMethod;
+        return true;
     }
 
     private static Type[] InferGenericArguments( MethodInfo method, ReadOnlySpan<Type> argumentTypes )
     {
         var genericParameters = method.GetGenericArguments();
         var inferredTypes = new Type[genericParameters.Length];
-
         var parameters = method.GetParameters();
-        var argumentCount = argumentTypes.Length;
 
         for ( var i = 0; i < parameters.Length; i++ )
         {
-            var parameter = parameters[i];
-
-            if ( i >= argumentCount )
+            if ( i >= argumentTypes.Length )
             {
-                if ( !parameter.HasDefaultValue )
+                if ( !parameters[i].HasDefaultValue )
                     return null; // Missing argument for non-default parameter
 
                 continue; // Skip inference for default parameters
             }
 
-            var argumentType = argumentTypes[i];
-
-            if ( TryInferTypes( parameter.ParameterType, argumentType, genericParameters, inferredTypes ) )
-                continue;
-
-            return null;
+            if ( !TryInferTypes( parameters[i].ParameterType, argumentTypes[i], genericParameters, inferredTypes ) )
+                return null;
         }
 
         return inferredTypes;
@@ -334,13 +298,18 @@ public class TypeResolver
                 var index = Array.IndexOf( genericParameters, parameterType );
 
                 if ( index < 0 )
-                    return true; // Not relevant
+                    return true;
 
-                if ( inferredTypes[index] == null )
-                    inferredTypes[index] = argumentType; // Infer the type
-
-                else if ( inferredTypes[index] != argumentType )
-                    return false; // Ambiguous inference
+                switch ( inferredTypes[index] )
+                {
+                    case null:
+                        inferredTypes[index] = argumentType;
+                        break;
+                    default:
+                        if ( inferredTypes[index] != argumentType )
+                            return false;
+                        break;
+                }
 
                 return true;
             }
@@ -360,25 +329,51 @@ public class TypeResolver
             // Handle nested generic types
 
             if ( !parameterType.ContainsGenericParameters )
-                return true; // Non-generic parameter, no inference needed
+                return true;
 
-            if ( !parameterType.IsGenericType || !argumentType!.IsGenericType || parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
-            {
+            if ( !parameterType.IsGenericType || !argumentType!.IsGenericType || 
+                 parameterType.GetGenericTypeDefinition() != argumentType.GetGenericTypeDefinition() )
                 return false;
-            }
 
-            var parameterArgs = parameterType.GetGenericArguments();
-            var argumentArgs = argumentType.GetGenericArguments();
+            var paramArgs = parameterType.GetGenericArguments();
+            var argArgs = argumentType.GetGenericArguments();
 
-            for ( var i = 0; i < parameterArgs.Length; i++ )
+            for ( var i = 0; i < paramArgs.Length; i++ )
             {
-                if ( TryInferTypes( parameterArgs[i], argumentArgs[i], genericParameters, inferredTypes ) )
-                    continue;
-
-                return false;
+                if ( !TryInferTypes( paramArgs[i], argArgs[i], genericParameters, inferredTypes ) )
+                    return false;
             }
 
             return true;
         }
+    }
+
+    private static int CompareMethods( MethodInfo m1, MethodInfo m2 )
+    {
+        switch ( m1.IsGenericMethod )
+        {
+            case false when m2.IsGenericMethod:
+                return -1;
+
+            case true when !m2.IsGenericMethod:
+                return 1;
+        }
+
+        var p1 = m1.GetParameters();
+        var p2 = m2.GetParameters();
+
+        for ( var i = 0; i < Math.Min( p1.Length, p2.Length ); i++ )
+        {
+            if ( p1[i].ParameterType == p2[i].ParameterType )
+                continue;
+
+            if ( p1[i].ParameterType.IsAssignableFrom( p2[i].ParameterType ) )
+                return 1;
+
+            if ( p2[i].ParameterType.IsAssignableFrom( p1[i].ParameterType ) )
+                return -1;
+        }
+
+        return p1.Length.CompareTo( p2.Length );
     }
 }

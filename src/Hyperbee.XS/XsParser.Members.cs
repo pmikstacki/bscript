@@ -82,7 +82,7 @@ public partial class XsParser
                 if ( args != null )
                 {
                     var (_, resolver) = ctx;
-                    var method = resolver.FindMethod( type, name, typeArgs, args );
+                    var method = resolver.ResolveMethod( type, name, typeArgs, args );
 
                     if ( method == null )
                         throw new InvalidOperationException( $"Method '{name}' not found on type '{type}'." );
