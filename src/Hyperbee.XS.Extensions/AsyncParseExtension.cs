@@ -20,8 +20,7 @@ public class AsyncParseExtension : IParseExtension
         return XsParsers.Bounded(
             static ctx =>
             {
-                var (scope, _) = ctx;
-                scope.Push( FrameType.Block );
+                ctx.EnterScope( FrameType.Block );
             },
             Between(
                 // This is basically a block, but we need the parts
@@ -29,18 +28,15 @@ public class AsyncParseExtension : IParseExtension
                 ZeroOrMany( statement ),
                 Terms.Char( '}' )
             ).Named( "async block" )
-            .Then<Expression>( static ( ctx, parts ) =>
-            {
-                var (scope, _) = ctx;
-                return ExpressionExtensions.BlockAsync(
-                    [.. scope.Variables.EnumerateValues( Collections.KeyScope.Current )],
+            .Then<Expression>( static ( ctx, parts ) => 
+                ExpressionExtensions.BlockAsync(
+                    [.. ctx.Scope().Variables.EnumerateValues( Collections.KeyScope.Current )],
                     [.. parts]
-                );
-            } ),
+                ) 
+            ),
             static ctx =>
             {
-                var (scope, _) = ctx;
-                scope.Pop();
+                ctx.ExitScope();
             }
         ).Named( "async" );
     }

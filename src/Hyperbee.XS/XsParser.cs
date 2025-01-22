@@ -81,7 +81,7 @@ public partial class XsParser
 
         var xs = imports.SkipAnd( ZeroOrMany( statement ) );
 
-        return SynthesizeEntryPoint( xs );
+        return SynthesizeMethod( xs );
     }
 
     private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
@@ -296,41 +296,42 @@ public partial class XsParser
             } );
     }
 
-    private static Parser<Expression> SynthesizeEntryPoint( SequenceSkipAnd<IReadOnlyList<string>, IReadOnlyList<Expression>> parser )
+    private static Parser<Expression> SynthesizeMethod( SequenceSkipAnd<IReadOnlyList<string>, IReadOnlyList<Expression>> parser )
     {
         return Bounded(
             static ctx =>
             {
-                var (scope, _) = ctx;
-                scope.Push( FrameType.Method );
+                ctx.EnterScope( FrameType.Method );
             },
-            parser.Then( static ( ctx, statements ) =>
-            {
-                var (scope, _) = ctx;
-                return ConvertToSingleExpression( statements, scope );
-            } ),
+            parser.Then( 
+                static ( ctx, statements ) => ConvertToSingleExpression( ctx, statements ) 
+            ),
             static ctx =>
             {
-                var (scope, _) = ctx;
-                scope.Pop();
-
-                // Ensure we've reached the end of the script
-                var cursor = ctx.Scanner.Cursor;
-                ctx.SkipWhiteSpace();
-
-                if ( cursor.Eof == false )
-                    throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
+                ctx.ExitScope();
+                ThrowIfNotEof( ctx );
             }
         );
+
+        static void ThrowIfNotEof( ParseContext ctx )
+        {
+            var cursor = ctx.Scanner.Cursor;
+            ctx.SkipWhiteSpace();
+
+            if ( cursor.Eof == false )
+                throw new SyntaxException( "Syntax Error. Failure parsing script.", cursor );
+        }
     }
 
     // Helper methods
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
+    private static Expression ConvertToSingleExpression( ParseContext context, IReadOnlyList<Expression> expressions )
     {
         if ( expressions == null || expressions.Count == 0 )
             return Default( typeof( void ) );
+
+        var scope = context.Scope();
 
         var finalType = expressions[^1].Type;
         var returnLabel = scope.Frame.ReturnLabel;

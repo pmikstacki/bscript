@@ -22,8 +22,7 @@ public class ForEachParseExtension : IParseExtension
             XsParsers.Bounded(
                 static ctx =>
                 {
-                    var (scope, _) = ctx;
-                    scope.Push( FrameType.Block );
+                    ctx.EnterScope( FrameType.Block );
                 },
                 Between(
                     Terms.Char( '(' ),
@@ -34,7 +33,6 @@ public class ForEachParseExtension : IParseExtension
                     Terms.Char( ')' )
                 ).Then( static ( ctx, parts ) =>
                 {
-                    var (scope, _) = ctx;
                     var (elementIdentifier, collection) = parts;
 
                     var elementName = elementIdentifier.ToString()!;
@@ -42,12 +40,13 @@ public class ForEachParseExtension : IParseExtension
                         collection.Type.GetElementType()!,
                         elementName );
 
-                    scope.Variables.Add( elementName, elementVariable );
+                    ctx.Scope().Variables
+                        .Add( elementName, elementVariable );
 
                     return (elementVariable, collection);
                 } )
                 .And( statement )
-                .Then<Expression>( static ( ctx, parts ) =>
+                .Then<Expression>( static parts =>
                 {
                     var ((element, collection), body) = parts;
 
@@ -55,8 +54,7 @@ public class ForEachParseExtension : IParseExtension
                 } ),
                 static ctx =>
                 {
-                    var (scope, _) = ctx;
-                    scope.Pop();
+                    ctx.ExitScope();
                 }
             ).Named( "foreach" );
     }

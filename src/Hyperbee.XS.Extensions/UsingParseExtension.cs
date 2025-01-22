@@ -27,7 +27,6 @@ public class UsingParseExtension : IParseExtension
                 Terms.Char( ')' )
             ).Then( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
                 var (variableIdentifier, disposable) = parts;
 
                 var variableName = variableIdentifier.ToString()!;
@@ -35,7 +34,7 @@ public class UsingParseExtension : IParseExtension
                     disposable.Type,
                     variableName );
 
-                scope.Variables.Add( variableName, variable );
+                ctx.Scope().Variables.Add( variableName, variable );
 
                 return (variable, disposable);
             } )

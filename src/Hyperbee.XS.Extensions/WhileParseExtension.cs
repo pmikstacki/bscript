@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.Expressions;
-using Hyperbee.XS;
 using Hyperbee.XS.System;
 using Parlot.Fluent;
 using static Parlot.Fluent.Parsers;
@@ -23,12 +22,11 @@ public class WhileParseExtension : IParseExtension
                 Terms.Char( ')' )
             )
             .And( statement )
-            .Then<Expression>( static ( ctx, parts ) =>
+            .Then<Expression>( static parts =>
             {
-                var (scope, _) = ctx;
                 var (test, body) = parts;
-
                 return ExpressionExtensions.While( test, body );
-            } ).Named( "while" );
+            } )
+            .Named( "while" );
     }
 }

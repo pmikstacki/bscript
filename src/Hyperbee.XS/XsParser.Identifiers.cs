@@ -25,11 +25,10 @@ public partial class XsParser
     internal static Parser<char> Colon = Terms.Char( ':' ).ElseError( InvalidSyntaxMessage );
 }
 
-public static class XsParserExtentions
+public static class XsParserExtensions
 {
-    internal static Parser<Expression> InvalidType( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidTypeMessage );
-    internal static Parser<Expression> InvalidExpression( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidExpressionMessage );
-    internal static Parser<Expression> InvalidStatement( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidStatementMessage );
-    internal static Parser<TextSpan> InvalidIdentifier( this Parser<TextSpan> parser ) => parser.ElseError( XsParser.InvalidIdentifier );
-
+    internal static Parser<Expression> ElseInvalidType( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidTypeMessage );
+    internal static Parser<Expression> ElseInvalidExpression( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidExpressionMessage );
+    internal static Parser<Expression> ElseInvalidStatement( this Parser<Expression> parser ) => parser.ElseError( XsParser.InvalidStatementMessage );
+    internal static Parser<TextSpan> ElseInvalidIdentifier( this Parser<TextSpan> parser ) => parser.ElseError( XsParser.InvalidIdentifier );
 }

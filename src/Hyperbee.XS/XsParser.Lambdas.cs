@@ -20,8 +20,8 @@ public partial class XsParser
                 expression
                 .Then( static ( ctx, body ) =>
                 {
-                    var (scope, _) = ctx;
-                    var returnLabel = scope.Frame.ReturnLabel;
+                    var (_, _, frame) = ctx;
+                    var returnLabel = frame.ReturnLabel;
 
                     if ( returnLabel != null )
                     {
@@ -36,7 +36,6 @@ public partial class XsParser
             .Named( "lambda" )
             .Then<Expression>( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
                 var (parameters, body) = parts;
 
                 try
@@ -45,7 +44,7 @@ public partial class XsParser
                 }
                 finally
                 {
-                    scope.Pop();
+                    ctx.ExitScope(); 
                 }
             } );
 
@@ -54,15 +53,14 @@ public partial class XsParser
             return ZeroOrOne(
                     Separated(
                         Terms.Char( ',' ),
-                        typeConstant.And( Terms.Identifier().InvalidIdentifier() )
+                        typeConstant.And( Terms.Identifier().ElseInvalidIdentifier() )
                     )
                 )
                 .Named( "parameters" )
                 .Then( static ( ctx, parts ) =>
                 {
                     var (scope, resolver) = ctx;
-
-                    scope.Push( FrameType.Method );
+                    scope.EnterScope( FrameType.Method );
 
                     if ( parts == null )
                         return [];

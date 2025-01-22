@@ -13,7 +13,7 @@ public class ParseScope
     public Frame Frame => _frames.Peek();
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public void Push( FrameType frameType, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
+    public void EnterScope( FrameType frameType, LabelTarget breakLabel = null, LabelTarget continueLabel = null )
     {
         var parent = _frames.Count > 0 ? _frames.Peek() : null;
         var frame = new Frame( frameType, parent, breakLabel, continueLabel );
@@ -23,38 +23,17 @@ public class ParseScope
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public void Pop()
+    public void ExitScope()
     {
         _frames.Pop();
         Variables.Pop();
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public bool HasVariable( Parlot.TextSpan ident )
-    {
-        return Variables.ContainsKey( ident.ToString()! );
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public ParameterExpression LookupVariable( Parlot.TextSpan ident )
-    {
-        if ( !Variables.TryGetValue( ident.ToString()!, out var variable ) )
-            throw new Exception( $"Variable '{ident}' not found." );
-
-        return variable;
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public bool TryLookupVariable( Parlot.TextSpan ident, out ParameterExpression variable )
-    {
-        return Variables.TryGetValue( ident.ToString()!, out variable );
     }
 }
 
 public enum FrameType
 {
     Method,
-    Loop,  // BF: better name? This is loop and switch
+    Loop,  //ME: better name? This is loop and switch
     Block
 }
 
@@ -119,15 +98,12 @@ public class Frame
         var currentFrame = this;
         while ( currentFrame != null )
         {
-            if ( currentFrame.FrameType != frameType )
-            {
-                currentFrame = currentFrame.Parent;
-                continue;
-            }
-            return currentFrame;
+            if ( currentFrame.FrameType == frameType )
+                return currentFrame;
+
+            currentFrame = currentFrame.Parent;
         }
 
         throw new InvalidOperationException( $"No enclosing {frameType} frame found." );
     }
-
 }

@@ -278,12 +278,12 @@ Given a custom `Expression` class `WhileExpression`:
 ```csharp
 public class WhileParseExtension : IParseExtension
 {
-    public ExtensionType Type => ExtensionType.Complex;
+    public ExtensionType Type => ExtensionType.Expression;
     public string Key => "while";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        var (xsconfig, expression, assignable, statement) = binder;
+        var (expression, statement) = binder;
 
         return
             Between(
@@ -291,21 +291,13 @@ public class WhileParseExtension : IParseExtension
                 expression,
                 Terms.Char( ')' )
             )
-            .And(
-                Between(
-                    Terms.Char( '{' ),
-                    ZeroOrMany( statement ),
-                    Terms.Char( '}' )
-                )
-            )
-            .Then<Expression>( static ( ctx, parts ) =>
+            .And( statement )
+            .Then<Expression>( static parts =>
             {
-                var (scope, _) = ctx;
                 var (test, body) = parts;
-
-                var bodyBlock = Block( body );
-                return new WhileExpression( test, bodyBlock );
-            } ).Named( "while" );
+                return ExpressionExtensions.While( test, body );
+            } )
+            .Named( "while" );
     }
 }
 ```

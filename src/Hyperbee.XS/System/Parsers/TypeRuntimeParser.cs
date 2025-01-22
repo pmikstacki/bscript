@@ -121,7 +121,7 @@ internal class TypeRuntimeParser : Parser<Type>
 
         // Apply fallback backtracking if enabled
 
-        while ( resolvedType == null && backtrack && positions?.Count > 0 )
+        while ( resolvedType == null && backtrack && positions.Count > 0 )
         {
             cursor.ResetPosition( positions.Pop() );
             var lastDotIndex = typeName.LastIndexOf( '.' );

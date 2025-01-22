@@ -22,11 +22,9 @@ public class StringFormatParseExtension : IParseExtension
         return SkipWhiteSpace( new BacktickLiteral() )
             .Then<Expression>( static ( ctx, value ) =>
             {
-                var (scope, _) = ctx;
-
                 var (format, variables) = StringFormatHelper.PrepareFormat(
                     value.ToString(),
-                    scope.Variables.EnumerateValues()
+                    ctx.Scope().Variables.EnumerateValues()
                 );
 
                 return ExpressionExtensions.StringFormat( format, variables );
@@ -51,7 +49,6 @@ internal class BacktickLiteral : Parser<TextSpan>
         {
             // Remove quotes
             var decoded = Character.DecodeString( new TextSpan( context.Scanner.Buffer, start + 1, end - start - 2 ) );
-
             result.Set( start, end, decoded );
         }
 

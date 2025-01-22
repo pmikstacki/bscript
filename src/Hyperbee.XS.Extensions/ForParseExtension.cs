@@ -22,8 +22,7 @@ public class ForParseExtension : IParseExtension
             XsParsers.Bounded(
                 static ctx =>
                 {
-                    var (scope, _) = ctx;
-                    scope.Push( FrameType.Block );
+                    ctx.EnterScope( FrameType.Block );
                 },
                 Between(
                     Terms.Char( '(' ),
@@ -35,18 +34,17 @@ public class ForParseExtension : IParseExtension
                 .And( statement )
                 .Then<Expression>( static ( ctx, parts ) =>
                 {
-                    var (scope, _) = ctx;
                     var ((initializer, test, iteration), body) = parts;
 
                     // Call ToArray to ensure the variables remain in scope for reduce.
-                    var variables = scope.Variables.EnumerateValues( KeyScope.Current ).ToArray();
+                    var variables = ctx.Scope().Variables
+                        .EnumerateValues( KeyScope.Current ).ToArray();
 
                     return ExpressionExtensions.For( variables, initializer, test, iteration, body );
                 } ),
                 static ctx =>
                 {
-                    var (scope, _) = ctx;
-                    scope.Pop();
+                    ctx.ExitScope();
                 }
             ).Named( "for" );
     }

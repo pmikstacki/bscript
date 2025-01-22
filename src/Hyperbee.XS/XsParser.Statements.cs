@@ -18,8 +18,8 @@ public partial class XsParser
             Always()
             .Then<Expression>( static ( ctx, _ ) =>
             {
-                var (scope, _) = ctx;
-                var breakLabel = scope.Frame.ResolveBreakLabel();
+                var (_, _, frame) = ctx;
+                var breakLabel = frame.ResolveBreakLabel();
 
                 if ( breakLabel == null )
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
@@ -35,8 +35,8 @@ public partial class XsParser
         return new( "continue",
             Always().Then<Expression>( static ( ctx, _ ) =>
             {
-                var (scope, _) = ctx;
-                var continueLabel = scope.Frame.ResolveContinueLabel();
+                var (_, _, frame) = ctx;
+                var continueLabel = frame.ResolveContinueLabel();
 
                 if ( continueLabel == null )
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
@@ -53,8 +53,8 @@ public partial class XsParser
             Terms.Identifier()
             .Then<Expression>( static ( ctx, labelName ) =>
             {
-                var (scope, _) = ctx;
-                var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                var (_, _, frame) = ctx;
+                var label = frame.GetOrCreateLabel( labelName.ToString() );
                 return Goto( label );
             } )
             .AndSkip( Terminator )
@@ -68,9 +68,9 @@ public partial class XsParser
             .AndSkip( Literals.WhiteSpace( includeNewLines: true ) )
             .Then<Expression>( static ( ctx, labelName ) =>
             {
-                var (scope, _) = ctx;
+                var (_, _, frame) = ctx;
 
-                var label = scope.Frame.GetOrCreateLabel( labelName.ToString() );
+                var label = frame.GetOrCreateLabel( labelName.ToString() );
                 return Label( label );
             }
         );
@@ -82,10 +82,10 @@ public partial class XsParser
             ZeroOrOne( expression )
             .Then<Expression>( static ( ctx, returnValue ) =>
             {
-                var (scope, _) = ctx;
+                var (_, _, frame) = ctx;
 
                 var returnType = returnValue?.Type ?? typeof( void );
-                var returnLabel = scope.Frame.GetOrCreateReturnLabel( returnType );
+                var returnLabel = frame.GetOrCreateReturnLabel( returnType );
 
                 return returnType == typeof( void )
                     ? Return( returnLabel )
@@ -121,9 +121,7 @@ public partial class XsParser
                 Terms.Char( '{' ).Then( static ( ctx, parts ) =>
                 {
                     // make sure we're in a block scope by parsing '{' first
-                    var (scope, _) = ctx;
-
-                    scope.Push( FrameType.Block );
+                    ctx.EnterScope( FrameType.Block );
                     return parts;
                 } ),
                 ZeroOrMany( statement ),
@@ -133,10 +131,8 @@ public partial class XsParser
             .RequireTermination( false )
             .Then( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
-                var block = ConvertToSingleExpression( parts, scope );
-
-                scope.Pop();
+                var block = ConvertToSingleExpression( ctx, parts );
+                ctx.ExitScope();
                 return block;
             } );
     }
@@ -146,14 +142,14 @@ public partial class XsParser
         return new( "if",
             Between(
                 OpenParen,
-                expression.InvalidExpression(),
+                expression.ElseInvalidExpression(),
                 CloseParen
             )
             .And( statement )
             .And(
                 ZeroOrOne(
                     Terms.Text( "else" )
-                    .SkipAnd( statement.InvalidStatement() )
+                    .SkipAnd( statement.ElseInvalidStatement() )
                 )
             )
             .Then<Expression>( static ( ctx, parts ) =>
@@ -172,7 +168,7 @@ public partial class XsParser
         return new( "default",
             Between(
                 OpenParen,
-                typeConstant.InvalidType(),
+                typeConstant.ElseInvalidType(),
                 CloseParen
             )
             .Then<Expression>( static ( ctx, typeConstant ) =>
@@ -191,16 +187,16 @@ public partial class XsParser
         return new( "var",
             Terms.Identifier()
             .AndSkip( Assignment )
-            .And( expression.InvalidExpression() )
+            .And( expression.ElseInvalidExpression() )
             .Then<Expression>( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
                 var (ident, right) = parts;
 
                 var left = ident.ToString()!;
 
                 var variable = Variable( right.Type, left );
-                scope.Variables.Add( left, variable );
+                
+                ctx.Scope().Variables.Add( left, variable );
 
                 return Assign( variable, right );
             } )
@@ -213,19 +209,16 @@ public partial class XsParser
         return new( "loop",
             Always().Then( ( ctx, _ ) =>
             {
-                var (scope, _) = ctx;
-
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                scope.Push( FrameType.Loop, breakLabel, continueLabel );
+                ctx.EnterScope( FrameType.Loop, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
-            .And( statement.InvalidStatement() )
+            .And( statement.ElseInvalidStatement() )
             .Then<Expression>( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
                 var ((breakLabel, continueLabel), body) = parts;
 
                 try
@@ -234,7 +227,7 @@ public partial class XsParser
                 }
                 finally
                 {
-                    scope.Pop();
+                    ctx.ExitScope();
                 }
             } )
             .Named( "loop" )
@@ -246,10 +239,8 @@ public partial class XsParser
         return new( "switch",
             Always().Then( static ( ctx, _ ) =>
             {
-                var (scope, _) = ctx;
-
                 var breakLabel = Label( typeof( void ), "Break" );
-                scope.Push( FrameType.Loop, breakLabel );
+                ctx.EnterScope( FrameType.Loop, breakLabel );
 
                 return breakLabel;
             } )
@@ -270,7 +261,6 @@ public partial class XsParser
             )
             .Then<Expression>( static ( ctx, parts ) =>
             {
-                var (scope, _) = ctx;
                 var (breakLabel, switchValue, bodyParts) = parts;
 
                 try
@@ -284,7 +274,7 @@ public partial class XsParser
                 }
                 finally
                 {
-                    scope.Pop();
+                    ctx.ExitScope();
                 }
             } )
             .Named( "switch" )
@@ -293,17 +283,15 @@ public partial class XsParser
         static Parser<SwitchCase> Case( Parser<Expression> expression, Deferred<Expression> statement )
         {
             return Terms.Text( "case" )
-                .SkipAnd( expression.InvalidExpression() )
+                .SkipAnd( expression.ElseInvalidExpression() )
                 .AndSkip( Colon )
                 .And(
                     ZeroOrMany( BreakOn( EndCase(), statement ) )
                 )
                 .Then( static ( ctx, parts ) =>
                 {
-                    var (scope, _) = ctx;
                     var (testExpression, statements) = parts;
-                    var body = ConvertToSingleExpression( statements, scope );
-
+                    var body = ConvertToSingleExpression( ctx, statements );
                     return SwitchCase( body, testExpression );
                 } )
                 .Named( "case" );
@@ -316,8 +304,7 @@ public partial class XsParser
                 .SkipAnd( ZeroOrMany( statement ) )
                 .Then( static ( ctx, statements ) =>
                 {
-                    var (scope, _) = ctx;
-                    var body = ConvertToSingleExpression( statements, scope );
+                    var body = ConvertToSingleExpression( ctx, statements );
                     return body;
                 } )
                 .Named( "default case" );
@@ -356,14 +343,14 @@ public partial class XsParser
 
                             return Parameter( type, name );
                         } )
-                        .And( statement.InvalidStatement() )
+                        .And( statement.ElseInvalidStatement() )
                     )
                 )
             )
             .And(
                 ZeroOrOne(
                     Terms.Text( "finally" )
-                    .SkipAnd( statement.InvalidStatement() )
+                    .SkipAnd( statement.ElseInvalidStatement() )
                 )
             )
             .Then<Expression>( static parts =>
@@ -437,7 +424,7 @@ public partial class XsParser
                         Terms.Char( '{' ),
                         Separated(
                             Terms.Char( ',' ),
-                            expression.InvalidExpression()
+                            expression.ElseInvalidExpression()
                         ),
                         Terms.Char( '}' )
                     )
@@ -461,7 +448,7 @@ public partial class XsParser
                     arrayConstructor
                 )
             )
-            .Then<Expression>( static ( ctx, parts ) =>
+            .Then<Expression>( static parts =>
             {
                 var (type, (constructorType, arguments, initial)) = parts;
 
