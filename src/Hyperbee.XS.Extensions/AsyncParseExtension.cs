@@ -28,11 +28,11 @@ public class AsyncParseExtension : IParseExtension
                 ZeroOrMany( statement ),
                 Terms.Char( '}' )
             ).Named( "async block" )
-            .Then<Expression>( static ( ctx, parts ) => 
+            .Then<Expression>( static ( ctx, parts ) =>
                 ExpressionExtensions.BlockAsync(
                     [.. ctx.Scope().Variables.EnumerateValues( Collections.KeyScope.Current )],
                     [.. parts]
-                ) 
+                )
             ),
             static ctx =>
             {

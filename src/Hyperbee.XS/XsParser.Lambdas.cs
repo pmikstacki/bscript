@@ -44,7 +44,7 @@ public partial class XsParser
                 }
                 finally
                 {
-                    ctx.ExitScope(); 
+                    ctx.ExitScope();
                 }
             } );
 

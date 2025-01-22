@@ -195,7 +195,7 @@ public partial class XsParser
                 var left = ident.ToString()!;
 
                 var variable = Variable( right.Type, left );
-                
+
                 ctx.Scope().Variables.Add( left, variable );
 
                 return Assign( variable, right );

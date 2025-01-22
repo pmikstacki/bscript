@@ -303,8 +303,8 @@ public partial class XsParser
             {
                 ctx.EnterScope( FrameType.Method );
             },
-            parser.Then( 
-                static ( ctx, statements ) => ConvertToSingleExpression( ctx, statements ) 
+            parser.Then(
+                static ( ctx, statements ) => ConvertToSingleExpression( ctx, statements )
             ),
             static ctx =>
             {
