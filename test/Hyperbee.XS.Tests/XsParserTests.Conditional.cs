@@ -119,5 +119,99 @@ public class XsParserConditionalTests
 
         Assert.AreEqual( "hello", result );
     }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithMissingSemicolon()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var x = if (true)
+                    1
+                else
+                    2;
+                x;
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithUnmatchedBraces()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                if (true)
+                {
+                    "hello";
+                else
+                { 
+                    "goodBye";
+                }
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidCondition()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                if (true
+                    "hello";
+                else
+                { 
+                    "goodBye";
+                }
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidElse()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                if (true)
+                {
+                    "hello";
+                } 
+                else
+                    "goodBye"
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+
 }
 

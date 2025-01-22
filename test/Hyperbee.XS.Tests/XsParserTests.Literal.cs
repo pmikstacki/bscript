@@ -172,5 +172,62 @@ public class XsParserLiteralTests
 
         Assert.IsTrue( result );
     }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithUnclosedString()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var x = "Hello;
+                x;
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithUnclosedParenthesis()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var x = (5 + 10;
+                x;
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidCharacter()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var x = 5 @ 10;
+                x;
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
 }
 

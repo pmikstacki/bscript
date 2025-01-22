@@ -204,7 +204,7 @@ public partial class XsParser
         );
     }
 
-    private static KeywordParserPair<Expression> LoopParser( Deferred<Expression> statement )
+    private static KeywordParserPair<Expression> LoopParser( Parser<Expression> blockExpression )
     {
         return new( "loop",
             Always().Then( ( ctx, _ ) =>
@@ -216,7 +216,7 @@ public partial class XsParser
 
                 return (breakLabel, continueLabel);
             } )
-            .And( statement.ElseInvalidStatement() )
+            .And( blockExpression.ElseInvalidStatement() )
             .Then<Expression>( static ( ctx, parts ) =>
             {
                 var ((breakLabel, continueLabel), body) = parts;

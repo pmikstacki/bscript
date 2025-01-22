@@ -73,4 +73,24 @@ public class XsParserIndexTests
 
         Assert.AreEqual( 42, result );
     }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithUnclosedBracket()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var x = new int[5;
+                x;
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
 }

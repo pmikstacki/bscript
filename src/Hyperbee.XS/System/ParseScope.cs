@@ -33,7 +33,7 @@ public class ParseScope
 public enum FrameType
 {
     Method,
-    Statement,  //ME: better name? This is loop and switch
+    Statement,
     Block
 }
 

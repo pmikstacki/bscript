@@ -31,5 +31,32 @@ public class XsParserLoopTests
 
         Assert.AreEqual( 10, result );
     }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithMissingBrace()
+    {
+        try
+        {
+            Xs.Parse(
+            """
+            var x = 0;
+            loop
+            
+                x++; 
+                if( x == 10 )
+                {
+                    break;
+                }
+
+            x;
+            """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
 }
 

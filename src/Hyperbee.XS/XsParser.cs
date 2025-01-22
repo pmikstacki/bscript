@@ -122,7 +122,7 @@ public partial class XsParser
                 DeclarationParser( expression ),
                 NewParser( expression ),
                 ConditionalParser( expression, statement ),
-                LoopParser( statement ),
+                LoopParser( blockExpression ),
                 TryCatchParser( statement ),
                 SwitchParser( expression, statement )
             )
@@ -275,11 +275,11 @@ public partial class XsParser
     {
         return Terms.Text( "import" )
             .SkipAnd(
-                Terms.Identifier()
+                Terms.Identifier().ElseInvalidIdentifier()
                 .And(
                     ZeroOrMany(
                         Terms.Char( '.' )
-                        .SkipAnd( Terms.Identifier() )
+                        .SkipAnd( Terms.Identifier().ElseInvalidIdentifier() )
                     )
                 )
             )
@@ -303,9 +303,7 @@ public partial class XsParser
             {
                 ctx.EnterScope( FrameType.Method );
             },
-            parser.Then(
-                static ( ctx, statements ) => ConvertToSingleExpression( ctx, statements )
-            ),
+            parser.Then( ConvertToSingleExpression ),
             static ctx =>
             {
                 ctx.ExitScope();

@@ -149,5 +149,64 @@ public class XsParserExpressionTests
 
         Assert.AreEqual( 25, result );
     }
-}
 
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidOperator()
+    {
+        try
+        {
+            Xs.Parse( "x = 5 $ 10;" );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidMathOperator()
+    {
+        try
+        {
+            Xs.Parse( "5 ++ 10;" );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidGrouping()
+    {
+        try
+        {
+            Xs.Parse( "(5 **) 2;" );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithMissingRight()
+    {
+        try
+        {
+            Xs.Parse( "5 +;" );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+}

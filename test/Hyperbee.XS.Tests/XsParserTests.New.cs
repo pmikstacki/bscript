@@ -214,4 +214,41 @@ public class XsParserNewExpressionTests
             throw;
         }
     }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidImport()
+    {
+        try
+        {
+            Xs.Parse(
+            """
+            import ;
+            new TestClass(42);
+            """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidImportMissingIdentifier()
+    {
+        try
+        {
+            Xs.Parse(
+            """
+            import Hyperbee.XS.;
+            """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
 }

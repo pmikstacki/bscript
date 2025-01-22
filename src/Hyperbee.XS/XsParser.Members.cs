@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static Parlot.Fluent.Parsers;
 
@@ -10,10 +11,13 @@ public partial class XsParser
 {
     private static Parser<Expression> IndexerAccessParser( Expression targetExpression, Parser<Expression> expression )
     {
-        return Between(
-                Terms.Char( '[' ),
-                Separated( Terms.Char( ',' ), expression ),
-                Terms.Char( ']' )
+        return If(
+                ctx => ctx.StartsWith( "[" ),
+                Between(
+                    OpenBracket,
+                    Separated( Terms.Char( ',' ), expression ),
+                    CloseBracket
+                )
             )
             .Then<Expression>( indexes =>
             {
@@ -49,7 +53,7 @@ public partial class XsParser
     {
         return Terms.Char( '.' )
             .SkipAnd(
-                Terms.Identifier()
+                Terms.Identifier().ElseInvalidIdentifier()
                 .And(
                     ZeroOrOne(
                         ZeroOrOne(
@@ -63,7 +67,7 @@ public partial class XsParser
                             Between(
                                 Terms.Char( '(' ),
                                 ArgsParser( expression ),
-                                Terms.Char( ')' )
+                                CloseParen
                             )
                         )
                     )

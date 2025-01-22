@@ -136,6 +136,63 @@ public class XsParserLambdaTests
         Assert.AreEqual( 42, result );
     }
 
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidLambdaSyntax()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var myLambda = ( int x => x;
+                myLambda( 10 );
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidLambdaBody()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var myLambda = ( int x ) => { return x + ; };
+                myLambda( 10 );
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
+    public void Compile_ShouldFail_WithInvalidLambdaParameter()
+    {
+        try
+        {
+            Xs.Parse(
+                """
+                var myLambda = ( int x, ) => x;
+                myLambda( 10 );
+                """ );
+        }
+        catch ( SyntaxException ex )
+        {
+            Console.WriteLine( ex.Message );
+            throw;
+        }
+    }
+
 }
 
 public class Runnable( Func<int> run )
