@@ -33,7 +33,7 @@ public class ParseScope
 public enum FrameType
 {
     Method,
-    Loop,  //ME: better name? This is loop and switch
+    Statement,  //ME: better name? This is loop and switch
     Block
 }
 
@@ -58,14 +58,14 @@ public class Frame
 
     public LabelTarget ResolveBreakLabel()
     {
-        var currentFrame = GetEnclosingFrame( FrameType.Loop );
+        var currentFrame = GetEnclosingFrame( FrameType.Statement );
 
         return currentFrame.BreakLabel;
     }
 
     public LabelTarget ResolveContinueLabel()
     {
-        var currentFrame = GetEnclosingFrame( FrameType.Loop );
+        var currentFrame = GetEnclosingFrame( FrameType.Statement );
 
         return currentFrame.ContinueLabel;
     }

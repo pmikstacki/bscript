@@ -212,7 +212,7 @@ public partial class XsParser
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                ctx.EnterScope( FrameType.Loop, breakLabel, continueLabel );
+                ctx.EnterScope( FrameType.Statement, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
@@ -240,7 +240,7 @@ public partial class XsParser
             Always().Then( static ( ctx, _ ) =>
             {
                 var breakLabel = Label( typeof( void ), "Break" );
-                ctx.EnterScope( FrameType.Loop, breakLabel );
+                ctx.EnterScope( FrameType.Statement, breakLabel );
 
                 return breakLabel;
             } )
