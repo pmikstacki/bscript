@@ -19,7 +19,7 @@ public partial class XsParser
             .Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
-                var breakLabel = scope.Frame.BreakLabel;
+                var breakLabel = scope.Frame.ResolveBreakLabel();
 
                 if ( breakLabel == null )
                     throw new Exception( "Invalid use of 'break' outside of a loop or switch." );
@@ -36,7 +36,7 @@ public partial class XsParser
             Always().Then<Expression>( static ( ctx, _ ) =>
             {
                 var (scope, _) = ctx;
-                var continueLabel = scope.Frame.ContinueLabel;
+                var continueLabel = scope.Frame.ResolveContinueLabel();
 
                 if ( continueLabel == null )
                     throw new Exception( "Invalid use of 'continue' outside of a loop." );
@@ -115,6 +115,32 @@ public partial class XsParser
 
     // Compound Statement Parsers
 
+    private static Parser<Expression> BlockParser( Deferred<Expression> statement )
+    {
+        return Between(
+                Terms.Char( '{' ).Then( static ( ctx, parts ) =>
+                {
+                    // make sure we're in a block scope by parsing '{' first
+                    var (scope, _) = ctx;
+
+                    scope.Push( FrameType.Block );
+                    return parts;
+                } ),
+                ZeroOrMany( statement ),
+                Terms.Char( '}' )
+            )
+            .Named( "block" )
+            .RequireTermination( false )
+            .Then( static ( ctx, parts ) =>
+            {
+                var (scope, _) = ctx;
+                var block = ConvertToSingleExpression( parts, scope );
+
+                scope.Pop();
+                return block;
+            } );
+    }
+
     private static KeywordParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         return new( "if",
@@ -159,6 +185,7 @@ public partial class XsParser
             .Named( "default" )
         );
     }
+
     private static KeywordParserPair<Expression> DeclarationParser( Parser<Expression> expression )
     {
         return new( "var",
@@ -191,7 +218,7 @@ public partial class XsParser
                 var breakLabel = Label( typeof( void ), "Break" );
                 var continueLabel = Label( typeof( void ), "Continue" );
 
-                scope.Push( FrameType.Child, breakLabel, continueLabel );
+                scope.Push( FrameType.Loop, breakLabel, continueLabel );
 
                 return (breakLabel, continueLabel);
             } )
@@ -222,7 +249,7 @@ public partial class XsParser
                 var (scope, _) = ctx;
 
                 var breakLabel = Label( typeof( void ), "Break" );
-                scope.Push( FrameType.Child, breakLabel );
+                scope.Push( FrameType.Loop, breakLabel );
 
                 return breakLabel;
             } )
@@ -271,10 +298,11 @@ public partial class XsParser
                 .And(
                     ZeroOrMany( BreakOn( EndCase(), statement ) )
                 )
-                .Then( static parts =>
+                .Then( static ( ctx, parts ) =>
                 {
+                    var (scope, _) = ctx;
                     var (testExpression, statements) = parts;
-                    var body = ConvertToSingleExpression( statements );
+                    var body = ConvertToSingleExpression( statements, scope );
 
                     return SwitchCase( body, testExpression );
                 } )
@@ -286,9 +314,10 @@ public partial class XsParser
             return Terms.Text( "default" )
                 .SkipAnd( Colon )
                 .SkipAnd( ZeroOrMany( statement ) )
-                .Then( static statements =>
+                .Then( static ( ctx, statements ) =>
                 {
-                    var body = ConvertToSingleExpression( statements );
+                    var (scope, _) = ctx;
+                    var body = ConvertToSingleExpression( statements, scope );
                     return body;
                 } )
                 .Named( "default case" );

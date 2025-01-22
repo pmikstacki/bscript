@@ -23,7 +23,7 @@ public class ForEachParseExtension : IParseExtension
                 static ctx =>
                 {
                     var (scope, _) = ctx;
-                    scope.Push( FrameType.Child );
+                    scope.Push( FrameType.Block );
                 },
                 Between(
                     Terms.Char( '(' ),

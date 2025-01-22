@@ -53,8 +53,9 @@ public class ParseScope
 
 public enum FrameType
 {
-    Parent,
-    Child
+    Method,
+    Loop,  // BF: better name? This is loop and switch
+    Block
 }
 
 public class Frame
@@ -76,42 +77,57 @@ public class Frame
         ContinueLabel = continueLabel;
     }
 
+    public LabelTarget ResolveBreakLabel()
+    {
+        var currentFrame = GetEnclosingFrame( FrameType.Loop );
+
+        return currentFrame.BreakLabel;
+    }
+
+    public LabelTarget ResolveContinueLabel()
+    {
+        var currentFrame = GetEnclosingFrame( FrameType.Loop );
+
+        return currentFrame.ContinueLabel;
+    }
+
     public LabelTarget GetOrCreateLabel( string labelName )
     {
-        if ( Labels.TryGetValue( labelName, out var label ) )
+        var currentFrame = GetEnclosingFrame( FrameType.Method );
+
+        if ( currentFrame.Labels.TryGetValue( labelName, out var label ) )
             return label;
 
-        label = Label( labelName );
-        Labels[labelName] = label;
-
+        currentFrame.Labels[labelName] = label = Label( labelName );
         return label;
     }
 
     public LabelTarget GetOrCreateReturnLabel( Type returnType )
     {
-        var currentFrame = this;
+        var currentFrame = GetEnclosingFrame( FrameType.Method );
 
+        currentFrame.ReturnLabel ??= Label( returnType, "ReturnLabel" );
+
+        if ( currentFrame.ReturnLabel.Type != returnType )
+            throw new InvalidOperationException( $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
+
+        return currentFrame.ReturnLabel;
+    }
+
+    private Frame GetEnclosingFrame( FrameType frameType )
+    {
+        var currentFrame = this;
         while ( currentFrame != null )
         {
-            if ( currentFrame.FrameType != FrameType.Parent )
+            if ( currentFrame.FrameType != frameType )
             {
                 currentFrame = currentFrame.Parent;
                 continue;
             }
-
-            if ( currentFrame.ReturnLabel == null )
-            {
-                currentFrame.ReturnLabel = Label( returnType, "ReturnLabel" );
-            }
-            else if ( currentFrame.ReturnLabel.Type != returnType )
-            {
-                throw new InvalidOperationException(
-                    $"Mismatched return types: Expected {currentFrame.ReturnLabel.Type}, found {returnType}." );
-            }
-
-            return currentFrame.ReturnLabel;
+            return currentFrame;
         }
 
-        throw new InvalidOperationException( "No enclosing method frame to handle return." );
+        throw new InvalidOperationException( $"No enclosing {frameType} frame found." );
     }
+
 }

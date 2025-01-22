@@ -21,7 +21,7 @@ public class AsyncParseExtension : IParseExtension
             static ctx =>
             {
                 var (scope, _) = ctx;
-                scope.Push( FrameType.Child );
+                scope.Push( FrameType.Block );
             },
             Between(
                 // This is basically a block, but we need the parts

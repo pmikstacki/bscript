@@ -112,14 +112,7 @@ public partial class XsParser
 
         // Block
 
-        var blockExpression = Between(
-            Terms.Char( '{' ),
-            ZeroOrMany( statement ),
-            Terms.Char( '}' )
-        )
-        .Named( "block" )
-        .RequireTermination( false )
-        .Then( static parts => ConvertToSingleExpression( parts ) );
+        var blockExpression = BlockParser( statement );
 
         // Expression statements
 
@@ -309,12 +302,12 @@ public partial class XsParser
             static ctx =>
             {
                 var (scope, _) = ctx;
-                scope.Push( FrameType.Parent );
+                scope.Push( FrameType.Method );
             },
-            parser.Then<Expression>( static ( ctx, statements ) =>
+            parser.Then( static ( ctx, statements ) =>
             {
                 var (scope, _) = ctx;
-                return ConvertToFinalExpression( statements, scope );
+                return ConvertToSingleExpression( statements, scope );
             } ),
             static ctx =>
             {
@@ -334,44 +327,25 @@ public partial class XsParser
     // Helper methods
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions )
+    private static Expression ConvertToSingleExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
     {
-        var type = (expressions == null || expressions.Count == 0)
-            ? null
-            : expressions[^1].Type;
+        if ( expressions == null || expressions.Count == 0 )
+            return Default( typeof( void ) );
 
-        return ConvertToSingleExpression( type, expressions );
-    }
-
-    [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    private static Expression ConvertToSingleExpression( Type type, IReadOnlyCollection<Expression> expressions )
-    {
-        type ??= typeof( void );
-
-        return expressions?.Count switch
-        {
-            null or 0 => Default( type ),
-            1 => expressions.First(),
-            _ => Block( expressions )
-        };
-    }
-
-    private static BlockExpression ConvertToFinalExpression( IReadOnlyList<Expression> expressions, ParseScope scope )
-    {
+        var finalType = expressions[^1].Type;
         var returnLabel = scope.Frame.ReturnLabel;
-        var finalType = expressions.Count > 0 ? expressions[^1].Type : null;
+        var locals = scope.Variables.EnumerateValues( Collections.KeyScope.Current ).ToArray();
+
+        if ( expressions.Count == 1 && locals.Length == 0 )
+            return expressions[0];
 
         if ( returnLabel == null )
-        {
-            return Block( scope.Variables.EnumerateValues(), expressions );
-        }
+            return Block( locals, expressions );
 
         if ( returnLabel.Type != finalType )
-        {
             throw new InvalidOperationException( $"Mismatched return types: Expected {returnLabel.Type}, found {finalType}." );
-        }
 
-        return Block( scope.Variables.EnumerateValues(), expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
+        return Block( locals, expressions.Concat( [Label( returnLabel, Default( returnLabel.Type ) )] ) );
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]

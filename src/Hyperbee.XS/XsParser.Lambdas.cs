@@ -62,7 +62,7 @@ public partial class XsParser
                 {
                     var (scope, resolver) = ctx;
 
-                    scope.Push( FrameType.Parent );
+                    scope.Push( FrameType.Method );
 
                     if ( parts == null )
                         return [];
