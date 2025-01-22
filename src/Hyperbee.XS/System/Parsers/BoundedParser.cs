@@ -6,13 +6,13 @@ namespace Hyperbee.XS.System.Parsers;
 public static partial class XsParsers
 {
     public static Parser<T> BoundedIf<T>(
-        Func<ParseContext,bool> condition,
+        Func<ParseContext, bool> condition,
         Action<ParseContext> before,
         Parser<T> parser,
         Action<ParseContext> after )
     {
-        return If( 
-            condition, 
+        return If(
+            condition,
             Bounded( before, parser, after )
         ).Named( "bounded-if" );
     }

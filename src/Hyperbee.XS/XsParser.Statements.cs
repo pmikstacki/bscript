@@ -136,7 +136,7 @@ public partial class XsParser
             }
         ).Named( "block" );
     }
-    
+
     private static KeywordParserPair<Expression> ConditionalParser( Parser<Expression> expression, Deferred<Expression> statement )
     {
         return new( "if",
