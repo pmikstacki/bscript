@@ -35,7 +35,7 @@ time.
 
 ### **Extensibility Beyond Native Expression Trees**:
 
-C# expression trees lack support for modern language features such as `async/await`, string interpolation, and null coalescing.
+C# expression trees lack support for modern language features such as `async/await`, `string interpolation`, and `using blocks`.
 
 XS enables developers to extend the language by adding new expressions, keywords, statements, and operators. This level
 of extensibility is unparalleled in the ecosystem and directly addresses common gaps in native expression trees.
@@ -44,7 +44,7 @@ For example, adding `async/await` support in C# expression trees is labor-intens
 machines and `Task` objects manually. XS simplifies this by allowing developers to seamlessly integrate `async` behaviors
 through a custom parser extension, as demonstrated by its built-in `async` block feature.
 
-Additional constructs like `using`, `string interpolation`, `while`, `for`, and `foreach` illustrate how XS empowers 
+Additional constructs like `using blocks`, `string interpolation`, `while`, `for`, and `foreach` illustrate how XS empowers 
 developers to expand the language with minimal effort while maintaining high performance.
 
 Consider this example of a `foreach` loop in XS:
