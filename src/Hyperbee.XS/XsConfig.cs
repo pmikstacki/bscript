@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.Collections;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
@@ -13,7 +14,10 @@ public class XsConfig
 
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
 
+    public Action<int, int, Dictionary<string, object>, Frame> Debugger { get; set; }
+
     internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
+
 }
 
 internal static class XsConfigExtensions

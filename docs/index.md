@@ -177,7 +177,7 @@ Example Extensions:
 
 #### **Debugging**:
 
-XS supports injecting debug expressions during parsing, allowing users to create debug callbacks and set breakpoints. This 
+XS supports `debug;` statements, allowing users to create debug callbacks and set breakpoints. This 
 feature automates a process that is laborious when using manual expression trees.
 
 XS also provides detailed parser syntax error reporting, including line and column numbers.

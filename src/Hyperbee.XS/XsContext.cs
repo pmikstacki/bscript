@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Hyperbee.Collections;
 using Hyperbee.XS.System;
 using Parlot;
 using Parlot.Fluent;
@@ -10,6 +11,7 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
+    public Action<int, int, Dictionary<string, object>, Frame> Debugger { get; }
     public List<string> Namespaces { get; } = [];
 
     public bool RequireTermination { get; set; } = true;
@@ -23,6 +25,7 @@ public class XsContext : ParseContext
         : base( scanner, useNewLines )
     {
         Resolver = config.Resolver.Value;
+        Debugger = config.Debugger;
 
 #if DEBUG
         OnEnterParser += ( obj, ctx ) =>
