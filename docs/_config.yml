@@ -1,9 +1,9 @@
-title: Hyperbee.ExpressionScript
-description: Documentation for Hyperbee Expression Script (XS).
+title: Hyperbee.XS
+description: Documentation for Hyperbee XS (Expression Script).
 remote_theme: pmarsceill/just-the-docs
 
 # Optional configuration
 search_enabled: true
 aux_links:
   "GitHub Repository":
-    - "//github.com/Stillpoint-Software/hyperbee.expressionscript"
+    - "//github.com/Stillpoint-Software/hyperbee.xs"
