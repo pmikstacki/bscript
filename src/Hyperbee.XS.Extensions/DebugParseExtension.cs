@@ -26,7 +26,7 @@ public class DebugParseExtension : IParseExtension
             .Then<Expression>( ( context, condition ) =>
             {
                 if ( context is not XsContext xsContext )
-                    throw new InvalidOperationException( $"Context must be of type {nameof(XsContext)}." );
+                    throw new InvalidOperationException( $"Context must be of type {nameof( XsContext )}." );
 
                 if ( xsContext.Debugger == null )
                     return Expression.Empty();
@@ -41,7 +41,7 @@ public class DebugParseExtension : IParseExtension
                     : null;
 
                 var debugExpression = Expression.Call(
-                    target, 
+                    target,
                     debugger.Method,
                     Expression.Constant( span.Line ),
                     Expression.Constant( span.Column ),
@@ -57,7 +57,7 @@ public class DebugParseExtension : IParseExtension
 
     private static BlockExpression CaptureVariables( LinkedDictionary<string, ParameterExpression> variables )
     {
-        var target = Expression.Parameter( typeof(Dictionary<string, object>), "variables" );
+        var target = Expression.Parameter( typeof( Dictionary<string, object> ), "variables" );
 
         var expression = Expression.Block(
             variables: [target],
@@ -68,8 +68,8 @@ public class DebugParseExtension : IParseExtension
 
         static IEnumerable<Expression> CreateSnapshot( ParameterExpression target, IEnumerable<ParameterExpression> variables )
         {
-            var method = typeof( Dictionary<string, object> ).GetMethod( "Add", BindingFlags.Instance | BindingFlags.Public, [typeof(string), typeof(object)] );
-            var ctor = typeof(Dictionary<string, object>).GetConstructor( System.Type.EmptyTypes )!;
+            var method = typeof( Dictionary<string, object> ).GetMethod( "Add", BindingFlags.Instance | BindingFlags.Public, [typeof( string ), typeof( object )] );
+            var ctor = typeof( Dictionary<string, object> ).GetConstructor( System.Type.EmptyTypes )!;
 
             yield return Expression.Assign(
                 target,
@@ -82,7 +82,7 @@ public class DebugParseExtension : IParseExtension
                     target,
                     method!,
                     Expression.Constant( variable.Name ),
-                    Expression.Convert( variable, typeof(object) )
+                    Expression.Convert( variable, typeof( object ) )
                 );
             }
 
