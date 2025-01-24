@@ -1,10 +1,10 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.Xs.Extensions;
 using Hyperbee.XS.System;
 using Hyperbee.XS.Tests;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
-using Hyperbee.Xs.Extensions;
 
 namespace Hyperbee.XS.Extensions.Tests;
 

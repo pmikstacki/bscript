@@ -622,11 +622,11 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     private string GetMethodInfoString( MethodInfo methodInfo )
     {
         var methodName = methodInfo.Name;
-        var declaringType = GetTypeString(methodInfo.DeclaringType);
+        var declaringType = GetTypeString( methodInfo.DeclaringType );
 
         var parameters = methodInfo.GetParameters();
         var parameterTypes = parameters.Length > 0
-            ? $"new[] {{ {string.Join(", ", parameters.Select(p => $"typeof({GetTypeString(p.ParameterType)})"))} }}"
+            ? $"new[] {{ {string.Join( ", ", parameters.Select( p => $"typeof({GetTypeString( p.ParameterType )})" ) )} }}"
             : "Type.EmptyTypes";
 
         return $"typeof({declaringType}).GetMethod(\"{methodName}\", {parameterTypes})";
@@ -639,7 +639,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             _usings.Add( type.Namespace );
         }
 
-        if( type == typeof( void ) )
+        if ( type == typeof( void ) )
         {
             return "void";
         }
