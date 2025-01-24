@@ -1,8 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
-using System.Xml.Linq;
 
 namespace Hyperbee.XS.System;
 
@@ -121,6 +121,8 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         Visit( node.IfTrue );
         Append( ",\n" );
         Visit( node.IfFalse );
+        Append( ",\n" );
+        AppendIndented( $"typeof({GetTypeString( node.Type )})" );
 
         ExitExpression();
         return node;
@@ -136,12 +138,15 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             case string:
                 Append( $"\"{value}\"" );
                 break;
+
             case bool boolValue:
                 Append( boolValue ? "true" : "false" );
                 break;
+
             case null:
-                Append( "null" );
+                Append( $"null, typeof({GetTypeString( node.Type )})" );
                 break;
+
             default:
                 Append( value );
                 break;
@@ -211,7 +216,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             Visit( node.Value );
         }
 
-        if ( node.Type != null && node.NodeType != ExpressionType.Default && node.Type != typeof( void ) )
+        if ( node.Type != null && node.NodeType == ExpressionType.Default && node.Type != typeof( void ) )
         {
             Append( ",\n" );
             AppendIndented( $"typeof({GetTypeString( node.Type )})" );
@@ -255,7 +260,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             _depth--;
             AppendIndented( $")" );
 
-            AppendArguments( node.Arguments );
+            AppendParamsArguments( node.Arguments );
 
             ExitExpression();
             return node;
@@ -418,7 +423,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         }
         else
         {
-            name = GenerateParameterUniqueName( node.Name, node.Type );
+            name = GenerateUniqueName( node.Name, node.Type );
             _parameters.Add( node, name );
             AppendIndented( name );
             _parameterOutput.Append( $"var {name} = {_config.Prefix}Parameter( typeof({GetTypeString( node.Type )}), \"{name}\" );\n" );
@@ -465,11 +470,11 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             _labels.Add( node, name );
             if ( node.Type != null && node.Type != typeof( void ) )
             {
-                _labelOutput.Append( $"LabelTarget {name} = {_config.Prefix}Label( typeof({GetTypeString( node.Type )}), \"{name}\" );\n" );
+                _labelOutput.Append( $"var {name} = {_config.Prefix}Label( typeof({GetTypeString( node.Type )}), \"{name}\" );\n" );
             }
             else
             {
-                _labelOutput.Append( $"LabelTarget {name} = {_config.Prefix}Label( \"{name}\" );\n" );
+                _labelOutput.Append( $"var {name} = {_config.Prefix}Label( \"{name}\" );\n" );
             }
         }
 
@@ -598,6 +603,12 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         Visit( node.Operand );
 
+        if ( node.NodeType == ExpressionType.Convert || node.NodeType == ExpressionType.ConvertChecked )
+        {
+            Append( ",\n" );
+            AppendIndented( $"typeof({GetTypeString( node.Type )})" );
+        }
+
         ExitExpression();
         return node;
     }
@@ -610,8 +621,15 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
     private string GetMethodInfoString( MethodInfo methodInfo )
     {
-        // TODO: Improve lookup and handling of generic methods
-        return $"typeof({GetTypeString( methodInfo.DeclaringType )}).GetMethod(\"{methodInfo.Name}\")";
+        var methodName = methodInfo.Name;
+        var declaringType = GetTypeString(methodInfo.DeclaringType);
+
+        var parameters = methodInfo.GetParameters();
+        var parameterTypes = parameters.Length > 0
+            ? $"new[] {{ {string.Join(", ", parameters.Select(p => $"typeof({GetTypeString(p.ParameterType)})"))} }}"
+            : "Type.EmptyTypes";
+
+        return $"typeof({declaringType}).GetMethod(\"{methodName}\", {parameterTypes})";
     }
 
     private string GetTypeString( Type type )
@@ -619,6 +637,11 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         if ( !_usings.Contains( type.Namespace ) )
         {
             _usings.Add( type.Namespace );
+        }
+
+        if( type == typeof( void ) )
+        {
+            return "void";
         }
 
         if ( type.IsGenericType )
@@ -700,6 +723,27 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             else
                 Append( "\n" );
 
+            for ( var i = 0; i < arguments.Count; i++ )
+            {
+                Visit( arguments[i] );
+                if ( i < arguments.Count - 1 )
+                {
+                    Append( "," );
+                }
+                Append( "\n" );
+            }
+        }
+    }
+
+    private void AppendParamsArguments( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
+    {
+        if ( arguments.Count > 0 )
+        {
+            if ( !firstArgument )
+                Append( ",\n" );
+            else
+                Append( "\n" );
+
             AppendIndented( "new[] {\n" );
             _depth++;
             for ( var i = 0; i < arguments.Count; i++ )
@@ -715,7 +759,6 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             AppendIndented( "}" );
         }
     }
-
     private void AppendInitializers( ReadOnlyCollection<ElementInit> initializers )
     {
         AppendIndented( "new[] {\n" );
@@ -786,7 +829,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         _expressionOutput.Append( value );
     }
 
-    private string GenerateParameterUniqueName( string name, Type type )
+    private string GenerateUniqueName( string name, Type type )
     {
         // Start with the parameter's name if it exists; otherwise, infer a name from the type
         var baseName = string.IsNullOrEmpty( name )
@@ -795,7 +838,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         var uniqueName = baseName;
         int counter = 1;
-        while ( _parameters.ContainsValue( uniqueName ) )
+        while ( _parameters.ContainsValue( uniqueName ) || IsKeyword( uniqueName ) )
         {
             uniqueName = $"{baseName}{counter}";
             counter++;
@@ -814,7 +857,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         var uniqueName = baseName;
         var counter = 1;
 
-        while ( _labels.ContainsValue( uniqueName ) )
+        while ( _labels.ContainsValue( uniqueName ) || IsKeyword( uniqueName ) )
         {
             uniqueName = $"{baseName}{counter}";
             counter++;
@@ -822,6 +865,20 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         return uniqueName;
     }
+
+    private static readonly HashSet<string> Keywords =
+    [
+        "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const", "continue",
+        "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally",
+        "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock",
+        "long", "namespace", "new", "null", "object", "operator", "out", "override", "params", "private", "protected",
+        "public", "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string",
+        "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort",
+        "using", "virtual", "void", "volatile", "while"
+    ];
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private static bool IsKeyword( string name ) => Keywords.Contains( name );
 
     private string InferNameFromType( Type type )
     {

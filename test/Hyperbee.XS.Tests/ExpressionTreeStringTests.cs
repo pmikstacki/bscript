@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -112,6 +112,34 @@ public class ExpressionTreeStringTests
             {
                 result = -1;
             }
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionTreeString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionTreeString_ShouldCreate_Conditional()
+    {
+        var script = """
+            var x = 5;
+            var result = if( x == 5 )
+            {   
+                1;
+            }
+            else
+            {
+                2;
+            };
             result;
             """;
 
@@ -323,10 +351,11 @@ public class ExpressionTreeStringTests
                 "Hyperbee.XS.Tests"
             ]
          );
+        var name = typeof( T ).Name;
 
         var scriptResult = await CSharpScript.EvaluateAsync<T>(
             code +
-            $"var lambda = Expression.Lambda<Func<int>>( expression );" +
+            $"var lambda = Expression.Lambda<Func<{name}>>( expression );" +
             "var compiled = lambda.Compile();" +
             "return compiled();", scriptOptions );
 
