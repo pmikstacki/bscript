@@ -1,5 +1,6 @@
-﻿using System.Reflection;
-using static System.Linq.Expressions.Expression;
+﻿using System.Linq.Expressions;
+using System.Reflection;
+using Hyperbee.XS.System;
 
 namespace Hyperbee.XS.Tests;
 
@@ -14,9 +15,9 @@ public class XsParserComplexTests
     [TestMethod]
     public void Compile_ShouldDemonstrateAllLanguageFeatures()
     {
-        var expression = Xs.Parse(
+        var script =
         """
-        var results = new List<int>();
+        var results = new List<int>(5);
 
         var c = 0;
         if (1 + 1 == 2)
@@ -72,10 +73,19 @@ public class XsParserComplexTests
         results.Add( calc(6, 7) );
 
         results;
-        """
-        );
+        """;
+        var expression = Xs.Parse( script );
 
-        var lambda = Lambda<Func<List<int>>>( expression );
+
+        var code = expression.ToExpressionTreeString();
+
+        Console.WriteLine( "Script:" );
+        Console.WriteLine( script );
+
+        Console.WriteLine( "\nCode:" );
+        Console.WriteLine( code );
+
+        var lambda = Expression.Lambda<Func<List<int>>>( expression );
         var compiled = lambda.Compile();
         var result = compiled();
 
