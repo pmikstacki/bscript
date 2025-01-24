@@ -221,7 +221,6 @@ Add the necessary packages:
    ```
    dotnet add package Hyperbee.XS
    dotnet add package Hyperbee.XS.Extensions
-   dotnet add package Parlot
    ```
 
 Create an XS script:
