@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Hyperbee.XS.System;
 
@@ -28,7 +29,6 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     private readonly Dictionary<ParameterExpression, string> _parameters = [];
     private readonly Dictionary<LabelTarget, string> _labels = [];
 
-    private readonly StringBuilder _usingsOutput = new( "using System;\nusing System.Linq.Expressions;\n" );
     private readonly StringBuilder _parameterOutput = new();
     private readonly StringBuilder _labelOutput = new();
     private readonly StringBuilder _expressionOutput = new();
@@ -36,13 +36,20 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     private int _depth = 0;
     private ExpressionTreeVisitorConfig _config;
 
-    public string Convert( Expression expression, ExpressionTreeVisitorConfig config )
+    internal string Convert( Expression expression, ExpressionTreeVisitorConfig config )
     {
         _config = config;
 
         Visit( expression );
 
-        return $"{_usingsOutput}\n{_parameterOutput}\n{_labelOutput}\nvar {_config.Variable} = {_expressionOutput};";
+        var usings = string.Join( '\n', _usings.Select( u => $"using {u};" ) );
+
+        return $"{usings}\n\n{_parameterOutput}\n{_labelOutput}\nvar {_config.Variable} = {_expressionOutput};";
+    }
+
+    protected override Expression VisitDebugInfo( DebugInfoExpression node )
+    {
+        return base.VisitDebugInfo( node );
     }
 
     protected override Expression VisitBinary( BinaryExpression node )
@@ -161,10 +168,26 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override ElementInit VisitElementInit( ElementInit node )
+    {
+        EnterExpression( "ElementInit" );
+
+        AppendIndented( GetMethodInfoString( node.AddMethod ) );
+        AppendArguments( node.Arguments );
+
+        ExitExpression();
+        return node;
+    }
+
     protected override Expression VisitExtension( Expression node )
     {
         Visit( node.Reduce() );
         return node;
+    }
+
+    protected override Expression VisitDynamic( DynamicExpression node )
+    {
+        return base.VisitDynamic( node );
     }
 
     protected override Expression VisitGoto( GotoExpression node )
@@ -200,39 +223,56 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
     protected override Expression VisitIndex( IndexExpression node )
     {
-        EnterExpression( "MakeIndex" );
 
-        Visit( node.Object );
-        Append( ",\n" );
-
-        AppendIndented( $"typeof({GetTypeString( node.Indexer.DeclaringType )}).GetProperty(\"{node.Indexer.Name}\", \n" );
-
-        _depth++;
-        AppendIndented( "new[] {\n" );
-
-        _depth++;
-        var parameters = node.Indexer.GetIndexParameters();
-
-        for ( var i = 0; i < parameters.Length; i++ )
+        if ( node.Indexer != null )
         {
-            AppendIndented( $"typeof({GetTypeString( parameters[i].ParameterType )})" );
-            if ( i < parameters.Length - 1 )
+            EnterExpression( "MakeIndex" );
+
+            Visit( node.Object );
+            Append( ",\n" );
+
+            AppendIndented( $"typeof({GetTypeString( node.Indexer.DeclaringType )}).GetProperty(\"{node.Indexer.Name}\", \n" );
+
+            _depth++;
+            AppendIndented( "new[] {\n" );
+
+            _depth++;
+            var parameters = node.Indexer.GetIndexParameters();
+
+            for ( var i = 0; i < parameters.Length; i++ )
             {
-                Append( "," );
+                AppendIndented( $"typeof({GetTypeString( parameters[i].ParameterType )})" );
+                if ( i < parameters.Length - 1 )
+                {
+                    Append( "," );
+                }
+                Append( "\n" );
             }
-            Append( "\n" );
+
+            _depth--;
+            AppendIndented( "}\n" );
+
+            _depth--;
+            AppendIndented( $")" );
+
+            AppendArguments( node.Arguments );
+
+            ExitExpression();
+            return node;
+        }
+        else
+        {
+            EnterExpression( "ArrayAccess" );
+
+            Visit( node.Object );
+
+            AppendArguments( node.Arguments );
+
+            ExitExpression();
+            return node;
+
         }
 
-        _depth--;
-        AppendIndented( "}\n" );
-
-        _depth--;
-        AppendIndented( $")" );
-
-        AppendArgumentList( node.Arguments );
-
-        ExitExpression();
-        return node;
     }
 
     protected override Expression VisitInvocation( InvocationExpression node )
@@ -241,7 +281,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         Visit( node.Expression );
 
-        AppendArgumentList( node.Arguments );
+        AppendArguments( node.Arguments );
 
         ExitExpression();
         return node;
@@ -276,16 +316,35 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitListInit( ListInitExpression node )
+    {
+        EnterExpression( "ListInit" );
+
+        Visit( node.NewExpression );
+        Append( ",\n" );
+
+        AppendInitializers( node.Initializers );
+
+        ExitExpression();
+        return node;
+    }
+
     protected override Expression VisitMember( MemberExpression node )
     {
         EnterExpression( "MakeMemberAccess" );
 
         Visit( node.Expression );
         Append( $",\n" );
-        AppendIndented( $"typeof({node.Member.DeclaringType.Name}).GetMember(\"{node.Member.Name}\")[0]" );
+
+        AppendIndented( GetMemberInfoString( node.Member ) );
 
         ExitExpression();
         return node;
+    }
+
+    protected override Expression VisitMemberInit( MemberInitExpression node )
+    {
+        return base.VisitMemberInit( node );
     }
 
     protected override Expression VisitMethodCall( MethodCallExpression node )
@@ -302,9 +361,9 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             AppendIndented( $"null,\n" );
         }
 
-        AppendIndented( $"typeof({GetTypeString( node.Method.DeclaringType )}).GetMethod(\"{node.Method.Name}\")" );
+        AppendIndented( GetMethodInfoString( node.Method ) );
 
-        AppendArgumentList( node.Arguments );
+        AppendArguments( node.Arguments );
 
         ExitExpression();
         return node;
@@ -316,12 +375,37 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         AppendIndented( $"typeof({GetTypeString( node.Type )}).GetConstructor(" );
 
-        AppendArgumentTypeList( node.Arguments, firstArgument: true );
-
+        if ( node.Arguments == null || node.Arguments.Count == 0 )
+        {
+            Append( "\n" );
+            AppendIndented( "Type.EmptyTypes" );
+        }
+        else
+        {
+            AppendArgumentTypes( node.Arguments, firstArgument: true );
+        }
         Append( ")" );
 
-        AppendArgumentList( node.Arguments );
+        AppendArguments( node.Arguments );
 
+        ExitExpression();
+        return node;
+    }
+
+    protected override Expression VisitNewArray( NewArrayExpression node )
+    {
+        EnterExpression( $"{node.NodeType}" );
+
+        if ( node.NodeType == ExpressionType.NewArrayBounds )
+        {
+            AppendIndented( $"typeof({GetTypeString( node.Type )})" );
+        }
+        else
+        {
+            AppendIndented( $"typeof({GetTypeString( node.Type.GetElementType() )})" );
+        }
+
+        AppendArguments( node.Expressions );
         ExitExpression();
         return node;
     }
@@ -343,11 +427,14 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitRuntimeVariables( RuntimeVariablesExpression node )
+    {
+        return base.VisitRuntimeVariables( node );
+    }
+
     protected override Expression VisitLabel( LabelExpression node )
     {
         EnterExpression( "Label" );
-
-        //Expression.Label( LabelTarget target, Expression ? defaultValue );
 
         if ( _labels.TryGetValue( node.Target, out var lableTarget ) )
         {
@@ -419,15 +506,6 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         return node;
     }
 
-    protected override Expression VisitNewArray( NewArrayExpression node )
-    {
-        EnterExpression( $"{node.NodeType}" );
-        AppendIndented( $"typeof({GetTypeString( node.Type )})" );
-        AppendArgumentList( node.Expressions );
-        ExitExpression();
-        return node;
-    }
-
     protected override Expression VisitSwitch( SwitchExpression node )
     {
         EnterExpression( "Switch" );
@@ -441,7 +519,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         if ( node.Cases != null && node.Cases.Count > 0 )
         {
-            AppendCaseList( node.Cases );
+            AppendSwitchCases( node.Cases );
         }
 
         ExitExpression();
@@ -453,7 +531,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         EnterExpression( "SwitchCase" );
 
         Visit( node.Body );
-        AppendArgumentList( node.TestValues );
+        AppendArguments( node.TestValues );
 
         ExitExpression();
         return node;
@@ -475,7 +553,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             AppendIndented( "null" );
         }
 
-        AppendCatchList( node.Handlers );
+        AppendCatchBlocks( node.Handlers );
 
         ExitExpression();
         return node;
@@ -524,8 +602,15 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         return node;
     }
 
+    private string GetMemberInfoString( MemberInfo memberInfo )
+    {
+        // TODO: Improve lookup
+        return $"typeof({GetTypeString( memberInfo.DeclaringType )}).GetMember(\"{memberInfo.Name}\")[0]";
+    }
+
     private string GetMethodInfoString( MethodInfo methodInfo )
     {
+        // TODO: Improve lookup and handling of generic methods
         return $"typeof({GetTypeString( methodInfo.DeclaringType )}).GetMethod(\"{methodInfo.Name}\")";
     }
 
@@ -534,7 +619,6 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         if ( !_usings.Contains( type.Namespace ) )
         {
             _usings.Add( type.Namespace );
-            _usingsOutput.AppendLine( $"using {type.Namespace};" );
         }
 
         if ( type.IsGenericType )
@@ -580,10 +664,9 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         {
             _expressionOutput.Append( ")" );
         }
-
     }
 
-    private void AppendArgumentTypeList( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
+    private void AppendArgumentTypes( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
     {
         if ( arguments.Count > 0 )
         {
@@ -608,7 +691,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         }
     }
 
-    private void AppendArgumentList( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
+    private void AppendArguments( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
     {
         if ( arguments.Count > 0 )
         {
@@ -633,7 +716,24 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         }
     }
 
-    private void AppendCaseList( ReadOnlyCollection<SwitchCase> cases )
+    private void AppendInitializers( ReadOnlyCollection<ElementInit> initializers )
+    {
+        AppendIndented( "new[] {\n" );
+        _depth++;
+        for ( var i = 0; i < initializers.Count(); i++ )
+        {
+            VisitElementInit( initializers[i] );
+            if ( i < initializers.Count - 1 )
+            {
+                Append( "," );
+            }
+            Append( "\n" );
+        }
+        _depth--;
+        AppendIndented( "}" );
+    }
+
+    private void AppendSwitchCases( ReadOnlyCollection<SwitchCase> cases )
     {
         if ( cases.Count > 0 )
         {
@@ -654,7 +754,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         }
     }
 
-    private void AppendCatchList( ReadOnlyCollection<CatchBlock> handlers )
+    private void AppendCatchBlocks( ReadOnlyCollection<CatchBlock> handlers )
     {
         if ( handlers != null && handlers.Count > 0 )
         {
@@ -712,7 +812,8 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             : name;
 
         var uniqueName = baseName;
-        int counter = 1;
+        var counter = 1;
+
         while ( _labels.ContainsValue( uniqueName ) )
         {
             uniqueName = $"{baseName}{counter}";
@@ -764,7 +865,5 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         return parts;
     }
-
-
 
 }

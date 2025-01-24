@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -195,6 +195,46 @@ public class ExpressionTreeStringTests
     }
 
     [TestMethod]
+    public async Task ToExpressionTreeString_ShouldCreate_ArrayInitialization()
+    {
+        var script = """
+            var a = new int[] { 1, 2, 3, 4, 5 };
+            a[2];
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionTreeString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionTreeString_ShouldCreate_ListInitialization()
+    {
+        var script = """
+            var l = new List<int>() { 1, 2, 3, 4, 5 };
+            l[2];
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionTreeString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
     public async Task ToExpressionTreeString_ShouldCreate_CallMethod()
     {
         var script = """
@@ -285,9 +325,6 @@ public class ExpressionTreeStringTests
          );
 
         var scriptResult = await CSharpScript.EvaluateAsync<T>(
-            //"using System;" +
-            //"using System.Linq.Expressions;" +
-            //"using Hyperbee.XS.Tests;" +
             code +
             $"var lambda = Expression.Lambda<Func<int>>( expression );" +
             "var compiled = lambda.Compile();" +
@@ -306,4 +343,5 @@ public class ExpressionTreeStringTests
         Console.WriteLine( code );
 #endif
     }
+
 }

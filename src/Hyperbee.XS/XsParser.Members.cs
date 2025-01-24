@@ -25,26 +25,25 @@ public partial class XsParser
                     .Where( p => p.GetIndexParameters().Length == indexes.Count )
                     .ToArray();
 
-                if ( indexers.Length == 0 )
+                if ( indexers.Length != 0 )
                 {
-                    throw new InvalidOperationException(
-                        $"No indexers found on type '{targetExpression.Type}' with {indexes.Count} parameters." );
+                    // Find the best match based on parameter types
+                    var indexer = indexers.FirstOrDefault( p =>
+                        p.GetIndexParameters()
+                            .Select( param => param.ParameterType )
+                            .SequenceEqual( indexes.Select( i => i.Type ) ) );
+
+                    if ( indexer == null )
+                    {
+                        throw new InvalidOperationException(
+                            $"No matching indexer found on type '{targetExpression.Type}' with parameter types: " +
+                            $"{string.Join( ", ", indexes.Select( i => i.Type.Name ) )}." );
+                    }
+
+                    return Expression.Property( targetExpression, indexer, indexes.ToArray() );
                 }
 
-                // Find the best match based on parameter types
-                var indexer = indexers.FirstOrDefault( p =>
-                    p.GetIndexParameters()
-                        .Select( param => param.ParameterType )
-                        .SequenceEqual( indexes.Select( i => i.Type ) ) );
-
-                if ( indexer == null )
-                {
-                    throw new InvalidOperationException(
-                        $"No matching indexer found on type '{targetExpression.Type}' with parameter types: " +
-                        $"{string.Join( ", ", indexes.Select( i => i.Type.Name ) )}." );
-                }
-
-                return Expression.Property( targetExpression, indexer, indexes.ToArray() );
+                return Expression.ArrayAccess( targetExpression, indexes );
             }
         );
     }

@@ -478,12 +478,11 @@ public partial class XsParser
 
                     case ConstructorType.ListInit:
                         var listCtor = type.GetConstructor( arguments.Select( arg => arg.Type ).ToArray() );
-                        var addMethod = type.GetMethod( "Add" );
 
                         if ( listCtor == null )
                             throw new InvalidOperationException( $"No matching constructor found for type {type.Name}." );
 
-                        return ListInit( New( listCtor, arguments ), addMethod, initial );
+                        return ListInit( New( listCtor, arguments ), initial );
 
                     default:
                         throw new InvalidOperationException( $"Unsupported constructor type: {constructorType}." );
