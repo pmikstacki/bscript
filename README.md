@@ -1,8 +1,8 @@
-# XS: A Lightweight, Extensible Scripting Language for Expression Trees
+# XS: A Lightweight, Extensible Scripting Language for Expression Trees :rocket:
 
 ### **What is XS?**
 
-XS is a lightweight, high-performance scripting language designed to simplify and enhance the use of C# expression trees.
+XS is a lightweight scripting language designed to simplify and enhance the use of C# expression trees.
 It provides a familiar C#-like syntax while offering advanced extensibility, making it a compelling choice for developers
 building domain-specific languages (DSLs), rules engines, or dynamic runtime logic systems.
 
@@ -20,7 +20,7 @@ Microsoft highlights that "the more complicated the expression tree that you wan
 is to manage and to read." ([Microsoft Documentation](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/expression-trees/expression-trees-building))
 
 C# expression trees are a powerful feature that represent code as data structures, enabling dynamic runtime evaluation
-and transformations. However, creating and maintaining them manually is highly complex and error-prone, especially for 
+and transformations. However, creating and maintaining them manually can be complex and error-prone, especially for 
 larger or nested constructs like `if-else`, `switch`, `loops`, or `exception handling`.
 
 Developers typically avoid using expression trees for anything beyond trivial cases due to this complexity.
@@ -71,8 +71,7 @@ Consider this example of a `foreach` loop in XS:
   Assert.AreEqual( 6, result );
   ```
 
-XS allows developers to create and execute high-level logic like this without requiring manual tree construction, 
-showcasing the power and ease of extensibility.
+XS allows developers to create and execute high-level logic like this without requiring manual tree construction.
 
 - **Challenge**: "How hard is it to extend the language?"
 
@@ -85,7 +84,7 @@ showcasing the power and ease of extensibility.
 ### **Unified Syntax and Model**:
 
 In XS, **everything is an expression**, including control flow constructs. This design makes the language highly 
-composable and aligns seamlessly with expression tree concepts, enabling features not directly possible in C#.
+composable and directly aligns with expression tree concepts, enabling features not directly possible in C#.
 
 Example: An `if` statement can return a value directly, allowing constructs like `c = if (true) { 42; } else { 0; };`. 
 This composability eliminates artificial boundaries between statements and expressions, resulting in a cleaner and more 
