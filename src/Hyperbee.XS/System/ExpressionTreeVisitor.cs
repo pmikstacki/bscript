@@ -22,8 +22,8 @@ public record ExpressionTreeVisitorConfig(
 public class ExpressionTreeVisitor : ExpressionVisitor
 {
     private readonly HashSet<string> _usings = [
-        "using System;",
-        "using System.Linq.Expressions;",
+        "System",
+        "System.Linq.Expressions",
     ];
     private readonly Dictionary<ParameterExpression, string> _parameters = [];
     private readonly Dictionary<LabelTarget, string> _labels = [];
