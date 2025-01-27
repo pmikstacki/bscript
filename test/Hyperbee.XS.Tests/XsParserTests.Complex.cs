@@ -9,7 +9,12 @@ public class XsParserComplexTests
 {
     public XsParser Xs { get; set; } = new
     (
-        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+        new XsConfig { 
+            References = [Assembly.GetExecutingAssembly()], 
+            Debugger = (l,c, v, s, f) => {
+                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {s} Frame: {f}" );
+            } 
+        }
     );
 
     [TestMethod]

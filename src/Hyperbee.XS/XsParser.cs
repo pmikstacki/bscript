@@ -1,5 +1,7 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using Hyperbee.Collections;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
 using Parlot;
@@ -53,6 +55,10 @@ public partial class XsParser
 
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
+
+        expressionStatement = config.Debugger != null
+            ? expressionStatement.Debug()
+            : expressionStatement;
 
         // Imports
 

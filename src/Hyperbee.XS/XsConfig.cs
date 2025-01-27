@@ -13,7 +13,7 @@ public class XsConfig
 
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
 
-    public Action<int, int, Dictionary<string, object>, Frame> Debugger { get; set; }
+    public Action<int, int, Dictionary<string, object>, string, Frame> Debugger { get; set; }
 
     internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
 
