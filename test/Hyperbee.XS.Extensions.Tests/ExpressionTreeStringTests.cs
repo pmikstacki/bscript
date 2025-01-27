@@ -1,11 +1,10 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.Xs.Extensions;
-using Hyperbee.XS.System;
+using Hyperbee.XS.System.Writer;
 using Hyperbee.XS.Tests;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
-
 namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
@@ -19,6 +18,9 @@ public class ExpressionTreeStringTests
             Extensions = XsExtensions.Extensions()
         }
     );
+
+    public ExpressionTreeVisitorConfig Config = new( "Expression.", '\t', "expression",
+            XsExtensions.Extensions().OfType<IExtensionWriter>().ToArray() );
 
     [TestMethod]
     public async Task ToExpressionTreeString_ShouldCreate_ForLoop()
@@ -144,10 +146,12 @@ public class ExpressionTreeStringTests
 
         await AssertScriptValue( code, result );
     }
-    /*
+
     [TestMethod]
     public async Task ToExpressionTreeString_ShouldCreate_AsyncAwait()
     {
+        var t = await Task<int>.FromResult( 42 );
+
         var script = """
             async {
                 var asyncBlock = async {
@@ -159,17 +163,17 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionTreeString( Config );
 
         WriteResult( script, code );
 
-        var lambda = Expression.Lambda<Func<Task<int>>> ( expression );
+        var lambda = Expression.Lambda<Func<Task<int>>>( expression );
         var compiled = lambda.Compile();
         var result = await compiled();
 
         await AssertScriptValueAsync( code, result );
     }
-    */
+
     public async Task AssertScriptValue<T>( string code, T result )
     {
         var scriptOptions = ScriptOptions.Default.WithReferences(
@@ -192,7 +196,7 @@ public class ExpressionTreeStringTests
 
         Assert.AreEqual( result, scriptResult );
     }
-    /*
+
     public async Task AssertScriptValueAsync<T>( string code, T result )
     {
         var scriptOptions = ScriptOptions.Default.WithReferences(
@@ -202,6 +206,7 @@ public class ExpressionTreeStringTests
                 "System.Linq.Expressions",
                 "System.Collections",
                 "System.Collections.Generic",
+                "Hyperbee.Expressions",
                 "Hyperbee.XS.Extensions.Tests"
             ]
          );
@@ -215,7 +220,7 @@ public class ExpressionTreeStringTests
 
         Assert.AreEqual( result, scriptResult );
     }
-    */
+
     private void WriteResult( string script, string code )
     {
 #if DEBUG

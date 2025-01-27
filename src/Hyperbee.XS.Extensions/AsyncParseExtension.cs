@@ -1,14 +1,16 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.ObjectModel;
+using System.Linq.Expressions;
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
 using Hyperbee.XS.System.Parsers;
+using Hyperbee.XS.System.Writer;
 using Parlot.Fluent;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
 
-public class AsyncParseExtension : IParseExtension
+public class AsyncParseExtension : IParseExtension, IExtensionWriter
 {
     public ExtensionType Type => ExtensionType.Expression;
     public string Key => "async";
@@ -39,5 +41,43 @@ public class AsyncParseExtension : IParseExtension
                 ctx.ExitScope();
             }
         ).Named( "async" );
+    }
+
+    public bool TryExpressionWriter( Expression node, ExpressionWriterContext context )
+    {
+        if ( node is not AsyncBlockExpression asyncBlock )
+            return false;
+
+        using var writer = context.EnterExpression( "Hyperbee.Expressions.ExpressionExtensions.BlockAsync", true, false );
+
+        var variableCount = asyncBlock.Variables.Count;
+
+        if ( variableCount > 0 )
+        {
+            writer.WriteParamsArguments( new ReadOnlyCollection<Expression>( asyncBlock
+                .Variables
+                .Select( x => x as Expression ).ToList() ), true );
+        }
+        var expressionCount = asyncBlock.Expressions.Count;
+
+        if ( expressionCount != 0 )
+        {
+            if ( variableCount > 0 )
+            {
+                writer.Write( ",\n" );
+            }
+
+            for ( var i = 0; i < expressionCount; i++ )
+            {
+                writer.WriteExpression( asyncBlock.Expressions[i] );
+                if ( i < expressionCount - 1 )
+                {
+                    writer.Write( "," );
+                }
+                writer.Write( "\n" );
+            }
+        }
+
+        return true;
     }
 }
