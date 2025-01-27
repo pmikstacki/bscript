@@ -19,7 +19,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
         var context = new ExpressionWriterContext( visitor, parameterOutput, labelOutput, expressionOutput, config );
 
         visitor.Context = context;
-        
+
         visitor.Visit( expression );
 
         output.WriteLine( string.Join( '\n', context.Usings.Select( u => $"using {u};" ) ) );
