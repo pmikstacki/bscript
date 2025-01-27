@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Hyperbee.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
@@ -54,10 +53,9 @@ public class AsyncParseExtension : IParseExtension, IExtensionWriter
 
         if ( variableCount > 0 )
         {
-            writer.WriteParamsArguments( new ReadOnlyCollection<Expression>( asyncBlock
-                .Variables
-                .Select( x => x as Expression ).ToList() ), true );
+            writer.WriteParamExpressions( asyncBlock.Variables, true );
         }
+
         var expressionCount = asyncBlock.Expressions.Count;
 
         if ( expressionCount != 0 )

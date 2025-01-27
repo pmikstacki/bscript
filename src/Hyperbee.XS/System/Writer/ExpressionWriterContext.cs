@@ -20,25 +20,36 @@ public class ExpressionWriterContext
 
     internal char Indention => Config.Indentation;
     internal string Prefix => Config.Prefix;
+    internal string Variable => Config.Variable;
 
     internal IExtensionWriter[] ExtensionWriters => Config.Writers;
 
     internal ExpressionTreeVisitor Visitor { get; init; }
     internal ExpressionTreeVisitorConfig Config { get; init; }
 
-    internal ExpressionWriterContext(
-        ExpressionTreeVisitor visitor,
-        StringWriter parameterOutput = null,
-        StringWriter labelOutput = null,
-        StringWriter expressionOutput = null,
-        ExpressionTreeVisitorConfig config = null )
+    internal ExpressionWriterContext( ExpressionTreeVisitorConfig config = null )
     {
-        Visitor = visitor;
-        ParameterOutput = parameterOutput ?? new();
-        LabelOutput = labelOutput ?? new();
-        ExpressionOutput = expressionOutput ?? new();
         Config = config ?? new();
+        Visitor = new ExpressionTreeVisitor( this );
     }
+
+    public static void WriteTo( Expression expression, StringWriter output, ExpressionTreeVisitorConfig config = null )
+    {
+        var context = new ExpressionWriterContext( config );
+
+        var writer = context
+            .GetWriter()
+            .WriteExpression( expression );
+
+        var usings = string.Join( '\n', context.Usings.Select( u => $"using {u};" ) );
+
+        output.WriteLine( usings );
+        output.WriteLine();
+        output.WriteLine( context.ParameterOutput );
+        output.WriteLine( context.LabelOutput );
+        output.Write( $"var {context.Variable} = {context.ExpressionOutput};" );
+    }
+
 
     public ExpressionWriter EnterExpression( string name, bool newLine = true, bool prefix = true )
     {

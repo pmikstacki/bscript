@@ -3,33 +3,8 @@ using System.Linq.Expressions;
 
 namespace Hyperbee.XS.System.Writer;
 
-internal class ExpressionTreeVisitor : ExpressionVisitor
+internal class ExpressionTreeVisitor( ExpressionWriterContext Context ) : ExpressionVisitor
 {
-    public ExpressionWriterContext Context { get; internal set; }
-
-    public static void WriteTo( Expression expression, StringWriter output, ExpressionTreeVisitorConfig config = null )
-    {
-        config = config ?? new ExpressionTreeVisitorConfig();
-
-        var visitor = new ExpressionTreeVisitor();
-        using var parameterOutput = new StringWriter();
-        using var labelOutput = new StringWriter();
-        using var expressionOutput = new StringWriter();
-
-        var context = new ExpressionWriterContext( visitor, parameterOutput, labelOutput, expressionOutput, config );
-
-        visitor.Context = context;
-
-        visitor.Visit( expression );
-
-        output.WriteLine( string.Join( '\n', context.Usings.Select( u => $"using {u};" ) ) );
-        output.WriteLine();
-        output.WriteLine( parameterOutput );
-        output.WriteLine( labelOutput );
-
-        output.Write( $"var {config.Variable} = {expressionOutput};" );
-    }
-
     protected override Expression VisitBinary( BinaryExpression node )
     {
         using var writer = Context.EnterExpression( $"{node.NodeType}" );
@@ -58,7 +33,12 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
     {
         using var writer = Context.EnterExpression( "Block" );
 
-        writer.WriteParameters( node.Variables );
+        writer.WriteParamExpressions( node.Variables, true );
+
+        if ( node.Variables.Count > 0 )
+        {
+            writer.Write( ",\n" );
+        }
 
         for ( var i = 0; i < node.Expressions.Count; i++ )
         {
@@ -137,7 +117,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
         using var writer = Context.EnterExpression( "ElementInit" );
 
         writer.WriteMethodInfo( node.AddMethod );
-        writer.WriteArguments( node.Arguments );
+        writer.WriteExpressions( node.Arguments );
 
         return node;
     }
@@ -222,7 +202,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
             writer.Outdent();
             writer.Write( $")", indent: true );
 
-            writer.WriteParamsArguments( node.Arguments );
+            writer.WriteParamExpressions( node.Arguments );
         }
         else
         {
@@ -230,7 +210,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
 
             writer.WriteExpression( node.Object );
 
-            writer.WriteArguments( node.Arguments );
+            writer.WriteExpressions( node.Arguments );
         }
 
         return node;
@@ -242,7 +222,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
 
         writer.WriteExpression( node.Expression );
 
-        writer.WriteArguments( node.Arguments );
+        writer.WriteExpressions( node.Arguments );
 
         return node;
     }
@@ -319,7 +299,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
 
         writer.WriteMethodInfo( node.Method );
 
-        writer.WriteArguments( node.Arguments );
+        writer.WriteExpressions( node.Arguments );
 
         return node;
     }
@@ -328,20 +308,8 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
     {
         using var writer = Context.EnterExpression( "New" );
 
-        writer.Write( $"typeof({writer.GetTypeString( node.Type )}).GetConstructor(", indent: true );
-
-        if ( node.Arguments == null || node.Arguments.Count == 0 )
-        {
-            writer.Write( "\n" );
-            writer.Write( "Type.EmptyTypes", indent: true );
-        }
-        else
-        {
-            writer.WriteArgumentTypes( node.Arguments, firstArgument: true );
-        }
-        writer.Write( ")" );
-
-        writer.WriteArguments( node.Arguments );
+        writer.WriteConstructorInfo( node.Constructor );
+        writer.WriteExpressions( node.Arguments );
 
         return node;
     }
@@ -355,7 +323,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
         else
             writer.WriteType( node.Type.GetElementType() );
 
-        writer.WriteArguments( node.Expressions );
+        writer.WriteExpressions( node.Expressions );
 
         return node;
     }
@@ -393,8 +361,9 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
 
     protected override LabelTarget VisitLabelTarget( LabelTarget node )
     {
-        var writer = Context.GetWriter();
-        writer.WriteLabel( node );
+        Context.GetWriter()
+            .WriteLabel( node );
+
         return node;
     }
 
@@ -451,7 +420,7 @@ internal class ExpressionTreeVisitor : ExpressionVisitor
         using var writer = Context.EnterExpression( "SwitchCase" );
 
         writer.WriteExpression( node.Body );
-        writer.WriteArguments( node.TestValues );
+        writer.WriteExpressions( node.TestValues );
 
         return node;
     }

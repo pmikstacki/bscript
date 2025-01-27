@@ -2,7 +2,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 
 namespace Hyperbee.XS.System.Writer;
 
@@ -25,14 +24,12 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
     {
         var methodName = methodInfo.Name;
         var declaringType = GetTypeString( methodInfo.DeclaringType );
-
-        // Handle method parameters
         var parameters = methodInfo.GetParameters();
+
         var parameterTypes = parameters.Length > 0
             ? $"new[] {{ {string.Join( ", ", parameters.Select( p => $"typeof({GetTypeString( p.ParameterType )})" ) )} }}"
             : "Type.EmptyTypes";
 
-        // Check if the method is generic
         if ( methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod )
         {
             // For generic method definitions, include a description to construct MakeGenericMethod
@@ -43,9 +40,20 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
         }
         else
         {
-            // Non-generic method handling
             Write( $"typeof({declaringType}).GetMethod(\"{methodName}\", {parameterTypes})", indent: true );
         }
+    }
+
+    public void WriteConstructorInfo( ConstructorInfo constructorInfo )
+    {
+        var declaringType = GetTypeString( constructorInfo.DeclaringType );
+        var parameters = constructorInfo.GetParameters();
+
+        var parameterTypes = parameters.Length > 0
+            ? $"new[] {{ {string.Join( ", ", parameters.Select( p => $"typeof({GetTypeString( p.ParameterType )})" ) )} }}"
+            : "Type.EmptyTypes";
+
+        Write( $"typeof({declaringType}).GetConstructor({parameterTypes})", indent: true );
     }
 
     public string GetTypeString( Type type )
@@ -86,51 +94,20 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
         Write( $"typeof({GetTypeString( type )})", indent: true );
     }
 
-    public void WriteArgumentTypes( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
+    public void WriteExpressions<T>( ReadOnlyCollection<T> collection, bool firstArgument = false ) where T : Expression
     {
-        if ( arguments.Count > 0 )
-        {
-            if ( !firstArgument )
-                Write( "," );
-
-            Write( "\n" );
-            Write( "new[] {\n", indent: true );
-
-            Indent();
-
-            var count = arguments.Count;
-
-            for ( var i = 0; i < count; i++ )
-            {
-                Write( $"typeof({GetTypeString( arguments[i].Type )})", indent: true );
-
-                if ( i < count - 1 )
-                {
-                    Write( "," );
-                }
-
-                Write( "\n" );
-            }
-
-            Outdent();
-            Write( "}", indent: true );
-        }
-    }
-
-    public void WriteArguments( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
-    {
-        if ( arguments.Count > 0 )
+        if ( collection.Count > 0 )
         {
             if ( !firstArgument )
                 Write( "," );
 
             Write( "\n" );
 
-            var count = arguments.Count;
+            var count = collection.Count;
 
             for ( var i = 0; i < count; i++ )
             {
-                WriteExpression( arguments[i] );
+                WriteExpression( collection[i] );
 
                 if ( i < count - 1 )
                 {
@@ -142,9 +119,9 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
         }
     }
 
-    public void WriteParamsArguments( ReadOnlyCollection<Expression> arguments, bool firstArgument = false )
+    public void WriteParamExpressions<T>( ReadOnlyCollection<T> collection, bool firstArgument = false ) where T : Expression
     {
-        if ( arguments.Count > 0 )
+        if ( collection.Count > 0 )
         {
             if ( !firstArgument )
                 Write( ",\n" );
@@ -152,11 +129,11 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
             Write( "new[] {\n", indent: true );
             Indent();
 
-            var count = arguments.Count;
+            var count = collection.Count;
 
             for ( var i = 0; i < count; i++ )
             {
-                WriteExpression( arguments[i] );
+                WriteExpression( collection[i] );
 
                 if ( i < count - 1 )
                 {
@@ -186,31 +163,6 @@ public class ExpressionWriter( ExpressionWriterContext context, Action<Expressio
             Write( name, indent: true );
 
             context.ParameterOutput.Write( $"var {name} = {context.Prefix}Parameter( typeof({GetTypeString( node.Type )}), \"{name}\" );\n" );
-        }
-    }
-
-    public void WriteParameters( ReadOnlyCollection<ParameterExpression> variables )
-    {
-        if ( variables.Count > 0 )
-        {
-            Write( "new[] {\n", indent: true );
-
-            Indent();
-
-            var count = variables.Count;
-
-            for ( var i = 0; i < count; i++ )
-            {
-                WriteExpression( variables[i] );
-                if ( i < count - 1 )
-                {
-                    Write( "," );
-                }
-                Write( "\n" );
-            }
-
-            Outdent();
-            Write( "},\n", indent: true );
         }
     }
 
