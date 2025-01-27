@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.Collections;
 using System.Reflection;
+using Hyperbee.Collections;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 
@@ -8,7 +8,7 @@ namespace Hyperbee.XS.System.Parsers;
 
 public static partial class XsParsers
 {
-    public static Parser<Expression> Debug( this Parser<Expression> parser ) 
+    public static Parser<Expression> Debug( this Parser<Expression> parser )
     {
         return parser.Then<Expression>( ( context, statement ) =>
         {
