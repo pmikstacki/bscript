@@ -10,7 +10,7 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
-    public Action<int, int, Dictionary<string, object>, string, Frame> Debugger { get; }
+    public DebuggerCallback Debugger { get; }
     public List<string> Namespaces { get; } = [];
 
     public bool RequireTermination { get; set; } = true;

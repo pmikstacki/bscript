@@ -1,9 +1,9 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.XS;
 using Hyperbee.XS.System;
+using Hyperbee.XS.System.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
-using static Hyperbee.XS.System.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
@@ -32,7 +32,6 @@ public class DebugParseExtension : IParseExtension
                     return Empty();
 
                 var span = context.Scanner.Cursor.Position;
-                var captureVariables = CaptureVariables( xsContext.Scope.Variables );
                 var frame = xsContext.Scope.Frame;
 
                 var debugger = xsContext.Debugger;
@@ -45,7 +44,8 @@ public class DebugParseExtension : IParseExtension
                     debugger.Method,
                     Constant( span.Line ),
                     Constant( span.Column ),
-                    captureVariables,
+                    XsParsersHelper.CaptureVariables( xsContext.Scope.Variables ),
+                    Constant( context.Scanner.Buffer.ShowPosition( span.Line, span.Column ) ),
                     Constant( frame )
                 );
 

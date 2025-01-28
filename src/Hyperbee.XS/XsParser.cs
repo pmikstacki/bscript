@@ -56,7 +56,7 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        expressionStatement = config.Debugger != null
+        expressionStatement = (config.Debugger != null && config.EnableDebugging)
             ? expressionStatement.Debug()
             : expressionStatement;
 

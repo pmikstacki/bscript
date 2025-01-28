@@ -1,31 +1,35 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.Xs.Extensions;
 using Hyperbee.XS.System.Writer;
 
-namespace Hyperbee.XS.Tests;
+namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
-public class XsParserComplexTests
+public class DebugParseExtensionTests
 {
     public XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
             References = [Assembly.GetExecutingAssembly()],
+            Extensions = XsExtensions.Extensions(),
             EnableDebugging = true,
             Debugger = ( l, c, v, s, f ) =>
             {
-                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {s} Frame: {f}" );
+                Console.WriteLine( $"Variables: {v}, Message: {s}" );
             }
         }
     );
 
     [TestMethod]
-    public void Compile_ShouldDemonstrateAllLanguageFeatures()
+    public void Debug_AllLanguageFeatures()
     {
         var script =
         """
         var results = new List<int>(5);
+
+        debug();
 
         var c = 0;
         if (1 + 1 == 2)
@@ -67,13 +71,9 @@ public class XsParserComplexTests
         results.Add(t);
 
         var l = 0;
-        loop
+        for ( var i = 0; i < 42; i++ )
         {
-            l++; 
-            if( l == 42 )
-            {
-                break;
-            }
+            l++;
         }
         results.Add(l);
 
@@ -83,7 +83,6 @@ public class XsParserComplexTests
         results;
         """;
         var expression = Xs.Parse( script );
-
 
         var code = expression.ToExpressionTreeString();
 

@@ -19,7 +19,6 @@ public static partial class XsParsers
                 return Empty();
 
             var span = context.Scanner.Cursor.Position;
-            var captureVariables = CaptureVariables( xsContext.Scope.Variables );
             var frame = xsContext.Scope.Frame;
 
             var debugger = xsContext.Debugger;
@@ -32,7 +31,7 @@ public static partial class XsParsers
                 debugger.Method,
                 Constant( span.Line ),
                 Constant( span.Column ),
-                captureVariables,
+                XsParsersHelper.CaptureVariables( xsContext.Scope.Variables ),
                 Constant( context.Scanner.Buffer.ShowPosition( span.Line, span.Column ) ),
                 Constant( frame )
             );
@@ -40,39 +39,29 @@ public static partial class XsParsers
             return Block( debugExpression, statement );
         } );
     }
+}
 
-    public static BlockExpression CaptureVariables( LinkedDictionary<string, ParameterExpression> variables )
+public static class XsParsersHelper
+{
+    private static readonly MethodInfo AddMethod;
+    private static readonly ConstructorInfo Constructor;
+
+    static XsParsersHelper()
     {
-        var target = Parameter( typeof( Dictionary<string, object> ), "variables" );
+        AddMethod = typeof( Dictionary<string, object> ).GetMethod( "Add", BindingFlags.Instance | BindingFlags.Public, [typeof( string ), typeof( object )] );
+        Constructor = typeof( Dictionary<string, object> ).GetConstructor( Type.EmptyTypes )!;
+    }
 
-        var expression = Block(
-            variables: [target],
-            CreateSnapshot( target, variables.EnumerateValues() )
-        );
-
-        return expression;
-
-        static IEnumerable<Expression> CreateSnapshot( ParameterExpression target, IEnumerable<ParameterExpression> variables )
-        {
-            var method = typeof( Dictionary<string, object> ).GetMethod( "Add", BindingFlags.Instance | BindingFlags.Public, [typeof( string ), typeof( object )] );
-            var ctor = typeof( Dictionary<string, object> ).GetConstructor( Type.EmptyTypes )!;
-
-            yield return Assign(
-                target,
-                New( ctor )
-            );
-
-            foreach ( var variable in variables )
-            {
-                yield return Call(
-                    target,
-                    method!,
-                    Constant( variable.Name ),
-                    Convert( variable, typeof( object ) )
-                );
-            }
-
-            yield return target;
-        }
+    public static Expression CaptureVariables( LinkedDictionary<string, ParameterExpression> variables )
+    {
+        return ListInit(
+            New( Constructor ),
+            variables.Select(
+                kvp => ElementInit(
+                    AddMethod,
+                    Constant( kvp.Key ),
+                    Convert( kvp.Value, typeof( object ) )
+                )
+            ) );
     }
 }

@@ -7,13 +7,17 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS;
 
+public delegate void DebuggerCallback( int line, int column, Dictionary<string, object> variables, string message, Frame frame );
+
 public class XsConfig
 {
     public IReadOnlyCollection<IParseExtension> Extensions { get; set; } = ReadOnlyCollection<IParseExtension>.Empty;
 
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
 
-    public Action<int, int, Dictionary<string, object>, string, Frame> Debugger { get; set; }
+    public DebuggerCallback Debugger { get; set; }
+
+    public bool EnableDebugging { get; set; }
 
     internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
 

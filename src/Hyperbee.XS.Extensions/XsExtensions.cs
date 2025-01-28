@@ -14,6 +14,7 @@ public static class XsExtensions
             new UsingParseExtension(),
             new AsyncParseExtension(),
             new AwaitParseExtension(),
+            new DebugParseExtension(),
         ];
     }
 }
