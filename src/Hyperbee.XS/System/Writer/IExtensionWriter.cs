@@ -4,5 +4,6 @@ namespace Hyperbee.XS.System.Writer;
 
 public interface IExtensionWriter
 {
-    bool TryExpressionWriter( Expression node, ExpressionWriterContext context );
+    bool CanWrite( Expression node );
+    void WriteExpression( Expression node, ExpressionWriterContext context );
 }

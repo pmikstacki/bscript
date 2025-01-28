@@ -15,9 +15,9 @@ public class DebugParseExtensionTests
             References = [Assembly.GetExecutingAssembly()],
             Extensions = XsExtensions.Extensions(),
             EnableDebugging = true,
-            Debugger = ( l, c, v, s, f ) =>
+            Debugger = ( _, _, v, m ) =>
             {
-                Console.WriteLine( $"Variables: {v}, Message: {s}" );
+                Console.WriteLine( $"Variables: {v}, Message: {m}" );
             }
         }
     );
@@ -84,7 +84,7 @@ public class DebugParseExtensionTests
         """;
         var expression = Xs.Parse( script );
 
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         Console.WriteLine( "Script:" );
         Console.WriteLine( script );

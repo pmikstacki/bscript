@@ -32,8 +32,6 @@ public class DebugParseExtension : IParseExtension
                     return Empty();
 
                 var span = context.Scanner.Cursor.Position;
-                var frame = xsContext.Scope.Frame;
-
                 var debugger = xsContext.Debugger;
                 var target = debugger.Target != null
                     ? Constant( debugger.Target )
@@ -45,8 +43,7 @@ public class DebugParseExtension : IParseExtension
                     Constant( span.Line ),
                     Constant( span.Column ),
                     XsParsersHelper.CaptureVariables( xsContext.Scope.Variables ),
-                    Constant( context.Scanner.Buffer.ShowPosition( span.Line, span.Column ) ),
-                    Constant( frame )
+                    Constant( context.Scanner.Buffer.GetLine(span.Line, span.Column, true) )
                 );
 
                 return (condition != null)

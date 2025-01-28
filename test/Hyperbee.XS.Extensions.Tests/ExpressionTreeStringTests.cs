@@ -19,7 +19,7 @@ public class ExpressionTreeStringTests
         }
     );
 
-    public ExpressionTreeVisitorConfig Config = new( "Expression.", '\t', "expression",
+    public ExpressionVisitorConfig Config = new( "Expression.", '\t', "expression",
             XsExtensions.Extensions().OfType<IExtensionWriter>().ToArray() );
 
     [TestMethod]
@@ -35,7 +35,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -60,7 +60,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -89,7 +89,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -114,7 +114,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -136,7 +136,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -163,7 +163,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = XsParser.Parse( script );
-        var code = expression.ToExpressionTreeString( Config );
+        var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
 

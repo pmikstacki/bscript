@@ -24,16 +24,16 @@ public class ExpressionWriterContext
 
     internal IExtensionWriter[] ExtensionWriters => Config.Writers;
 
-    internal ExpressionTreeVisitor Visitor { get; init; }
-    internal ExpressionTreeVisitorConfig Config { get; init; }
+    internal ExpressionVisitor Visitor { get; init; }
+    internal ExpressionVisitorConfig Config { get; init; }
 
-    internal ExpressionWriterContext( ExpressionTreeVisitorConfig config = null )
+    internal ExpressionWriterContext( ExpressionVisitorConfig config = null )
     {
         Config = config ?? new();
-        Visitor = new ExpressionTreeVisitor( this );
+        Visitor = new ExpressionVisitor( this );
     }
 
-    public static void WriteTo( Expression expression, StringWriter output, ExpressionTreeVisitorConfig config = null )
+    public static void WriteTo( Expression expression, StringWriter output, ExpressionVisitorConfig config = null )
     {
         var context = new ExpressionWriterContext( config );
 

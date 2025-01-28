@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace Hyperbee.XS.System.Writer;
 
-internal class ExpressionTreeVisitor( ExpressionWriterContext Context ) : ExpressionVisitor
+internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::System.Linq.Expressions.ExpressionVisitor
 {
     protected override Expression VisitBinary( BinaryExpression node )
     {
@@ -126,10 +126,13 @@ internal class ExpressionTreeVisitor( ExpressionWriterContext Context ) : Expres
     {
         if ( Context.ExtensionWriters is not null )
         {
-            foreach ( var write in Context.ExtensionWriters )
+            foreach ( var writer in Context.ExtensionWriters )
             {
-                if ( write.TryExpressionWriter( node, Context ) )
+                if ( writer.CanWrite( node ) )
+                {
+                    writer.WriteExpression( node, Context );
                     return node;
+                }
             }
         }
 

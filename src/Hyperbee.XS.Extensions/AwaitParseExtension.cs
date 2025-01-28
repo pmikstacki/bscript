@@ -11,6 +11,7 @@ public class AwaitParseExtension : IParseExtension, IExtensionWriter
     public ExtensionType Type => ExtensionType.Expression;
     public string Key => "await";
 
+
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
         var (expression, _) = binder;
@@ -20,10 +21,15 @@ public class AwaitParseExtension : IParseExtension, IExtensionWriter
             .Named( "await" );
     }
 
-    public bool TryExpressionWriter( Expression node, ExpressionWriterContext context )
+    public bool CanWrite( Expression node )
+    {
+        return node is AwaitExpression awaitExpression;
+    }
+
+    public void WriteExpression( Expression node, ExpressionWriterContext context )
     {
         if ( node is not AwaitExpression awaitExpression )
-            return false;
+            return;
 
         using var writer = context.EnterExpression( "Hyperbee.Expressions.ExpressionExtensions.Await", true, false );
 
@@ -33,7 +39,5 @@ public class AwaitParseExtension : IParseExtension, IExtensionWriter
             writer.Write( ",\n" );
             writer.Write( "true", indent: true );
         }
-
-        return true;
     }
 }

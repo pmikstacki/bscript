@@ -7,7 +7,7 @@ using Parlot.Fluent;
 
 namespace Hyperbee.XS;
 
-public delegate void DebuggerCallback( int line, int column, Dictionary<string, object> variables, string message, Frame frame );
+public delegate void DebuggerCallback( int line, int column, Dictionary<string, object> variables, string message );
 
 public class XsConfig
 {

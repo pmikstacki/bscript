@@ -13,9 +13,9 @@ public class XsParserComplexTests
         {
             References = [Assembly.GetExecutingAssembly()],
             EnableDebugging = true,
-            Debugger = ( l, c, v, s, f ) =>
+            Debugger = ( l, c, v, m ) =>
             {
-                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {s} Frame: {f}" );
+                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
             }
         }
     );
@@ -85,7 +85,7 @@ public class XsParserComplexTests
         var expression = Xs.Parse( script );
 
 
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         Console.WriteLine( "Script:" );
         Console.WriteLine( script );

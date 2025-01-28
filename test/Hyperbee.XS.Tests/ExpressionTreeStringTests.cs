@@ -27,7 +27,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -55,7 +55,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -88,7 +88,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -116,7 +116,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -144,7 +144,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -168,7 +168,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -189,7 +189,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -210,7 +210,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -231,7 +231,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -251,7 +251,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -271,7 +271,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -291,7 +291,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -312,7 +312,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 
@@ -331,7 +331,7 @@ public class ExpressionTreeStringTests
             """;
 
         var expression = Xs.Parse( script );
-        var code = expression.ToExpressionTreeString();
+        var code = expression.ToExpressionString();
 
         WriteResult( script, code );
 

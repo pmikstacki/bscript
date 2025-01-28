@@ -42,10 +42,15 @@ public class AsyncParseExtension : IParseExtension, IExtensionWriter
         ).Named( "async" );
     }
 
-    public bool TryExpressionWriter( Expression node, ExpressionWriterContext context )
+    public bool CanWrite( Expression node )
+    {
+        return node is AsyncBlockExpression asyncBlock;
+    }
+
+    public void WriteExpression( Expression node, ExpressionWriterContext context )
     {
         if ( node is not AsyncBlockExpression asyncBlock )
-            return false;
+            return;
 
         using var writer = context.EnterExpression( "Hyperbee.Expressions.ExpressionExtensions.BlockAsync", true, false );
 
@@ -75,7 +80,5 @@ public class AsyncParseExtension : IParseExtension, IExtensionWriter
                 writer.Write( "\n" );
             }
         }
-
-        return true;
     }
 }
