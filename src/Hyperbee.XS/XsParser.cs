@@ -22,10 +22,10 @@ public partial class XsParser
     {
     }
 
-    public XsParser( XsConfig config, bool enableDebugging = false )
+    public XsParser( XsConfig config )
     {
         _config = config ?? new XsConfig();
-        _xs = CreateParser( _config, enableDebugging );
+        _xs = CreateParser( _config );
     }
 
     // Parse
@@ -50,7 +50,7 @@ public partial class XsParser
 
     // Parsers
 
-    private static Parser<Expression> CreateParser( XsConfig config, bool enableDebugging = false )
+    private static Parser<Expression> CreateParser( XsConfig config )
     {
         var statement = Deferred<Expression>();
 
@@ -59,7 +59,7 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        expressionStatement = enableDebugging
+        expressionStatement = config.EnableDebugging
             ? expressionStatement.Debug()
             : expressionStatement;
 

@@ -13,8 +13,10 @@ public class XsParserComplexTests
         new XsConfig
         {
             References = [Assembly.GetExecutingAssembly()],
-        },
-        enableDebugging: true
+#if DEBUG
+            EnableDebugging = true
+#endif
+        }
     );
 
     [TestMethod]

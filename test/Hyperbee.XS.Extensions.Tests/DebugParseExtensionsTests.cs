@@ -14,8 +14,10 @@ public class DebugParseExtensionTests
         {
             References = [Assembly.GetExecutingAssembly()],
             Extensions = XsExtensions.Extensions(),
-        },
-        enableDebugging: true
+#if DEBUG
+            EnableDebugging = true
+#endif
+        }
     );
 
     [TestMethod]
