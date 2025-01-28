@@ -10,21 +10,22 @@ public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
     public ParseScope Scope { get; } = new();
-    public DebuggerCallback Debugger { get; }
+
     public List<string> Namespaces { get; } = [];
 
     public bool RequireTermination { get; set; } = true;
 
+    public XsDebugInfo DebugInfo { get; init; }
 
 #if DEBUG
     public Stack<object> ParserStack { get; } = new();
 #endif
 
-    public XsContext( XsConfig config, Scanner scanner, bool useNewLines = false )
+    public XsContext( XsConfig config, XsDebugInfo debugInfo, Scanner scanner, bool useNewLines = false )
         : base( scanner, useNewLines )
     {
         Resolver = config.Resolver.Value;
-        Debugger = config.Debugger;
+        DebugInfo = debugInfo;
 
 #if DEBUG
         OnEnterParser += ( obj, ctx ) =>

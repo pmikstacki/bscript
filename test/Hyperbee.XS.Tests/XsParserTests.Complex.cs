@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System.Writer;
 
@@ -12,12 +13,8 @@ public class XsParserComplexTests
         new XsConfig
         {
             References = [Assembly.GetExecutingAssembly()],
-            EnableDebugging = true,
-            Debugger = ( l, c, v, m ) =>
-            {
-                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
-            }
         }
+        , true
     );
 
     [TestMethod]
@@ -27,7 +24,7 @@ public class XsParserComplexTests
         """
         var results = new List<int>(5);
 
-        var c = 0;
+        var c = 0; var c1 = 0; var c2 = 0;
         if (1 + 1 == 2)
         {
             c = if (true) { 42; } else { 0; };
@@ -82,8 +79,20 @@ public class XsParserComplexTests
 
         results;
         """;
-        var expression = Xs.Parse( script );
 
+        var debugInfo = new XsDebugInfo()
+        {
+            Debugger = ( l, c, v, m ) =>
+            {
+                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
+            },
+            BreakPoints = [
+                new( 1 ),                // all of line 1   
+                new( 3, new( 12, 23 ) ), // line 3, between columns 12-23
+            ]
+        };
+
+        var expression = Xs.Parse( script, debugInfo );
 
         var code = expression.ToExpressionString();
 

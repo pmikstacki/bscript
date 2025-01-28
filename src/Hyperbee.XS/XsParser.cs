@@ -22,18 +22,21 @@ public partial class XsParser
     {
     }
 
-    public XsParser( XsConfig config )
+    public XsParser( XsConfig config, bool enableDebugging = false )
     {
         _config = config ?? new XsConfig();
-        _xs = CreateParser( _config );
+        _xs = CreateParser( _config, enableDebugging );
     }
 
     // Parse
 
-    public Expression Parse( string script )
+    public Expression Parse( string script, XsDebugInfo debugInfo = null )
     {
+        if ( debugInfo != null )
+            debugInfo.Source = script;
+
         var scanner = new Scanner( script );
-        var context = new XsContext( _config, scanner ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
+        var context = new XsContext( _config, debugInfo, scanner ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
 
         try
         {
@@ -47,7 +50,7 @@ public partial class XsParser
 
     // Parsers
 
-    private static Parser<Expression> CreateParser( XsConfig config )
+    private static Parser<Expression> CreateParser( XsConfig config, bool enableDebugging = false )
     {
         var statement = Deferred<Expression>();
 
@@ -56,7 +59,7 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        expressionStatement = (config.Debugger != null && config.EnableDebugging)
+        expressionStatement = enableDebugging
             ? expressionStatement.Debug()
             : expressionStatement;
 

@@ -15,18 +15,19 @@ public static partial class XsParsers
             if ( context is not XsContext xsContext )
                 throw new InvalidOperationException( $"Context must be of type {nameof( XsContext )}." );
 
-            if ( xsContext.Debugger == null )
+            if ( xsContext.DebugInfo == null )
                 return Empty();
 
             var span = context.Scanner.Cursor.Position;
-            var debugger = xsContext.Debugger;
-            var target = debugger.Target != null
-                ? Constant( debugger.Target )
+            var debugInfo = xsContext.DebugInfo;
+            var debuggerCallback = debugInfo.InvokeDebugger;
+            var target = debuggerCallback.Target != null
+                ? Constant( debuggerCallback.Target )
                 : null;
 
             var debugExpression = Call(
                 target,
-                debugger.Method,
+                debuggerCallback.Method,
                 Constant( span.Line ),
                 Constant( span.Column ),
                 XsParsersHelper.CaptureVariables( xsContext.Scope.Variables ),

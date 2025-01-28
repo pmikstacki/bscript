@@ -14,12 +14,8 @@ public class DebugParseExtensionTests
         {
             References = [Assembly.GetExecutingAssembly()],
             Extensions = XsExtensions.Extensions(),
-            EnableDebugging = true,
-            Debugger = ( _, _, v, m ) =>
-            {
-                Console.WriteLine( $"Variables: {v}, Message: {m}" );
-            }
-        }
+        },
+        true
     );
 
     [TestMethod]
@@ -82,7 +78,17 @@ public class DebugParseExtensionTests
 
         results;
         """;
-        var expression = Xs.Parse( script );
+
+        var debugInfo = new XsDebugInfo()
+        {
+            BreakPoints = [],
+            Debugger = ( l, c, v, m ) =>
+            {
+                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
+            }
+        };
+
+        var expression = Xs.Parse( script, debugInfo );
 
         var code = expression.ToExpressionString();
 
