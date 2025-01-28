@@ -15,7 +15,7 @@ public class DebugParseExtensionTests
             References = [Assembly.GetExecutingAssembly()],
             Extensions = XsExtensions.Extensions(),
         },
-        true
+        enableDebugging: true
     );
 
     [TestMethod]
@@ -81,7 +81,6 @@ public class DebugParseExtensionTests
 
         var debugInfo = new XsDebugInfo()
         {
-            BreakPoints = [],
             Debugger = ( l, c, v, m ) =>
             {
                 Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );

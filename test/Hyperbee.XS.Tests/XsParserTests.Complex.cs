@@ -13,8 +13,8 @@ public class XsParserComplexTests
         new XsConfig
         {
             References = [Assembly.GetExecutingAssembly()],
-        }
-        , true
+        },
+        enableDebugging: true
     );
 
     [TestMethod]
@@ -86,7 +86,7 @@ public class XsParserComplexTests
             {
                 Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
             },
-            BreakPoints = [
+            Breakpoints = [
                 new( 1 ),                // all of line 1   
                 new( 3, new( 12, 23 ) ), // line 3, between columns 12-23
             ]
