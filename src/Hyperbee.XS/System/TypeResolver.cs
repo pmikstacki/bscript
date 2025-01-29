@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Hyperbee.XS.System;
 
-public class TypeResolver
+public sealed class TypeResolver
 {
     private readonly List<Assembly> _references = [
         typeof( string ).Assembly,

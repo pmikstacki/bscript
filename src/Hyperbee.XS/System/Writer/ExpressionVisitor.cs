@@ -3,11 +3,18 @@ using System.Linq.Expressions;
 
 namespace Hyperbee.XS.System.Writer;
 
-internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::System.Linq.Expressions.ExpressionVisitor
+internal class ExpressionVisitor : global::System.Linq.Expressions.ExpressionVisitor
 {
+    private readonly ExpressionWriterContext _context;
+
+    public ExpressionVisitor( ExpressionWriterContext context )
+    {
+        _context = context;
+    }
+
     protected override Expression VisitBinary( BinaryExpression node )
     {
-        using var writer = Context.EnterExpression( $"{node.NodeType}" );
+        using var writer = _context.EnterExpression( $"{node.NodeType}" );
 
         writer.WriteExpression( node.Left );
         writer.Write( ",\n" );
@@ -31,7 +38,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitBlock( BlockExpression node )
     {
-        using var writer = Context.EnterExpression( "Block" );
+        using var writer = _context.EnterExpression( "Block" );
 
         writer.WriteParamExpressions( node.Variables, true );
 
@@ -54,7 +61,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitConditional( ConditionalExpression node )
     {
-        using var writer = Context.EnterExpression( "Condition" );
+        using var writer = _context.EnterExpression( "Condition" );
 
         writer.WriteExpression( node.Test );
         writer.Write( ",\n" );
@@ -72,7 +79,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitConstant( ConstantExpression node )
     {
-        using var writer = Context.EnterExpression( "Constant", newLine: false );
+        using var writer = _context.EnterExpression( "Constant", newLine: false );
         var value = node.Value;
 
         switch ( value )
@@ -99,14 +106,14 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitDefault( DefaultExpression node )
     {
-        if ( node.Type != null && node.Type != typeof( void ) )
+        if ( node.Type != typeof( void ) )
         {
-            using var writer = Context.EnterExpression( "Default" );
+            using var writer = _context.EnterExpression( "Default" );
             writer.WriteType( node.Type );
         }
         else
         {
-            using var writer = Context.EnterExpression( "Empty", newLine: false );
+            using var writer = _context.EnterExpression( "Empty", newLine: false );
         }
 
         return node;
@@ -114,7 +121,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override ElementInit VisitElementInit( ElementInit node )
     {
-        using var writer = Context.EnterExpression( "ElementInit" );
+        using var writer = _context.EnterExpression( "ElementInit" );
 
         writer.WriteMethodInfo( node.AddMethod );
         writer.WriteExpressions( node.Arguments );
@@ -124,15 +131,15 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitExtension( Expression node )
     {
-        if ( Context.ExtensionWriters is not null )
+        if ( _context.ExtensionWriters is not null )
         {
-            foreach ( var writer in Context.ExtensionWriters )
+            foreach ( var writer in _context.ExtensionWriters )
             {
-                if ( writer.CanWrite( node ) )
-                {
-                    writer.WriteExpression( node, Context );
-                    return node;
-                }
+                if ( !writer.CanWrite( node ) )
+                    continue;
+
+                writer.WriteExpression( node, _context );
+                return node;
             }
         }
 
@@ -143,16 +150,16 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitGoto( GotoExpression node )
     {
-        using var writer = Context.EnterExpression( $"{node.Kind}" );
+        using var writer = _context.EnterExpression( $"{node.Kind}" );
 
-        if ( Context.Labels.TryGetValue( node.Target, out var lableTarget ) )
+        if ( _context.Labels.TryGetValue( node.Target, out var lableTarget ) )
         {
             writer.Write( lableTarget, indent: true );
         }
         else
         {
             VisitLabelTarget( node.Target );
-            Context.Labels.TryGetValue( node.Target, out lableTarget );
+            _context.Labels.TryGetValue( node.Target, out lableTarget );
             writer.Write( lableTarget, indent: true );
         }
 
@@ -162,7 +169,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
             writer.WriteExpression( node.Value );
         }
 
-        if ( node.Type != null && node.NodeType == ExpressionType.Default && node.Type != typeof( void ) )
+        if ( node.NodeType == ExpressionType.Default && node.Type != typeof( void ) )
         {
             writer.Write( ",\n" );
             writer.WriteType( node.Type );
@@ -175,7 +182,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
     {
         if ( node.Indexer != null )
         {
-            using var writer = Context.EnterExpression( "MakeIndex" );
+            using var writer = _context.EnterExpression( "MakeIndex" );
 
             writer.WriteExpression( node.Object );
             writer.Write( ",\n" );
@@ -209,7 +216,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
         }
         else
         {
-            using var writer = Context.EnterExpression( "ArrayAccess" );
+            using var writer = _context.EnterExpression( "ArrayAccess" );
 
             writer.WriteExpression( node.Object );
 
@@ -221,7 +228,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitInvocation( InvocationExpression node )
     {
-        using var writer = Context.EnterExpression( "Invoke" );
+        using var writer = _context.EnterExpression( "Invoke" );
 
         writer.WriteExpression( node.Expression );
 
@@ -232,39 +239,41 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitLambda<T>( Expression<T> node )
     {
-        using var writer = Context.EnterExpression( "Lambda" );
+        using var writer = _context.EnterExpression( "Lambda" );
 
         writer.WriteExpression( node.Body );
 
-        if ( node.Parameters.Count > 0 )
+        if ( node.Parameters.Count <= 0 )
         {
-            writer.Write( ",\n" );
-            writer.Write( "new[] {\n", indent: true );
-
-            writer.Indent();
-
-            var count = node.Parameters.Count;
-
-            for ( var i = 0; i < count; i++ )
-            {
-                writer.WriteExpression( node.Parameters[i] );
-                if ( i < count - 1 )
-                {
-                    writer.Write( "," );
-                }
-                writer.Write( "\n" );
-            }
-
-            writer.Outdent();
-            writer.Write( "}", indent: true );
+            return node;
         }
+
+        writer.Write( ",\n" );
+        writer.Write( "new[] {\n", indent: true );
+
+        writer.Indent();
+
+        var count = node.Parameters.Count;
+
+        for ( var i = 0; i < count; i++ )
+        {
+            writer.WriteExpression( node.Parameters[i] );
+            if ( i < count - 1 )
+            {
+                writer.Write( "," );
+            }
+            writer.Write( "\n" );
+        }
+
+        writer.Outdent();
+        writer.Write( "}", indent: true );
 
         return node;
     }
 
     protected override Expression VisitListInit( ListInitExpression node )
     {
-        using var writer = Context.EnterExpression( "ListInit" );
+        using var writer = _context.EnterExpression( "ListInit" );
 
         writer.WriteExpression( node.NewExpression );
         writer.Write( ",\n" );
@@ -276,10 +285,10 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitMember( MemberExpression node )
     {
-        using var writer = Context.EnterExpression( "MakeMemberAccess" );
+        using var writer = _context.EnterExpression( "MakeMemberAccess" );
 
         writer.WriteExpression( node.Expression );
-        writer.Write( $",\n" );
+        writer.Write( ",\n" );
 
         writer.WriteMemberInfo( node.Member );
 
@@ -288,7 +297,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitMethodCall( MethodCallExpression node )
     {
-        using var writer = Context.EnterExpression( "Call" );
+        using var writer = _context.EnterExpression( "Call" );
 
         if ( node.Object != null )
         {
@@ -297,7 +306,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
         }
         else
         {
-            writer.Write( $"null,\n", indent: true );
+            writer.Write( "null,\n", indent: true );
         }
 
         writer.WriteMethodInfo( node.Method );
@@ -309,7 +318,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitNew( NewExpression node )
     {
-        using var writer = Context.EnterExpression( "New" );
+        using var writer = _context.EnterExpression( "New" );
 
         writer.WriteConstructorInfo( node.Constructor );
         writer.WriteExpressions( node.Arguments );
@@ -319,12 +328,12 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitNewArray( NewArrayExpression node )
     {
-        using var writer = Context.EnterExpression( $"{node.NodeType}" );
+        using var writer = _context.EnterExpression( $"{node.NodeType}" );
 
-        if ( node.NodeType == ExpressionType.NewArrayBounds )
-            writer.WriteType( node.Type );
-        else
-            writer.WriteType( node.Type.GetElementType() );
+        writer.WriteType( node.NodeType == ExpressionType.NewArrayBounds
+            ? node.Type
+            : node.Type.GetElementType()
+        );
 
         writer.WriteExpressions( node.Expressions );
 
@@ -333,23 +342,23 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitParameter( ParameterExpression node )
     {
-        var writer = Context.GetWriter();
+        var writer = _context.GetWriter();
         writer.WriteParameter( node );
         return node;
     }
 
     protected override Expression VisitLabel( LabelExpression node )
     {
-        using var writer = Context.EnterExpression( "Label" );
+        using var writer = _context.EnterExpression( "Label" );
 
-        if ( Context.Labels.TryGetValue( node.Target, out var lableTarget ) )
+        if ( _context.Labels.TryGetValue( node.Target, out var lableTarget ) )
         {
             writer.Write( lableTarget, indent: true );
         }
         else
         {
             VisitLabelTarget( node.Target );
-            Context.Labels.TryGetValue( node.Target, out lableTarget );
+            _context.Labels.TryGetValue( node.Target, out lableTarget );
             writer.Write( lableTarget, indent: true );
         }
 
@@ -364,7 +373,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override LabelTarget VisitLabelTarget( LabelTarget node )
     {
-        Context.GetWriter()
+        _context.GetWriter()
             .WriteLabel( node );
 
         return node;
@@ -372,14 +381,14 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitLoop( LoopExpression node )
     {
-        using var writer = Context.EnterExpression( "Loop" );
+        using var writer = _context.EnterExpression( "Loop" );
 
         writer.WriteExpression( node.Body );
 
         if ( node.BreakLabel != null )
         {
             VisitLabelTarget( node.BreakLabel );
-            if ( Context.Labels.TryGetValue( node.BreakLabel, out var breakLabel ) )
+            if ( _context.Labels.TryGetValue( node.BreakLabel, out var breakLabel ) )
             {
                 writer.Write( ",\n" );
                 writer.Write( breakLabel, indent: true );
@@ -389,7 +398,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
         if ( node.ContinueLabel != null )
         {
             VisitLabelTarget( node.ContinueLabel );
-            if ( Context.Labels.TryGetValue( node.ContinueLabel, out var continueLabel ) )
+            if ( _context.Labels.TryGetValue( node.ContinueLabel, out var continueLabel ) )
             {
                 writer.Write( ",\n" );
                 writer.Write( continueLabel, indent: true );
@@ -401,7 +410,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitSwitch( SwitchExpression node )
     {
-        using var writer = Context.EnterExpression( "Switch" );
+        using var writer = _context.EnterExpression( "Switch" );
 
         writer.WriteExpression( node.SwitchValue );
         if ( node.DefaultBody != null )
@@ -410,7 +419,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
             writer.WriteExpression( node.DefaultBody );
         }
 
-        if ( node.Cases != null && node.Cases.Count > 0 )
+        if ( node.Cases.Count > 0 )
         {
             VisitSwitchCases( node.Cases );
         }
@@ -420,7 +429,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override SwitchCase VisitSwitchCase( SwitchCase node )
     {
-        using var writer = Context.EnterExpression( "SwitchCase" );
+        using var writer = _context.EnterExpression( "SwitchCase" );
 
         writer.WriteExpression( node.Body );
         writer.WriteExpressions( node.TestValues );
@@ -430,7 +439,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitTry( TryExpression node )
     {
-        using var writer = Context.EnterExpression( "TryCatchFinally" );
+        using var writer = _context.EnterExpression( "TryCatchFinally" );
 
         writer.WriteExpression( node.Body );
         writer.Write( ",\n" );
@@ -451,7 +460,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override CatchBlock VisitCatchBlock( CatchBlock node )
     {
-        using var writer = Context.EnterExpression( "MakeCatchBlock" );
+        using var writer = _context.EnterExpression( "MakeCatchBlock" );
 
         writer.WriteType( node.Test );
         writer.Write( ",\n" );
@@ -483,7 +492,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     protected override Expression VisitUnary( UnaryExpression node )
     {
-        using var writer = Context.EnterExpression( $"{node.NodeType}" );
+        using var writer = _context.EnterExpression( $"{node.NodeType}" );
 
         writer.WriteExpression( node.Operand );
 
@@ -498,7 +507,7 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     private void VisitInitializers( ReadOnlyCollection<ElementInit> initializers )
     {
-        var writer = Context.GetWriter();
+        var writer = _context.GetWriter();
 
         writer.Write( "new[] {\n", indent: true );
         writer.Indent();
@@ -522,57 +531,61 @@ internal class ExpressionVisitor( ExpressionWriterContext Context ) : global::Sy
 
     private void VisitSwitchCases( ReadOnlyCollection<SwitchCase> cases )
     {
-        if ( cases.Count > 0 )
+        if ( cases.Count <= 0 )
         {
-            var writer = Context.GetWriter();
-
-            writer.Write( ",\n" );
-            writer.Write( "new[] {\n", indent: true );
-            writer.Indent();
-
-            var count = cases.Count;
-
-            for ( var i = 0; i < count; i++ )
-            {
-                VisitSwitchCase( cases[i] );
-
-                if ( i < count - 1 )
-                {
-                    writer.Write( "," );
-                }
-                writer.Write( "\n" );
-            }
-
-            writer.Outdent();
-            writer.Write( "}", indent: true );
+            return;
         }
+
+        var writer = _context.GetWriter();
+
+        writer.Write( ",\n" );
+        writer.Write( "new[] {\n", indent: true );
+        writer.Indent();
+
+        var count = cases.Count;
+
+        for ( var i = 0; i < count; i++ )
+        {
+            VisitSwitchCase( cases[i] );
+
+            if ( i < count - 1 )
+            {
+                writer.Write( "," );
+            }
+            writer.Write( "\n" );
+        }
+
+        writer.Outdent();
+        writer.Write( "}", indent: true );
     }
 
     private void VisitCatchBlocks( ReadOnlyCollection<CatchBlock> handlers )
     {
-        if ( handlers != null && handlers.Count > 0 )
+        if ( handlers == null || handlers.Count <= 0 )
         {
-            var writer = Context.GetWriter();
-
-            writer.Write( ",\n" );
-            writer.Write( "new[] {\n", indent: true );
-            writer.Indent();
-
-            var count = handlers.Count;
-
-            for ( var i = 0; i < count; i++ )
-            {
-                VisitCatchBlock( handlers[i] );
-                if ( i < count - 1 )
-                {
-                    writer.Write( "," );
-                }
-                writer.Write( "\n" );
-            }
-
-            writer.Outdent();
-            writer.Write( "}", indent: true );
+            return;
         }
+
+        var writer = _context.GetWriter();
+
+        writer.Write( ",\n" );
+        writer.Write( "new[] {\n", indent: true );
+        writer.Indent();
+
+        var count = handlers.Count;
+
+        for ( var i = 0; i < count; i++ )
+        {
+            VisitCatchBlock( handlers[i] );
+            if ( i < count - 1 )
+            {
+                writer.Write( "," );
+            }
+            writer.Write( "\n" );
+        }
+
+        writer.Outdent();
+        writer.Write( "}", indent: true );
     }
 
 }

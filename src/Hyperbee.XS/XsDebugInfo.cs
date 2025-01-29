@@ -28,6 +28,5 @@ public class XsDebugInfo
     }
 
     public delegate void DebuggerCallback( int line, int column, Dictionary<string, object> variables, string message );
-
 }
 
