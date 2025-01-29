@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Hyperbee ExpressionScript (XS)
+title: Overview
 nav_order: 1
 ---
 # XS: A Lightweight, Extensible Scripting Language for Expression Trees :rocket:
