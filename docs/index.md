@@ -122,7 +122,8 @@ performance improvements and enabling dynamic updates without application restar
 **Different tools for different needs:** Roslyn is a full compiler designed for analyzing, transforming, and compiling 
 complete C# programs. XS is a **lightweight scripting engine optimized for runtime execution** and **expression tree generation**.  
 
-#### **Why Use XS Instead of Roslyn for Runtime Execution?**  
+#### **Why Use XS Instead of Roslyn for Runtime Execution?** 
+- **Enhances Expressions** – XS simplifies expression tree creation and management, enabling developers to focus on code, not AST syntax. 
 - **Lower Overhead** – XS generates and executes **expression trees directly**, avoiding Roslyn’s full compilation pipeline and reducing startup costs.  
 - **Optimized for Dynamic Execution** – Ideal for **rule engines, embedded scripting, and DSLs**, where Roslyn’s full compilation step is unnecessary.  
 - **Expression Tree Native** – Unlike Roslyn, XS treats **code as data**, enabling **runtime introspection, transformation, and optimization** before execution.  
