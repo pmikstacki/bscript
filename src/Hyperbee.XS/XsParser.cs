@@ -59,7 +59,7 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        expressionStatement = config.EnableDebugging
+        expressionStatement = config.EnableDebugging //BF I don't think this flag is needed
             ? expressionStatement.Debug()
             : expressionStatement;
 

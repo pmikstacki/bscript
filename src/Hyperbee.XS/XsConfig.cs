@@ -15,7 +15,7 @@ public class XsConfig
 
     internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
 
-    public bool EnableDebugging { get; init; } = false;
+    public bool EnableDebugging { get; init; } = false; //BF we can delete this
 }
 
 internal static class XsConfigExtensions

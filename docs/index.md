@@ -157,6 +157,7 @@ It supports:
 - **Generics**: Fully supports generic types and methods.
 - **LINQ**: Seamless integration with LINQ expressions for dynamic query building.
 - **Tuples and Deconstruction**: Built-in support for tuples and destructuring patterns.
+- **Debugging**: Debug statements and detailed syntax error reporting.
 
 #### **Extensibility**:
 
@@ -176,10 +177,25 @@ Example Extensions:
 
 #### **Debugging**:
 
-XS supports `debug;` statements, allowing users to create debug callbacks and set breakpoints. This 
-feature automates a process that is laborious when using manual expression trees.
+XS supports `debug();` statements and line level debugging, allowing users to create debug callbacks and set breakpoints. 
+This feature automates a process that is laborious when using manual expression trees.
 
-XS also provides detailed parser syntax error reporting, including line and column numbers.
+```
+    var debugInfo = new XsDebugInfo()
+    {
+        Debugger = ( l, c, v, m ) =>
+        {
+            Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
+            Debugger.Break();
+        }
+    };
+
+    var expression = Xs.Parse( script, debugInfo );
+
+    var lambda = Expression.Lambda<Func<List<int>>>( expression );
+    var compiled = lambda.Compile();
+    var result = compiled();
+```
 
 #### **Security**:
 

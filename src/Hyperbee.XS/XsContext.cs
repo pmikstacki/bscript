@@ -65,8 +65,8 @@ public static class XsContextExtensions
             return;
         }
 
-        scope = default;
-        resolver = default;
+        scope = null;
+        resolver = null;
     }
 
     public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver, out Frame frame )
@@ -77,9 +77,9 @@ public static class XsContextExtensions
             return;
         }
 
-        scope = default;
-        resolver = default;
-        frame = default;
+        scope = null;
+        resolver = null;
+        frame = null;
     }
 
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
