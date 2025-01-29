@@ -4,7 +4,7 @@ public static class BufferExtensions
 {
     public static string GetLine( this string buffer, int line, int column, bool showCaret = false ) //BF refactored to eliminate split string[] allocations
     {
-        if ( string.IsNullOrEmpty(buffer) || line <= 0 ) 
+        if ( string.IsNullOrEmpty( buffer ) || line <= 0 )
             return string.Empty;
 
         var currentLine = 1;

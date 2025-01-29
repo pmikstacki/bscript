@@ -325,9 +325,9 @@ internal class ExpressionVisitor( ExpressionWriterContext context ) : global::Sy
     {
         using var writer = _context.EnterExpression( $"{node.NodeType}" );
 
-        writer.WriteType( node.NodeType == ExpressionType.NewArrayBounds 
-            ? node.Type 
-            : node.Type.GetElementType() 
+        writer.WriteType( node.NodeType == ExpressionType.NewArrayBounds
+            ? node.Type
+            : node.Type.GetElementType()
         );
 
         writer.WriteExpressions( node.Expressions );
