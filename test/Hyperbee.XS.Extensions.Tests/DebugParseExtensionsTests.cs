@@ -13,10 +13,7 @@ public class DebugParseExtensionTests
         new XsConfig
         {
             References = [Assembly.GetExecutingAssembly()],
-            Extensions = XsExtensions.Extensions(),
-#if DEBUG
-            EnableDebugging = true
-#endif
+            Extensions = XsExtensions.Extensions()
         }
     );
 

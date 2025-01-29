@@ -14,8 +14,6 @@ public class XsConfig
     public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
 
     internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
-
-    public bool EnableDebugging { get; init; } = false;
 }
 
 internal static class XsConfigExtensions

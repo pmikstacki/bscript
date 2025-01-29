@@ -8,15 +8,15 @@ namespace Hyperbee.XS.System.Parsers;
 
 public static partial class XsParsers
 {
-    public static Parser<Expression> Debug( this Parser<Expression> parser )
+    public static Parser<Expression> Debuggable( this Parser<Expression> parser )
     {
-        return parser.Then<Expression>( ( context, statement ) =>
+        return parser.Then( ( context, statement ) =>
         {
             if ( context is not XsContext xsContext )
                 throw new InvalidOperationException( $"Context must be of type {nameof( XsContext )}." );
 
             if ( xsContext.DebugInfo == null )
-                return Empty();
+                return statement;
 
             var span = context.Scanner.Cursor.Position;
             var debugInfo = xsContext.DebugInfo;

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.XS.System.Writer;
 
@@ -12,10 +11,7 @@ public class XsParserComplexTests
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
-#if DEBUG
-            EnableDebugging = true
-#endif
+            References = [Assembly.GetExecutingAssembly()]
         }
     );
 

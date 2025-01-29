@@ -59,9 +59,7 @@ public partial class XsParser
         var expression = ExpressionParser( statement, config );
         var expressionStatement = expression.WithTermination();
 
-        expressionStatement = config.EnableDebugging
-            ? expressionStatement.Debug()
-            : expressionStatement;
+        expressionStatement = expressionStatement.Debuggable();
 
         // Imports
 
