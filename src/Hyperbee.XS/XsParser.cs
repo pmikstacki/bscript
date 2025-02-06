@@ -207,10 +207,13 @@ public partial class XsParser
             postfixExpression,
             primaryExpression
         ).Unary(
-            (Terms.Char( '!' ), Not),
-            (Terms.Char( '-' ), Negate),
-            (Terms.Char( '~' ), OnesComplement)
+            (Terms.Text( "?" ), IsTrue),
+            (Terms.Text( "!?" ), IsFalse),
+            (Terms.Text( "!" ), Not),
+            (Terms.Text( "-" ), Negate),
+            (Terms.Text( "~" ), OnesComplement)
         ).Named( "unary" );
+
 
         // Binary Expressions
 
@@ -218,10 +221,12 @@ public partial class XsParser
             .RightAssociative(
                 (Terms.Text( "**" ), SafePower)
             )
-            .LeftAssociative( // operator
+            .LeftAssociative(
                 (Terms.Text( "*" ), Multiply),
                 (Terms.Text( "/" ), Divide),
-                (Terms.Text( "%" ), Modulo),
+                (Terms.Text( "%" ), Modulo)
+            )
+            .LeftAssociative( // operator
                 (Terms.Text( "+" ), Add),       // peek and use increment
                 (Terms.Text( "-" ), Subtract),  // peek and use decrement
                 (Terms.Text( "==" ), Equal),
@@ -266,13 +271,13 @@ public partial class XsParser
     private static Parser<IReadOnlyList<Expression>> ArgsParser( Parser<Expression> expression )
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( static args => args ?? Array.Empty<Expression>() );
+            .Then( static args => args ?? [] );
     }
 
     private static Parser<IReadOnlyList<Type>> TypeArgsParser()
     {
         return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ) )
-            .Then( static typeArgs => typeArgs ?? Array.Empty<Type>() );
+            .Then( static typeArgs => typeArgs ?? [] );
     }
 
 
@@ -373,7 +378,7 @@ public partial class XsParser
         if ( expression is not ConstantExpression ce || ce.Value is not Type type )
             throw new InvalidOperationException( "The right-side of a cast operator requires a Type." );
 
-        if ( nullable )
+        if ( nullable && type.IsValueType )
             return typeof( Nullable<> ).MakeGenericType( type );
 
         return type;

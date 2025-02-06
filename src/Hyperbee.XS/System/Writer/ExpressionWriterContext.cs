@@ -22,7 +22,7 @@ public class ExpressionWriterContext
     internal string Prefix => Config.Prefix;
     internal string Variable => Config.Variable;
 
-    internal IExtensionWriter[] ExtensionWriters => Config.Writers;
+    internal IExpressionWriter[] ExtensionWriters => Config.Writers;
 
     internal ExpressionVisitor Visitor { get; init; }
     internal ExpressionVisitorConfig Config { get; init; }
@@ -57,10 +57,9 @@ public class ExpressionWriterContext
         output.Write( $"var {context.Variable} = {context.ExpressionOutput};" );
     }
 
-
     public ExpressionWriter EnterExpression( string name, bool newLine = true, bool prefix = true )
     {
-        var writer = new ExpressionWriter( this, ( w ) => ExitExpression( w, newLine ) );
+        var writer = new ExpressionWriter( this, ( w ) => ExpressionWriterContext.ExitExpression( w, newLine ) );
 
         writer.Write( $"{(prefix ? Prefix : string.Empty)}{name}(", indent: true );
 
@@ -77,7 +76,7 @@ public class ExpressionWriterContext
         return new ExpressionWriter( this, null );
     }
 
-    private void ExitExpression( ExpressionWriter writer, bool newLine = true )
+    private static void ExitExpression( ExpressionWriter writer, bool newLine = true )
     {
         writer.Outdent();
 
