@@ -1,7 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.Xs.Extensions;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 namespace Hyperbee.XS.Extensions.Tests;
@@ -9,11 +10,11 @@ namespace Hyperbee.XS.Extensions.Tests;
 [TestClass]
 public class ExpressionTreeStringTests
 {
-    public XsParser XsParser { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
             Extensions = XsExtensions.Extensions()
         }
     );
@@ -36,7 +37,7 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -61,7 +62,7 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -90,7 +91,7 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -115,7 +116,7 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -137,7 +138,7 @@ public class ExpressionTreeStringTests
             result;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -164,7 +165,7 @@ public class ExpressionTreeStringTests
             }
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var code = expression.ToExpressionString( Config );
 
         WriteResult( script, code );
@@ -191,12 +192,12 @@ public class ExpressionTreeStringTests
             }
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<Task<int>>>( newExpression );
         var compiled = lambda.Compile();
         var result = await compiled();
@@ -217,12 +218,12 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<int>>( newExpression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -244,12 +245,12 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<int>>( newExpression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -275,12 +276,12 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<int>>( newExpression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -302,12 +303,12 @@ public class ExpressionTreeStringTests
             x;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<int>>( newExpression );
         var compiled = lambda.Compile();
         var result = compiled();
@@ -326,12 +327,12 @@ public class ExpressionTreeStringTests
             result;
             """;
 
-        var expression = XsParser.Parse( script );
+        var expression = Xs.Parse( script );
         var newScript = expression.ToXS( XsConfig );
 
         WriteResult( script, newScript );
 
-        var newExpression = XsParser.Parse( newScript );
+        var newExpression = Xs.Parse( newScript );
         var lambda = Expression.Lambda<Func<string>>( newExpression );
         var compiled = lambda.Compile();
         var result = compiled();

@@ -1,4 +1,4 @@
-﻿using Hyperbee.XS.System;
+﻿using Hyperbee.XS.Core;
 
 namespace Hyperbee.Xs.Extensions;
 
@@ -15,6 +15,7 @@ public static class XsExtensions
             new AsyncParseExtension(),
             new AwaitParseExtension(),
             new DebugParseExtension(),
+            new NuGetParseExtension()
         ];
     }
 }

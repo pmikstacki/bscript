@@ -1,11 +1,11 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using Hyperbee.XS.System;
-using Hyperbee.XS.System.Parsers;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Parsers;
 using Parlot;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
-using static Hyperbee.XS.System.Parsers.XsParsers;
+using static Hyperbee.XS.Core.Parsers.XsParsers;
 using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.XS;
@@ -59,13 +59,15 @@ public partial class XsParser
 
         expressionStatement = expressionStatement.Debuggable();
 
-        // Imports
+        // Directives
 
-        var imports = ZeroOrMany( ImportParser() ).Named( "import-statements" );
+        var directives = KeywordLookup<Expression>( "keyword-directives" )
+            .Add( ImportParser() )
+            .Add( config.Extensions.Statements( ExtensionType.Directive, expression, statement ) );
 
         // Compose Statements
 
-        var terminatedStatements = KeywordLookup<Expression>( "lookup(terminated-statements)" )
+        var terminatedStatements = KeywordLookup<Expression>( "keyword-terminated" )
             .Add(
                 BreakParser(),
                 ContinueParser(),
@@ -84,7 +86,8 @@ public partial class XsParser
 
         // Create the final parser
 
-        var xs = imports.SkipAnd( ZeroOrMany( statement ) );
+        var xs = ZeroOrMany( directives )
+            .SkipAnd( ZeroOrMany( statement ) );
 
         return SynthesizeMethod( xs );
     }
@@ -121,7 +124,7 @@ public partial class XsParser
 
         // Expression statements
 
-        var complexExpression = KeywordLookup<Expression>()
+        var complexExpression = KeywordLookup<Expression>( "keyword-expression" )
             .Add(
                 DefaultParser( typeConstant ),
                 DeclarationParser( expression ),
@@ -214,7 +217,6 @@ public partial class XsParser
             (Terms.Text( "~" ), OnesComplement)
         ).Named( "unary" );
 
-
         // Binary Expressions
 
         return expression.Parser = unaryExpression
@@ -270,54 +272,44 @@ public partial class XsParser
 
     private static Parser<IReadOnlyList<Expression>> ArgsParser( Parser<Expression> expression )
     {
-        return ZeroOrOne( Separated( Terms.Char( ',' ), expression ) )
-            .Then( static args => args ?? [] );
+        return ZeroOrOne( Separated( Terms.Char( ',' ), expression ), [] );
     }
 
     private static Parser<IReadOnlyList<Type>> TypeArgsParser()
     {
-        return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ) )
-            .Then( static typeArgs => typeArgs ?? [] );
+        return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ), [] );
     }
 
-
-    private static Parser<string> ImportParser()
+    private static KeywordParserPair<Expression> ImportParser()
     {
-        return Terms.Text( "import" )
-            .SkipAnd(
-                Terms.Identifier().ElseInvalidIdentifier()
-                .And(
-                    ZeroOrMany(
-                        Terms.Char( '.' )
-                        .SkipAnd( Terms.Identifier().ElseInvalidIdentifier() )
-                    )
-                )
-            )
-            .AndSkip( Terms.Char( ';' ) )
-            .Then( ( ctx, parts ) =>
-            {
-                var (first, rest) = parts;
-                var ns = rest.Aggregate( first, ( current, part ) => $"{current}.{part}" ).ToString();
+        return new(
+            "import",
+            Terms.NamespaceIdentifier().ElseInvalidIdentifier()
+                .AndSkip( Terms.Char( ';' ) )
+                .Then<Expression>( ( ctx, parts ) =>
+                {
+                    var ns = parts.ToString();
 
-                if ( ctx is XsContext xsContext )
-                    xsContext.Namespaces.Add( ns );
+                    if ( ctx is XsContext xsContext )
+                        xsContext.Namespaces.Add( ns );
 
-                return ns;
-            } );
+                    return default;
+                } )
+        );
     }
 
-    private static Parser<Expression> SynthesizeMethod( SequenceSkipAnd<IReadOnlyList<string>, IReadOnlyList<Expression>> parser )
+    private static Parser<Expression> SynthesizeMethod( SequenceSkipAnd<IReadOnlyList<Expression>, IReadOnlyList<Expression>> parser )
     {
         return Bounded(
             static ctx =>
             {
-                if ( ctx is not XsContext xsContext || xsContext.InitalScope )
+                if ( ctx is not XsContext xsContext || xsContext.InitialScope )
                     ctx.EnterScope( FrameType.Method );
             },
             parser.Then( ConvertToSingleExpression ),
             static ctx =>
             {
-                if ( ctx is not XsContext xsContext || xsContext.InitalScope )
+                if ( ctx is not XsContext xsContext || xsContext.InitialScope )
                     ctx.ExitScope();
 
                 ThrowIfNotEof( ctx );

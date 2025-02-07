@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
@@ -9,9 +10,17 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class ExpressionStringTests
 {
-    public XsParser Xs { get; set; } = new
+    private static readonly ScriptOptions ScriptOptions = ScriptOptions.Default.WithReferences(
+        [
+            "System",
+            "System.Linq.Expressions",
+            "Hyperbee.XS.Tests"
+        ]
+    );
+
+    public static XsParser Xs { get; set; } = new
     (
-        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+        new XsConfig { ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ) }
     );
 
     [TestMethod]
@@ -519,20 +528,13 @@ public class ExpressionStringTests
 
     public async Task AssertScriptValue<T>( string code, T result )
     {
-        var scriptOptions = ScriptOptions.Default.WithReferences(
-            [
-                "System",
-                "System.Linq.Expressions",
-                "Hyperbee.XS.Tests"
-            ]
-         );
         var name = typeof( T ).Name;
 
         var scriptResult = await CSharpScript.EvaluateAsync<T>(
             code +
             $"var lambda = Expression.Lambda<Func<{name}>>( expression );" +
             "var compiled = lambda.Compile();" +
-            "return compiled();", scriptOptions );
+            "return compiled();", ScriptOptions );
 
         Assert.AreEqual( result, scriptResult );
     }
@@ -547,5 +549,4 @@ public class ExpressionStringTests
         Console.WriteLine( code );
 #endif
     }
-
 }

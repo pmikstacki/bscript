@@ -1,18 +1,19 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.Xs.Extensions;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 
 namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
 public class DebugParseExtensionTests
 {
-    public XsParser Xs { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
             Extensions = XsExtensions.Extensions()
         }
     );

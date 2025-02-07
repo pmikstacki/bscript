@@ -1,14 +1,15 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.XS.Core;
 
 namespace Hyperbee.XS.Tests;
 
 [TestClass]
 public class XsParserNewExpressionTests
 {
-    public XsParser Xs { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
-        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+        new XsConfig { ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ) }
     );
 
     [TestMethod]

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Hyperbee.Xs.Extensions;
+using Hyperbee.XS.Core;
 using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Extensions.Tests;
@@ -7,11 +8,11 @@ namespace Hyperbee.XS.Extensions.Tests;
 [TestClass]
 public class AsyncParseExtensionTests
 {
-    public XsParser XsParser { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
             Extensions = XsExtensions.Extensions()
         }
     );
@@ -19,7 +20,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public async Task Compile_ShouldSucceed_WithAsyncBlock()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             async {
                 await Task.FromResult( 42 );
@@ -37,7 +38,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public async Task Compile_ShouldSucceed_WithAsyncBlockAwait()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             async {
                 var asyncBlock = async {
@@ -59,7 +60,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithAsyncBlockGetAwaiter()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             var asyncBlock = async {
                 await Task.FromResult( 42 );
@@ -79,7 +80,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public async Task Compile_ShouldSucceed_WithAsyncBlockAwaitVariable()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             async {
                 var taskVar = Task.FromResult( 40 );
@@ -105,7 +106,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public async Task Compile_ShouldSucceed_WithAsyncBlockLambda()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             async {
                 var myLambda = () => {
@@ -128,7 +129,7 @@ public class AsyncParseExtensionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithGetAwaiter()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             await Task.FromResult( 42 ); // GetAwaiter().GetResult();
             """ );

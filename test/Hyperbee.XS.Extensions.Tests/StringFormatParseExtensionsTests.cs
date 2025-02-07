@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Hyperbee.Xs.Extensions;
+using Hyperbee.XS.Core;
 using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Extensions.Tests;
@@ -7,11 +8,11 @@ namespace Hyperbee.XS.Extensions.Tests;
 [TestClass]
 public class StringFormatParseExtensionTests
 {
-    public XsParser XsParser { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
             Extensions = XsExtensions.Extensions()
         }
     );
@@ -19,7 +20,7 @@ public class StringFormatParseExtensionTests
     [TestMethod]
     public void Compile_ShouldSucceed_WithExtensions()
     {
-        var expression = XsParser.Parse(
+        var expression = Xs.Parse(
             """
             var x = "hello";
             var y = "!";
