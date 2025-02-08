@@ -37,8 +37,6 @@ XS abstracts this complexity, allowing developers to write scripts that directly
 
 ### **Extensibility Beyond Native Expression Trees**:
 
-### **Extensibility Beyond Native Expression Trees**:
-
 XS is easy to extended to support new language features.
 
 This is important because native C# expression trees lack support for modern language features such as `async/await`, 
