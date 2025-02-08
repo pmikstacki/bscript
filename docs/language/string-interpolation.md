@@ -2,7 +2,7 @@
 layout: default
 title: String Interpolation
 parent: Language
-nav_order: 10
+nav_order: 13
 ---
 
 # String Interpolation

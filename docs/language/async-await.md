@@ -2,7 +2,7 @@
 layout: default
 title: Async-Await
 parent: Language
-nav_order: 16
+nav_order: 2
 ---
 
 ## Description

@@ -6,29 +6,78 @@ nav_order: 6
 
 # Examples
 
-This section provides various examples of XS code.
-
-## Complex Calculation
-
 ```xs
-var sum = 0;
-for (var i = 0; i < 100; i++) {
-    sum += i;
+var results = new List<int>(5);
+
+var c = 0; var c1 = 0; var c2 = 0;
+
+// conditional
+if (1 + 1 == 2)
+{
+    c = if (true) { 42; } else { 0; };
 }
-return sum;
-```
+else
+{
+    c = 1;
+}
 
-## Nested Expressions
+results.Add(c);
 
-```xs
-var result = if (x > 10) {
-    if (y > 20) {
-        "Both conditions met";
-    } else {
-        "Only x is greater than 10";
+// switch
+var s = 3;
+switch (s)
+{
+    case 1: 
+       s = 1; 
+       goto there;
+    case 2: 
+       s = 2; 
+       goto there;
+    default: 
+       s = 42; 
+       goto there;
+}
+there:
+
+results.Add(s);
+
+// try-catch-finally
+var t = 1;
+
+try
+{
+    throw new ArgumentException();
+}
+catch (InvalidOperationException)
+{
+    t = 0;
+}
+catch (ArgumentException)
+{
+    t += 40;
+}
+finally
+{
+    t += 1;
+}
+
+results.Add(t);
+
+// loop
+var l = 0;
+loop
+{
+    l++; 
+    if( l == 42 )
+    {
+        break;
     }
-} else {
-    "x is 10 or less";
-};
-result;
+}
+results.Add(l);
+
+// lambda
+var calc = (int a, int b) => a * b;
+results.Add( calc(6, 7) );
+
+results;
 ```

@@ -2,12 +2,13 @@
 layout: default
 title: Package
 parent: Language
-nav_order: 20
+nav_order: 12
 ---
 
 ## Description
 
-References a nuget package, allowing you to use its types and methods in your code.  This construct requires the `Hyperbee.XS.Extensions` package.
+The `package` directive references, or downloads, a nuget package, allowing you to use its types and methods in your code. 
+This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Syntax
 

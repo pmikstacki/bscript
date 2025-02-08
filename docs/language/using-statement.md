@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Using Disposable
+title: Using Statement
 parent: Language
-nav_order: 9
+nav_order: 18
 ---
 
 ## Description
@@ -12,7 +12,7 @@ The `using` statement ensures that the resource is disposed of when the block of
 ## Syntax
 
 ```abnf
-; Using Disposable Resources
+; Using Statement
 using-disposable = "using" "(" declaration ")" block
 
 block = "{" *statement "}"

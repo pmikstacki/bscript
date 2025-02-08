@@ -1,21 +1,18 @@
 ---
 layout: default
-title: Using Namespace
+title: Using Directive
 parent: Language
 nav_order: 19
 ---
 
-# Using Namespace
-
-
 ## Description
 
-The `using` statement ensures that ...
+The `using` directive allows the use of types in a namespace so that you do not have to fully qualify them.
 
 ## Syntax
 
 ```abnf
-; Using Namespace
+; Using Directive
 using-namespace = "using" namespace-identifier ";"
 ```
 

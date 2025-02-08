@@ -6,7 +6,7 @@ nav_order: 4
 
 # Debugging
 
-Debug expressions in XS allow you to inject debugging information directly into your scripts.
+XS supports debug expressions (breakpoints), and statement debugging.
 
 ## Description
 

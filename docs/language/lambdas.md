@@ -2,7 +2,7 @@
 layout: default
 title: Lambdas
 parent: Language
-nav_order: 14
+nav_order: 8
 ---
 
 ## Description

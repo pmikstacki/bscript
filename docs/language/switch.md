@@ -2,7 +2,7 @@
 layout: default
 title: Switch Statements
 parent: Language
-nav_order: 7
+nav_order: 14
 ---
 
 ## Description

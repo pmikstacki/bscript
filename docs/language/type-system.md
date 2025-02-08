@@ -1,11 +1,13 @@
 ---
 layout: default
 title: Type System
-nav_order: 2
+parent: Language
+nav_order: 17
 ---
+
 # Type System
 
-### **Primitive Types**
+## **Primitive Types**
 
 | Type      | Suffix | Example              |
 | --------- | ------ | -------------------- |
@@ -20,7 +22,7 @@ nav_order: 2
 | `bool`    | N/A    | `var flag = true`    |
 | `null`    | N/A    | `var value = null`   |
 
-### **Type Promotion Rules**
+## **Type Promotion Rules**
 
 1. Arithmetic operations promote types:  
    `int` → `float` → `double` → `decimal`.

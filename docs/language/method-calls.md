@@ -2,7 +2,7 @@
 layout: default
 title: Method Calls
 parent: Language
-nav_order: 13
+nav_order: 10
 ---
 
 ## Description
