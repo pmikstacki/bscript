@@ -128,7 +128,11 @@ public class XsParserNewExpressionTests
 
         var expression = parser.Parse(
             """
-            new int[] { new int[] {10,20,30}, new int[] {40,50}, new int[] {60} };
+            new int[] { 
+                new int[] {10,20,30}, 
+                new int[] {40,50}, 
+                new int[] {60} 
+            };
             """ );
 
         var lambda = Expression.Lambda<Func<int[][]>>( expression );
