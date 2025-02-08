@@ -11,9 +11,8 @@ XS is a lightweight scripting language designed to simplify and enhance the use 
 It provides a familiar C#-like syntax while offering advanced extensibility, making it a compelling choice for developers
 building domain-specific languages (DSLs), rules engines, or dynamic runtime logic systems.
 
-Unlike traditional approaches to expression trees, XS focuses on lowering the barrier for developers, eliminating the
-complexity of manually constructing and managing expression trees while enabling capabilities beyond what C# natively
-supports.
+XS focuses on lowering the barrier for developers who want to leverage expression trees, eliminating the
+complexity of manually constructing, extending, and navigating expression tree syntax.
 
 ---
 
@@ -119,7 +118,7 @@ performance improvements and enabling dynamic updates without application restar
 ### **How Does XS Compare to Roslyn?**  
 
 **Different tools for different needs:** Roslyn is a full compiler designed for analyzing, transforming, and compiling 
-complete C# programs. XS is a **lightweight scripting engine optimized for runtime execution** and **expression tree generation**.  
+complete C# programs. XS is a lightweight scripting engine optimized for runtime execution and expression tree generation.  
 
 #### **Why Use XS Instead of Roslyn for Runtime Execution?** 
 - Enhances Expressions – XS simplifies expression tree creation and management, enabling developers to focus on code, not AST syntax. 
@@ -130,7 +129,8 @@ complete C# programs. XS is a **lightweight scripting engine optimized for runti
 
 XS is **not a Roslyn replacement**—it serves a different purpose: **fast, lightweight, and embeddable runtime execution 
 without full compiler overhead**. If you need to compile and analyze full C# programs, Roslyn is the right tool. If 
-you need a small, efficient, and customizable scripting language for runtime execution, XS is a solid choice.
+you need a small, efficient, and **customizable** scripting language for runtime execution, or you want to easily generate expression 
+trees, XS is a solid choice.
 
 ---
 
@@ -270,7 +270,8 @@ var expression = Expression.Add(
 
 #### Configuration
 
-`ToExpressionString( config )` supports configuration options to control the output format and the ability to include IExpressionWriters to help with custom expression types. See Hyperbee.XS.Extensions for examples.
+`ToExpressionString( config )` supports configuration options to control the output format and the ability to include IExpressionWriters to help 
+with custom expression types. See Hyperbee.XS.Extensions for examples.
 
 ### **ToXS()**
 
@@ -294,23 +295,21 @@ would output:
 1 + 2 * 3;
 ```
 
-> Note: it is not guaranteed that the output will be the same as the original script, but it will be semantically equivalent. For example whitespace, variable names and block closure may differ.
+> Note: it is not guaranteed that the output will be the same as the original script, but it will be semantically equivalent. 
+For example whitespace, variable names and block closure may differ.
 
 #### Configuration
 
-`ToXS( config )` supports configuration options to control the output format and the ability to include IXsWriters to help with custom expression types. See Hyperbee.XS.Extensions for examples.
+`ToXS( config )` supports configuration options to control the output format and the ability to include IXsWriters to help 
+with custom expression types. See Hyperbee.XS.Extensions for examples.
 
 ---
 
 ### **Conclusion**
 
-XS addresses a critical gap in the .NET ecosystem by simplifying the creation and management of expression trees while 
+XS addresses a gap in the .NET ecosystem by simplifying the creation and management of expression trees while 
 enabling capabilities beyond what C# offers. With its lightweight design, advanced extensibility, and performance 
 optimizations, XS empowers developers to build robust, dynamic systems with minimal overhead and maximum flexibility.
-
-By targeting use cases like DSLs, rule engines, and IoC frameworks, XS establishes itself as a unique and powerful tool 
-for modern .NET development. Its combination of performance, extensibility, and developer-friendly features ensures 
-long-term relevance and adaptability.
 
 ---
 

@@ -22,9 +22,11 @@ public class UsingParseExtensionTests
     {
         var expression = Xs.Parse(
             """
+            using Hyperbee.XS.Extensions.Tests;
+            
             var x = 0;
             var onDispose = () => { x++; };
-            using( var disposable = new Hyperbee.XS.Extensions.Tests.Disposable(onDispose) )
+            using( var disposable = new Disposable(onDispose) )
             {
                 x++;
             }

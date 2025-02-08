@@ -17,7 +17,7 @@ public class XsParserNewExpressionTests
     {
         var expression = Xs.Parse(
             """
-            import Hyperbee.XS.Tests;
+            using Hyperbee.XS.Tests;
             new TestClass(42);
             """ );
 
@@ -36,7 +36,7 @@ public class XsParserNewExpressionTests
         {
             var expression = Xs.Parse(
                 """
-                import Hyperbee.XS.Tests;
+                using Hyperbee.XS.Tests;
                 new TestClass(42).PropertyThis.PropertyValue;
                 """ );
 
@@ -224,7 +224,7 @@ public class XsParserNewExpressionTests
         {
             Xs.Parse(
             """
-            import ;
+            using ;
             new TestClass(42);
             """ );
         }
@@ -243,7 +243,7 @@ public class XsParserNewExpressionTests
         {
             Xs.Parse(
             """
-            import Hyperbee.XS.;
+            using Hyperbee.XS.;
             """ );
         }
         catch ( SyntaxException ex )

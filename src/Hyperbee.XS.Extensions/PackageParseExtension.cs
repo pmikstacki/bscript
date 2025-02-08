@@ -8,11 +8,11 @@ using static Parlot.Fluent.Parsers;
 
 namespace Hyperbee.Xs.Extensions;
 
-public class NuGetParseExtension : IParseExtension
+public class PackageParseExtension : IParseExtension
 {
     public ExtensionType Type => ExtensionType.Directive;
 
-    public string Key => "nuget";
+    public string Key => "package";
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {

@@ -7,7 +7,7 @@ nav_order: 5
 
 ## ABNF Grammar Specification
 
-Wroking draft of the ABNF grammar specification for the language.
+Draft of the ABNF grammar specification for the language.
 
 ```abnf
 ; Root Rule: A script is a sequence of statements
@@ -112,7 +112,7 @@ primary-expression  = literal
 new-expression      = "new" typename "(" [ argument-list ] ")"
 
 ; Lambda Expressions
-lambda-expression   = "(" [ lambda-parameter-list ] ")" "=>" block
+lambda-expression   = "(" [ lambda-parameter-list ] ")" "=>" (terminated-statement / complex-statement)
 lambda-parameter-list = typename identifier *( "," typename identifier )
 
 ; Method Calls
@@ -123,7 +123,7 @@ generic-method-call = identifier "<" type-argument-list ">" "(" [ argument-list 
 type-argument-list  = typename *( "," typename )
 
 ; Control Flow
-conditional         = "if" "(" expression ")" (terminated-statement / block) [ "else" (terminated-statement / block) ]
+conditional         = "if" "(" expression ")" (terminated-statement / complex-statement) [ "else" (terminated-statement / complex-statement) ]
 loop                = "loop" block
 break-statement     = "break"
 continue-statement  = "continue"
@@ -132,8 +132,8 @@ return-statement    = "return" [expression]
 throw-statement     = "throw" [expression]
 
 ; Try-Catch-Finally
-try-catch           = "try" block *(catch-clause) ["finally" block]
-catch-clause        = "catch" "(" typename [identifier] ")" block
+try-catch           = "try" (terminated-statement / complex-statement) *(catch-clause) ["finally" (terminated-statement / complex-statement)]
+catch-clause        = "catch" "(" typename [identifier] ")" (terminated-statement / complex-statement)
 
 ; Switch
 switch              = "switch" "(" expression ")" "{" *case-statement [default-statement] "}"

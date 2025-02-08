@@ -4,15 +4,15 @@ using Hyperbee.Xs.Extensions;
 namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
-public class NuGetParseExtensionTests
+public class PackageParseExtensionTests
 {
     [TestMethod]
     public void Compile_ShouldSucceed_WithExtensions()
     {
         const string script =
             """
-            nuget Humanizer.Core;
-            import Humanizer;
+            package Humanizer.Core;
+            using Humanizer;
             
             var number = 123;
             number.ToWords();
@@ -20,7 +20,7 @@ public class NuGetParseExtensionTests
 
         var xsConfig = new XsConfig()
         {
-            Extensions = [new NuGetParseExtension()]
+            Extensions = [new PackageParseExtension()]
         };
 
         var xs = new XsParser( xsConfig );

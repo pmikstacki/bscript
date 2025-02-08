@@ -62,7 +62,7 @@ public partial class XsParser
         // Directives
 
         var directives = KeywordLookup<Expression>( "keyword-directives" )
-            .Add( ImportParser() )
+            .Add( UsingNamespaceParser() )
             .Add( config.Extensions.Statements( ExtensionType.Directive, expression, statement ) );
 
         // Compose Statements
@@ -280,10 +280,10 @@ public partial class XsParser
         return ZeroOrOne( Separated( Terms.Char( ',' ), TypeRuntime() ), [] );
     }
 
-    private static KeywordParserPair<Expression> ImportParser()
+    private static KeywordParserPair<Expression> UsingNamespaceParser()
     {
         return new(
-            "import",
+            "using",
             Terms.NamespaceIdentifier().ElseInvalidIdentifier()
                 .AndSkip( Terms.Char( ';' ) )
                 .Then<Expression>( ( ctx, parts ) =>
