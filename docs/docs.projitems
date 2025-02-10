@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
@@ -9,6 +9,8 @@
     <Import_RootNamespace>docs</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)debugging.md" />
+    <None Include="$(MSBuildThisFileDirectory)examples.md" />
     <None Include="$(MSBuildThisFileDirectory)language\async-await.md" />
     <None Include="$(MSBuildThisFileDirectory)language\casting.md" />
     <None Include="$(MSBuildThisFileDirectory)language\conditionals.md" />
@@ -16,7 +18,6 @@
     <None Include="$(MSBuildThisFileDirectory)language\for.md" />
     <None Include="$(MSBuildThisFileDirectory)language\foreach.md" />
     <None Include="$(MSBuildThisFileDirectory)language\generics.md" />
-    <None Include="$(MSBuildThisFileDirectory)grammar.md" />
     <None Include="$(MSBuildThisFileDirectory)index.md" />
     <None Include="$(MSBuildThisFileDirectory)language\lambdas.md" />
     <None Include="$(MSBuildThisFileDirectory)language\language.md" />
