@@ -178,13 +178,6 @@ var compiled = lambda.Compile();
 var result = compiled();
 ```
 
-#### **Performance**:
-
-- XS is optimized for runtime execution, with minimal parsing and compilation overhead.
-- By integrating FastExpressionCompiler, XS enables:
-  - Fast compilation into reloadable assemblies.
-  - Reduced memory usage and improved runtime throughput.
-
 ---
 
 ## **Getting Started with XS**
@@ -280,9 +273,9 @@ equivalent. For example whitespace, variable names and block closure may differ.
 
 ### **Conclusion**
 
-XS addresses a gap in the .NET ecosystem by simplifying the creation and management of expression trees while 
-enabling capabilities beyond what C# offers. With its lightweight design, advanced extensibility, and performance 
-optimizations, XS empowers developers to build robust, dynamic systems with minimal overhead and maximum flexibility.
+XS addresses a gap in the .NET ecosystem by simplifying the creation and management of expression trees. With its 
+lightweight design, advanced extensibility, and performance optimizations, XS empowers developers to build robust,
+dynamic systems with minimal overhead and maximum flexibility.
 
 ---
 
