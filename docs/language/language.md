@@ -1,6 +1,6 @@
 ---
 layout: default
-title: language
+title: Language
 has_children: true
 nav_order: 1
 ---
