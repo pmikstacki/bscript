@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 var value = 42;
 var myString = `The answer to life, the universe, and everything is {value}.`;
 ```

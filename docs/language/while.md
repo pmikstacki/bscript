@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 var x = 0;
 while (x < 42) {
     x++;

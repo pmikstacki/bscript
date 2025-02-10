@@ -11,7 +11,7 @@ Lambdas are anonymous functions that can be used to create inline functions. The
 
 ## Usage
 
-```xs
+```
 var add = (int x, int y) => x + y;
 var result = add(42, 10);
 result;

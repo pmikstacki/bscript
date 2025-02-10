@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 package Humanizer.Core:latest;
 using Humanizer;
             

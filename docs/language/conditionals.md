@@ -11,7 +11,7 @@ The `if` statement is used to perform different actions based on different test 
 
 ## Usage
 
-```xs
+```
 if (x == 42) {
     "The answer to everything.";
 } else {
@@ -19,7 +19,7 @@ if (x == 42) {
 };
 ```
 
-```xs
+```
 var result = if (x == 42) {
     "The answer to everything.";
 } else {

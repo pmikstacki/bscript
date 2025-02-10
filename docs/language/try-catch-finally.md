@@ -12,7 +12,7 @@ The `finally` block contains code that is always executed after the `try` block,
 
 ## Usage
 
-```xs
+```
 try {
     throw new Exception("An error occurred");
 } 

@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 for (var i = 0; i < 42; i++) {
     print(i);
 }

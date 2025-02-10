@@ -11,7 +11,7 @@ The `loop` construct is used to create an infinite loop that can be terminated u
 
 ## Usage
 
-```xs
+```
 var x = 0;
 loop {
     x++;

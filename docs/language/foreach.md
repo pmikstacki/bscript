@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 var list = [1, 2, 3];
 foreach (var item in list) {
     item;
