@@ -10,16 +10,7 @@ nav_order: 20
 Variables in XS are used to store data that can be referenced and manipulated in a program. 
 In XS, variables are declared using the `var` keyword.
 
-## Syntax
-
-```abnf
-; Variable Declarations
-declaration = "var" identifier [ "=" expression ]
-
-identifier = ALPHA *(ALPHA / DIGIT / "_")
-```
-
-## Examples
+## Usage
 
 ```xs
 var answer = 42;

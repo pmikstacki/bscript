@@ -9,17 +9,7 @@ nav_order: 14
 
 The `switch` statement evaluates an expression and executes the corresponding case block based on the value of the expression.
 
-## Syntax
-
-```abnf
-; Switch
-switch = "switch" "(" expression ")" "{" *case-statement [default-statement] "}"
-
-case-statement = "case" expression ":" *statement
-default-statement = "default" ":" *statement
-```
-
-## Examples
+## Usage
 
 ```xs
 var x = 42;

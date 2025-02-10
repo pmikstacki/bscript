@@ -7,16 +7,11 @@ nav_order: 21
 
 # While Loop
 
-The `while` loop is used to repeat a block of code while a specified condition is true. This construct requires the `Hyperbee.XS.Extensions` package.
+The `while` loop is used to repeat a block of code while a specified condition is true.
 
-## Syntax
+This construct requires the `Hyperbee.XS.Extensions` package.
 
-```abnf
-; While Loop
-while-loop = "while" "(" expression ")" statement
-```
-
-## Examples
+## Usage
 
 ```xs
 var x = 0;

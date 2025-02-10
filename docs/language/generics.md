@@ -9,6 +9,8 @@ nav_order: 7
 
 Generics in XS allow you to define classes, methods, and data structures with a placeholder for the type. This enables you to create reusable and type-safe code components.
 
+## Usage
+
 To create a generic type, use the following syntax:
 
 ```xs

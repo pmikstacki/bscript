@@ -35,7 +35,7 @@ debug();        // Unconditional debug breakpoint
 var debugger = new XsDebugger()
 {
     BreakMode = BreakMode.Call,  // DEBUG ON `debug()` CALLS
-    Callback = x =>
+    Handler = x =>
     {
         Console.WriteLine($"Debugging at Line: {x.Line}, Column: {x.Column} - {x.SourceLine}");
 
@@ -86,7 +86,7 @@ results;
 var debugger = new XsDebugger()
 {
     BreakMode = BreakMode.Statements, // DEBUG STATEMENTS
-    Callback = x =>
+    Handler = x =>
     {
         Console.WriteLine($"Debugging at Line: {x.Line}, Column: {x.Column} - {x.SourceLine}");
 

@@ -10,24 +10,16 @@ nav_order: 15
 The `try` block contains code that may throw an exception. The `catch` block contains code that handles the exception if one is thrown.
 The `finally` block contains code that is always executed after the `try` block, regardless of whether an exception was thrown.
 
-## Syntax
-
-```abnf
-; Try-Catch-Finally
-try-catch = "try" block *(catch-clause) ["finally" block]
-
-catch-clause = "catch" "(" typename [identifier] ")" block
-
-block = "{" *statement "}"
-typename = identifier *( "." identifier ) [generic-arguments]
-```
-
-## Examples
+## Usage
 
 ```xs
 try {
     throw new Exception("An error occurred");
-} catch (Exception e) {
+} 
+catch (Exception e) {
     e.Message;
+}
+finally {
+    // Finally block
 }
 ```

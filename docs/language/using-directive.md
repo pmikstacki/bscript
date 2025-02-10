@@ -9,14 +9,7 @@ nav_order: 19
 
 The `using` directive allows the use of types in a namespace so that you do not have to fully qualify them.
 
-## Syntax
-
-```abnf
-; Using Directive
-using-namespace = "using" namespace-identifier ";"
-```
-
-## Examples
+## Usage
 
 ```xs
 using namespace;

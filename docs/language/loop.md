@@ -9,16 +9,7 @@ nav_order: 9
 
 The `loop` construct is used to create an infinite loop that can be terminated using a `break` statement.
 
-## Syntax
-
-```abnf
-; Loop
-loop = "loop" block
-
-block = "{" *statement "}"
-```
-
-## Examples
+## Usage
 
 ```xs
 var x = 0;
