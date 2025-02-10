@@ -13,7 +13,7 @@ You can also enable statement debugging in the XS configuration to enable statem
 
 ## Breakpoints
 
-```xs
+```
 debug(expression); // Conditional debug breakpoint
 debug();           // Unconditional debug breakpoint
 ```
@@ -23,7 +23,7 @@ debug();           // Unconditional debug breakpoint
 This example sets up the debugger to break on every `debug()` call in the script.
 
 ### Debug Breakpoint Calls
-```xs
+```
 var x = 42;
 debug(x == 42); // Conditional debug breakpoint
 debug();        // Unconditional debug breakpoint
@@ -58,7 +58,7 @@ var result = compiled();
 This example sets up the debugger to break on every statement in the script.
 
 ### Debug Statement Stepping
-```xs
+```
 var results = new List<int>(5);
 
 var c = 0;
