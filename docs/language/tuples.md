@@ -13,13 +13,13 @@ Tuples in XS allow you to store multiple values in a single variable. They are u
 
 To create a tuple, use the following syntax:
 
-```xs
+```
 var tuple = (value1, value2, value3);
 ```
 
 You can access the elements of a tuple using the Item1, Item2, etc., properties:
 
-```xs
+```
 var tuple = (42, "Hitchhiker's Guide", true);
 var first = tuple.Item1;  // 42
 var second = tuple.Item2; // "Hitchhiker's Guide"

@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 using (var resource = new Resource()) {
     resource.DoSomething();
 }

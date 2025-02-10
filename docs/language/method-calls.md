@@ -11,7 +11,7 @@ Method calls are used to invoke methods on objects. You can pass arguments to th
 
 ## Usage
 
-```xs
+```
 var myObject = new MyClass();
 var result = myObject.MyMethod(42, "Hitchhiker's Guide");
 result;

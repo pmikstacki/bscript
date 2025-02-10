@@ -12,7 +12,7 @@ In XS, variables are declared using the `var` keyword.
 
 ## Usage
 
-```xs
+```
 var answer = 42;
 var question = "What is the meaning of life, the universe, and everything?";
 var result = `The answer to '{question}' is {answer}.`;

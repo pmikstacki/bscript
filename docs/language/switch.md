@@ -11,7 +11,7 @@ The `switch` statement evaluates an expression and executes the corresponding ca
 
 ## Usage
 
-```xs
+```
 var x = 42;
 var result = switch (x) {
     case 1: "One";

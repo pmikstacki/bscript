@@ -13,7 +13,7 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
-```xs
+```
 async {
     await Task.Delay(1000);
     // code to execute after delay

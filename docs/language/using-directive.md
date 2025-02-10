@@ -11,6 +11,6 @@ The `using` directive allows the use of types in a namespace so that you do not 
 
 ## Usage
 
-```xs
+```
 using namespace;
 ```
