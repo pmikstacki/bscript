@@ -9,15 +9,7 @@ nav_order: 4
 
 The `if` statement is used to perform different actions based on different test conditions. 
 
-## Syntax
-
-```abnf
-; Conditional Statements
-conditional = "if" "(" expression ")" (terminated-statement / block) [ "else" (terminated-statement / block) ]
-block       = "{" *statement "}"
-```
-
-## Examples
+## Usage
 
 ```xs
 if (x == 42) {

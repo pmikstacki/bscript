@@ -7,19 +7,11 @@ nav_order: 18
 
 # Using Statement
 
-The `using` statement ensures that the resource is disposed of when the block of code is exited. This construct requires the `Hyperbee.XS.Extensions` package.
+The `using` statement ensures that the resource is disposed of when the block of code is exited. 
 
-## Syntax
+This construct requires the `Hyperbee.XS.Extensions` package.
 
-```abnf
-; Using Statement
-using-disposable = "using" "(" declaration ")" block
-
-block = "{" *statement "}"
-declaration = "var" identifier [ "=" expression ]
-```
-
-## Examples
+## Usage
 
 ```xs
 using (var resource = new Resource()) {

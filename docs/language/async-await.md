@@ -9,17 +9,9 @@ nav_order: 2
 
 Async blocks are used to write asynchronous code. They allow you to await tasks without blocking the main thread.
 
-## Syntax
+This construct requires the `Hyperbee.XS.Extensions` package.
 
-```abnf
-; Async and Await Expressions
-async-block         = "async" block
-await-expression    = "await" expression
-
-block               = "{" *statement "}"
-```
-
-## Examples
+## Usage
 
 ```xs
 async {

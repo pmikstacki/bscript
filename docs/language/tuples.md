@@ -9,6 +9,8 @@ nav_order: 16
 
 Tuples in XS allow you to store multiple values in a single variable. They are useful for returning multiple values from a method or grouping related values together.
 
+## Usage
+
 To create a tuple, use the following syntax:
 
 ```xs
