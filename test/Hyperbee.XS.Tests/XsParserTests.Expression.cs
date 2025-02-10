@@ -5,7 +5,7 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class XsParserExpressionTests
 {
-    public XsParser Xs { get; } = new();
+    public static XsParser Xs { get; } = new();
 
     [TestMethod]
     public void Compile_ShouldSucceed_Constant()
@@ -37,6 +37,32 @@ public class XsParserExpressionTests
     public void Compile_ShouldSucceed_UnaryNot()
     {
         var expression = Xs.Parse( "!false;" );
+
+        var lambda = Lambda<Func<bool>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.IsTrue( result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_UnaryIsFalse()
+    {
+        var expression = Xs.Parse( "!?false;" );
+
+        var lambda = Lambda<Func<bool>>( expression );
+
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.IsTrue( result );
+    }
+
+    [TestMethod]
+    public void Compile_ShouldSucceed_UnaryIsTrue()
+    {
+        var expression = Xs.Parse( "?true;" );
 
         var lambda = Lambda<Func<bool>>( expression );
 

@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS.System.Parsers;
+using Hyperbee.XS.Core.Parsers;
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -35,7 +35,8 @@ public partial class XsParser
         var stringLiteral = Terms.String( StringLiteralQuotes.Double )
             .Then<Expression>( static value => Constant( value.ToString() ) );
 
-        var nullLiteral = Terms.Text( "null" ).Then<Expression>( static _ => Constant( null ) );
+        var nullLiteral = Terms.Text( "null" )
+            .Then<Expression>( static _ => Constant( null ) );
 
         var literal = OneOf(
             longLiteral,

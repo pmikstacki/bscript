@@ -1,14 +1,15 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using Hyperbee.XS.Core;
 
 namespace Hyperbee.XS.Tests;
 
 [TestClass]
 public class XsParserNewExpressionTests
 {
-    public XsParser Xs { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
-        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+        new XsConfig { ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ) }
     );
 
     [TestMethod]
@@ -16,7 +17,7 @@ public class XsParserNewExpressionTests
     {
         var expression = Xs.Parse(
             """
-            import Hyperbee.XS.Tests;
+            using Hyperbee.XS.Tests;
             new TestClass(42);
             """ );
 
@@ -35,7 +36,7 @@ public class XsParserNewExpressionTests
         {
             var expression = Xs.Parse(
                 """
-                import Hyperbee.XS.Tests;
+                using Hyperbee.XS.Tests;
                 new TestClass(42).PropertyThis.PropertyValue;
                 """ );
 
@@ -127,7 +128,11 @@ public class XsParserNewExpressionTests
 
         var expression = parser.Parse(
             """
-            new int[] { new int[] {10,20,30}, new int[] {40,50}, new int[] {60} };
+            new int[] { 
+                new int[] {10,20,30}, 
+                new int[] {40,50}, 
+                new int[] {60} 
+            };
             """ );
 
         var lambda = Expression.Lambda<Func<int[][]>>( expression );
@@ -223,7 +228,7 @@ public class XsParserNewExpressionTests
         {
             Xs.Parse(
             """
-            import ;
+            using ;
             new TestClass(42);
             """ );
         }
@@ -242,7 +247,7 @@ public class XsParserNewExpressionTests
         {
             Xs.Parse(
             """
-            import Hyperbee.XS.;
+            using Hyperbee.XS.;
             """ );
         }
         catch ( SyntaxException ex )

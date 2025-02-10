@@ -1,19 +1,38 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 
 namespace Hyperbee.XS.Tests;
 
 [TestClass]
 public class XsParserComplexTests
 {
-    public XsParser Xs { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()]
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
         }
     );
+
+
+    [TestMethod]
+    public void Compile_ShouldAllowDoubleAssignment()
+    {
+        var script = "var x = var y = 42; x;";
+
+        var expression = Xs.Parse( script );
+
+        var code = expression.ToExpressionString();
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        Assert.AreEqual( 42, result );
+    }
+
 
     [TestMethod]
     public void Compile_ShouldDemonstrateAllLanguageFeatures()
@@ -36,10 +55,11 @@ public class XsParserComplexTests
         var s = 3;
         switch (s)
         {
-            case 1: s = 1; break;
-            case 2: s = 2; break;
-            default: s = 42; break;
+            case 1: s = 1; goto there;
+            case 2: s = 2; goto there;
+            default: s = 42; goto there;
         }
+        there:
         results.Add(s);
         
         var t = 1;
@@ -78,11 +98,11 @@ public class XsParserComplexTests
         results;
         """;
 
-        var debugInfo = new XsDebugInfo()
+        var debugger = new XsDebugger()
         {
-            Debugger = ( l, c, v, m ) =>
+            Handler = d =>
             {
-                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
+                Console.WriteLine( $"Line: {d.Line}, Column: {d.Column}, Variables: {d.Variables}, Text: {d.SourceLine}" );
             },
             Breakpoints = [
                 new( 1 ),                // all of line 1   
@@ -90,7 +110,7 @@ public class XsParserComplexTests
             ]
         };
 
-        var expression = Xs.Parse( script, debugInfo );
+        var expression = Xs.Parse( script, debugger );
 
         var code = expression.ToExpressionString();
 
@@ -101,7 +121,8 @@ public class XsParserComplexTests
         Console.WriteLine( code );
 
         var lambda = Expression.Lambda<Func<List<int>>>( expression );
-        var compiled = lambda.Compile();
+
+        var compiled = lambda.Compile( preferInterpretation: true );
         var result = compiled();
 
         // Assertions for each feature

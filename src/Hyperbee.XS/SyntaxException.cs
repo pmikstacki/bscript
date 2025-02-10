@@ -1,4 +1,5 @@
-﻿using Parlot;
+﻿using Hyperbee.XS.Core;
+using Parlot;
 
 namespace Hyperbee.XS;
 
@@ -22,5 +23,14 @@ public class SyntaxException : Exception
         Buffer = cursor.Buffer;
     }
 
-    public override string Message => $"{base.Message} {Buffer.GetLine( Line, Column, true )}";
+    public override string Message
+    {
+        get
+        {
+            var sourceLine = BufferHelper.GetLine( Buffer, Offset, out var caret );
+            var caretLine = new string( ' ', caret ) + "^";
+
+            return $"({Line} {Column})\n{sourceLine}\n{caretLine}";
+        }
+    }
 }

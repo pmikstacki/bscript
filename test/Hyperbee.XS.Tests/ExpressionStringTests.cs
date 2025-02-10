@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
@@ -9,9 +10,17 @@ namespace Hyperbee.XS.Tests;
 [TestClass]
 public class ExpressionStringTests
 {
-    public XsParser Xs { get; set; } = new
+    private static readonly ScriptOptions ScriptOptions = ScriptOptions.Default.WithReferences(
+        [
+            "System",
+            "System.Linq.Expressions",
+            "Hyperbee.XS.Tests"
+        ]
+    );
+
+    public static XsParser Xs { get; set; } = new
     (
-        new XsConfig { References = [Assembly.GetExecutingAssembly()] }
+        new XsConfig { ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ) }
     );
 
     [TestMethod]
@@ -76,14 +85,15 @@ public class ExpressionStringTests
             {
                 case 1:
                     result = 1;
-                    break;
+                    goto there;
                 case 2:
                     result = 2;
-                    break;
+                    goto there;
                 default:
                     result = -1;
-                    break;
+                    goto there;
             }
+            there:
             result;
             """;
 
@@ -342,22 +352,189 @@ public class ExpressionStringTests
         await AssertScriptValue( code, result );
     }
 
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_IsTrueAndIsFalse()
+    {
+        var script = """
+            var x = ?true;
+            var y = !?false;
+            x && y;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<bool>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_TypeAs()
+    {
+        var script = """
+            var obj = "test";
+            var result = obj as? string;
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_Convert()
+    {
+        var script = """
+            var obj = "test";
+            var result = obj as string;
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_TypeIs()
+    {
+        var script = """
+            var obj = "test";
+            var result = (obj is string);
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<bool>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_CoalesceAssign()
+    {
+        var script = """
+            var x = "hello";
+            var result = default(string);
+            result ??= x;
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<string>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_PowerAssign()
+    {
+        var script = """
+            var x = 5;
+            var result = 2;
+            result **= x;
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_MathOperations()
+    {
+        var script = """
+            var x = 5;
+            var y = 10;
+            var result = x + y * 2 - (x / y);
+            result;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
+    [TestMethod]
+    public async Task ToExpressionString_ShouldCreate_AssignmentOperations()
+    {
+        var script = """
+            var x = 5;
+            x += 10;
+            x -= 3;
+            x *= 2;
+            x /= 4;
+            x;
+            """;
+
+        var expression = Xs.Parse( script );
+        var code = expression.ToExpressionString();
+
+        WriteResult( script, code );
+
+        var lambda = Expression.Lambda<Func<int>>( expression );
+        var compiled = lambda.Compile();
+        var result = compiled();
+
+        await AssertScriptValue( code, result );
+    }
+
     public async Task AssertScriptValue<T>( string code, T result )
     {
-        var scriptOptions = ScriptOptions.Default.WithReferences(
-            [
-                "System",
-                "System.Linq.Expressions",
-                "Hyperbee.XS.Tests"
-            ]
-         );
-        var name = typeof( T ).Name;
+        var typeName = typeof( T ).Name;
 
         var scriptResult = await CSharpScript.EvaluateAsync<T>(
             code +
-            $"var lambda = Expression.Lambda<Func<{name}>>( expression );" +
+            $"var lambda = Expression.Lambda<Func<{typeName}>>( expression );" +
             "var compiled = lambda.Compile();" +
-            "return compiled();", scriptOptions );
+            "return compiled();", ScriptOptions );
 
         Assert.AreEqual( result, scriptResult );
     }
@@ -372,5 +549,4 @@ public class ExpressionStringTests
         Console.WriteLine( code );
 #endif
     }
-
 }

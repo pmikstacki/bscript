@@ -1,9 +1,9 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using System.Reflection;
-using Hyperbee.XS.System;
-using Hyperbee.XS.System.Parsers;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Parsers;
 using Parlot.Fluent;
+using ReferenceManager = Hyperbee.XS.Core.ReferenceManager;
 
 namespace Hyperbee.XS;
 
@@ -11,9 +11,22 @@ public class XsConfig
 {
     public IReadOnlyCollection<IParseExtension> Extensions { get; set; } = ReadOnlyCollection<IParseExtension>.Empty;
 
-    public IReadOnlyCollection<Assembly> References { get; init; } = ReadOnlyCollection<Assembly>.Empty;
+    public ReferenceManager ReferenceManager { private get; init; }
+    internal Lazy<TypeResolver> Resolver { get; }
 
-    internal Lazy<TypeResolver> Resolver => new( new TypeResolver( References ) );
+    public XsConfig( Action<ReferenceManager> references = null )
+    {
+        // the ReferenceManager property is an initialization convenience for setting up the Resolver.
+        // if you don't set the ReferenceManager property, the Resolver will create one.
+
+        if ( references != null )
+        {
+            ReferenceManager = new ReferenceManager();
+            references( ReferenceManager );
+        }
+
+        Resolver = new( () => new TypeResolver( ReferenceManager ?? new ReferenceManager() ) );
+    }
 }
 
 internal static class XsConfigExtensions

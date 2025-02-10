@@ -6,9 +6,8 @@ XS is a lightweight scripting language designed to simplify and enhance the use 
 It provides a familiar C#-like syntax while offering advanced extensibility, making it a compelling choice for developers
 building domain-specific languages (DSLs), rules engines, or dynamic runtime logic systems.
 
-Unlike traditional approaches to expression trees, XS focuses on lowering the barrier for developers, eliminating the
-complexity of manually constructing and managing expression trees while enabling capabilities beyond what C# natively
-supports.
+XS lowers the barrier for developers who want to leverage expression trees, eliminating the complexity of manually constructing, 
+extending, and navigating expression tree syntax.
 
 ---
 
@@ -27,26 +26,20 @@ Developers typically avoid using expression trees for anything beyond trivial ca
 
 #### **XS's Contribution**:
 
-XS abstracts this complexity, allowing developers to write scripts that directly translate into efficient expression trees. 
-By automating the creation and management of these trees, XS reduces errors and development time.
+XS abstracts this complexity, allowing developers to write scripts that directly translate to and from expression trees. 
 
 ---
 
 ### **Extensibility Beyond Native Expression Trees**:
 
-C# expression trees lack support for modern language features such as `async/await`, `string interpolation`, and `using blocks`.
+XS is easy to extended to support new language features.
 
-XS enables developers to extend the language by adding new expressions, keywords, statements, and operators. This level
-of extensibility is unparalleled in the ecosystem and directly addresses common gaps in native expression trees.
+This is important because native C# expression trees lack support for modern language features such as `async/await`, 
+`string interpolation`, `for/foreach` loops, and `using statements`. XS provides full support for these features through
+extensions.
 
-For example, adding `async/await` support in C# expression trees is labor-intensive and involves creating custom state
-machines and `Task` objects manually. XS simplifies this by allowing developers to integrate `async` behaviors
-through a custom parser extension, as demonstrated by its built-in `async` block feature.
-
-Additional constructs like `using blocks`, `string interpolation`, `while`, `for`, and `foreach` illustrate how XS lets 
-developers to easily expand the language.
-
-Consider this example of a `foreach` loop in XS:
+Consider this example of a `foreach` loop in XS. `foreach` is not natively supported in C# expression trees, but XS 
+supports it through a custom `Expression` extension, that reduces to native `Expression`s.
 
   ```csharp
   var expression = XsParser.Parse(
@@ -72,22 +65,20 @@ Consider this example of a `foreach` loop in XS:
 
 XS allows developers to create and execute high-level logic like this without requiring manual tree construction.
 
-- **Challenge**: "How hard is it to extend the language?"
-
-  - **Response**: XS's `IParseExtension` interface makes extension straightforward and modular. Developers can focus on 
-  the high-level behavior of their custom expressions without needing to handle low-level parsing or tree construction 
-  manually. The design promotes rapid iteration and avoids the rigidity seen in alternative implementations.
+XS's `IParseExtension` interface makes extension straightforward and modular. Developers can focus on the high-level 
+behavior of their custom expressions without needing to handle low-level parsing or tree construction manually. 
   
 ---
 
 ### **Unified Syntax and Model**:
 
-In XS, **everything is an expression**, including control flow constructs. This design makes the language highly 
-composable and directly aligns with expression tree concepts, enabling features not directly possible in C#.
+In XS, **everything is an expression**, including language extensions. This design makes the language highly 
+composable and directly aligns with expression tree concepts, enabling features not always directly possible in C#
+(like implicit returns).
 
-Example: An `if` statement can return a value directly, allowing constructs like `c = if (true) { 42; } else { 0; };`. 
-This composability eliminates artificial boundaries between statements and expressions, resulting in a cleaner and more 
-intuitive scripting model.
+Example: An `if`, `switch`, and `block` statements can return a values directly, allowing constructs like
+`c = if (true) { 42; } else { 0; };`. This composability eliminates artificial boundaries between statements and 
+expressions, resulting in a cleaner and more intuitive scripting model.
 
 ---
 
@@ -96,8 +87,10 @@ intuitive scripting model.
 - Generates Expression Trees: XS generates standard expression trees, ensuring runtime performance is as good as-or 
 better than-handwritten expression trees.
 
-- Compiler Agnosticism: XS supports both `Expression.Compile()` and FastExpressionCompiler (FEC), giving developers 
-full control over how to execute scripts.
+- Compiler Agnosticism: XS supports both 
+[Expression.Compile()](https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression-1.compile) and 
+[FastExpressionCompiler (FEC)](https://github.com/dadhi/FastExpressionCompiler)), giving developers full control over 
+how to execute scripts.
 
 - Lightweight Parsing: XS is built on Parlot, a high-performance parser combinator that outperforms alternatives 
 like Sprache and Superpower in both speed and memory usage. XS avoids the bloat of Roslyn while still offering advanced
@@ -114,7 +107,7 @@ performance improvements and enabling dynamic updates without application restar
 ### **How Does XS Compare to Roslyn?**  
 
 **Different tools for different needs:** Roslyn is a full compiler designed for analyzing, transforming, and compiling 
-complete C# programs. XS is a **lightweight scripting engine optimized for runtime execution** and **expression tree generation**.  
+complete C# programs. XS is a lightweight parsing engine optimized for expression tree generation and execution.  
 
 #### **Why Use XS Instead of Roslyn for Runtime Execution?** 
 - Enhances Expressions – XS simplifies expression tree creation and management, enabling developers to focus on code, not AST syntax. 
@@ -125,7 +118,8 @@ complete C# programs. XS is a **lightweight scripting engine optimized for runti
 
 XS is **not a Roslyn replacement**—it serves a different purpose: **fast, lightweight, and embeddable runtime execution 
 without full compiler overhead**. If you need to compile and analyze full C# programs, Roslyn is the right tool. If 
-you need a small, efficient, and customizable scripting language for runtime execution, XS is a solid choice.
+you need a small, efficient, and customizable scripting language for runtime execution, or you want to easily generate expression 
+trees, XS is a solid choice.
 
 ---
 
@@ -169,28 +163,20 @@ XS supports `debug();` statements and line level debugging, allowing users to cr
 This feature automates a process that is laborious when using manual expression trees.
 
 ```
-    var debugInfo = new XsDebugInfo()
+var debugger = new XsDebugger()
+{
+    Handler = d =>
     {
-        Debugger = ( l, c, v, m ) =>
-        {
-            Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
-            Debugger.Break();
-        }
-    };
+        Console.WriteLine( $"Line: {d.Line}, Column: {d.Column}, Variables: {d.Variables}, Text: {d.SourceLine}" );
+    }
+};
 
-    var expression = Xs.Parse( script, debugInfo );
+var expression = Xs.Parse( script, debugger );
 
-    var lambda = Expression.Lambda<Func<List<int>>>( expression );
-    var compiled = lambda.Compile();
-    var result = compiled();
+var lambda = Expression.Lambda<Func<List<int>>>( expression );
+var compiled = lambda.Compile();
+var result = compiled();
 ```
-
-#### **Security**:
-
-- XS adopts an opt-in model for assembly references, ensuring that scripts can only access explicitly bound assemblies, 
-classes, and methods. This design prevents accidental exposure of sensitive APIs and supports secure, sandboxed execution.
-
-- Developers can also extend XS with custom security features (e.g., key management or access control).
 
 #### **Performance**:
 
@@ -207,50 +193,96 @@ To get started with XS, you need to set up a .NET project. Ensure you have .NET 
 
 Add the necessary packages:
 
-   ```
-   dotnet add package Hyperbee.XS
-   dotnet add package Hyperbee.XS.Extensions
-   ```
+```
+dotnet add package Hyperbee.XS
+dotnet add package Hyperbee.XS.Extensions
+```
 
 Create an XS script:
 
-    ```csharp
-    var config = new XsConfig { Extensions = Hyperbee.Xs.Extensions.XsExtensions };
-    var parser = new XsParser( config );
-    
-    var expression = XsParser.Parse(
-       """
-       var array = new int[] { 1,2,3 };
-       var x = 0;
-       
-       foreach ( var item in array )
-       {
-          x += item;
-       }
+```csharp
+var config = new XsConfig { Extensions = Hyperbee.Xs.Extensions.XsExtensions };
+var parser = new XsParser( config );
 
-       x + 12; // return the last expression
-       """ 
-    );
+var expression = XsParser.Parse(
+    """
+    var array = new int[] { 1,2,3 };
+    var x = 0;
     
-    var lambda = Lambda<Func<int>>( expression );
-    
-    var compiled = lambda.Compile();
-    var result = compiled();
-    
-    Assert.AreEqual( 42, result );
-    ```
+    foreach ( var item in array )
+    {
+      x += item;
+    }
+
+    x + 12; // return the last expression
+    """ 
+);
+
+var lambda = Lambda<Func<int>>( expression );
+
+var compiled = lambda.Compile();
+var result = compiled();
+
+Assert.AreEqual( 42, result );
+```
+
+---
+
+## **Additional Features**
+
+### **ToExpressionString()**
+
+XS provides a `ToExpressionString()` method that converts an expression tree into a string representing C# expression syntax.  For example:
+
+```csharp
+var expression = XsParser.Parse( "1 + 2 * 3;" );
+var expressionString = expression.ToExpressionString();
+```
+
+would output:
+
+```csharp
+var expression = Expression.Add( 
+  Expression.Constant( 1 ), 
+  Expression.Multiply( 
+    Expression.Constant( 2 ), 
+    Expression.Constant( 3 ) 
+  ) 
+);
+```
+
+### **ToXS()**
+
+XS also provides a `ToXS()` method that converts an expression tree into an XS script. For example:
+
+
+```csharp
+var expression = Expression.Add( 
+  Expression.Constant( 1 ), 
+  Expression.Multiply( 
+    Expression.Constant( 2 ), 
+    Expression.Constant( 3 ) 
+  ) 
+);
+var xs = expression.ToXS();
+```
+
+would output:
+
+```csharp
+1 + 2 * 3;
+```
+
+> Note: it is not guaranteed that the output will be the same as the original script, but it will be semantically 
+equivalent. For example whitespace, variable names and block closure may differ.
 
 ---
 
 ### **Conclusion**
 
-XS addresses a critical gap in the .NET ecosystem by simplifying the creation and management of expression trees while 
+XS addresses a gap in the .NET ecosystem by simplifying the creation and management of expression trees while 
 enabling capabilities beyond what C# offers. With its lightweight design, advanced extensibility, and performance 
 optimizations, XS empowers developers to build robust, dynamic systems with minimal overhead and maximum flexibility.
-
-By targeting use cases like DSLs, rule engines, and IoC frameworks, XS establishes itself as a unique and powerful tool 
-for modern .NET development. Its combination of performance, extensibility, and developer-friendly features ensures 
-long-term relevance and adaptability.
 
 ---
 

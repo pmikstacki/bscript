@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using Hyperbee.XS.System;
+using Hyperbee.XS.Core;
 using Parlot;
 using Parlot.Fluent;
 
@@ -9,23 +9,27 @@ namespace Hyperbee.XS;
 public class XsContext : ParseContext
 {
     public TypeResolver Resolver { get; }
-    public ParseScope Scope { get; } = new();
+
+    internal bool InitialScope { get; }
+    public ParseScope Scope { get; }
 
     public List<string> Namespaces { get; } = [];
 
     public bool RequireTermination { get; set; } = true;
 
-    public XsDebugInfo DebugInfo { get; init; }
+    public XsDebugger Debugger { get; init; }
 
 #if DEBUG
     public Stack<object> ParserStack { get; } = new();
 #endif
 
-    public XsContext( XsConfig config, XsDebugInfo debugInfo, Scanner scanner, bool useNewLines = false )
+    public XsContext( XsConfig config, XsDebugger debugger, Scanner scanner, ParseScope scope = null, bool useNewLines = false )
         : base( scanner, useNewLines )
     {
         Resolver = config.Resolver.Value;
-        DebugInfo = debugInfo;
+        Debugger = debugger;
+        Scope = scope ?? new ParseScope();
+        InitialScope = scope == null;
 
 #if DEBUG
         OnEnterParser += ( obj, ctx ) =>

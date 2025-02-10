@@ -1,12 +1,12 @@
 ﻿using System.Linq.Expressions;
 using Hyperbee.Expressions;
-using Hyperbee.XS.System;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 using Parlot.Fluent;
 
 namespace Hyperbee.Xs.Extensions;
 
-public class AwaitParseExtension : IParseExtension, IExtensionWriter
+public class AwaitParseExtension : IParseExtension, IExpressionWriter, IXsWriter
 {
     public ExtensionType Type => ExtensionType.Expression;
     public string Key => "await";
@@ -23,7 +23,7 @@ public class AwaitParseExtension : IParseExtension, IExtensionWriter
 
     public bool CanWrite( Expression node )
     {
-        return node is AwaitExpression awaitExpression;
+        return node is AwaitExpression;
     }
 
     public void WriteExpression( Expression node, ExpressionWriterContext context )
@@ -39,5 +39,16 @@ public class AwaitParseExtension : IParseExtension, IExtensionWriter
             writer.Write( ",\n" );
             writer.Write( "true", indent: true );
         }
+    }
+
+    public void WriteExpression( Expression node, XsWriterContext context )
+    {
+        if ( node is not AwaitExpression awaitExpression )
+            return;
+
+        using var writer = context.GetWriter();
+
+        writer.Write( "await " );
+        writer.WriteExpression( awaitExpression.Target );
     }
 }

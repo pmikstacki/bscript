@@ -1,18 +1,19 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using Hyperbee.Xs.Extensions;
-using Hyperbee.XS.System.Writer;
+using Hyperbee.XS.Core;
+using Hyperbee.XS.Core.Writer;
 
 namespace Hyperbee.XS.Extensions.Tests;
 
 [TestClass]
 public class DebugParseExtensionTests
 {
-    public XsParser Xs { get; set; } = new
+    public static XsParser Xs { get; set; } = new
     (
         new XsConfig
         {
-            References = [Assembly.GetExecutingAssembly()],
+            ReferenceManager = ReferenceManager.Create( Assembly.GetExecutingAssembly() ),
             Extensions = XsExtensions.Extensions()
         }
     );
@@ -40,10 +41,11 @@ public class DebugParseExtensionTests
         var s = 3;
         switch (s)
         {
-            case 1: s = 1; break;
-            case 2: s = 2; break;
-            default: s = 42; break;
+            case 1: s = 1; goto there;
+            case 2: s = 2; goto there;
+            default: s = 42; goto there;
         }
+        there:
         results.Add(s);
         
         var t = 1;
@@ -75,18 +77,21 @@ public class DebugParseExtensionTests
         var calc = (int a, int b) => a * b;
         results.Add( calc(6, 7) );
 
+        debug();
+        
         results;
         """;
 
-        var debugInfo = new XsDebugInfo()
+        var debugger = new XsDebugger()
         {
-            Debugger = ( l, c, v, m ) =>
+            BreakMode = BreakMode.Statements,
+            Handler = d =>
             {
-                Console.WriteLine( $"Line: {l}, Column: {c}, Variables: {v}, Message: {m}" );
+                Console.WriteLine( $"Line: {d.Line}, Column: {d.Column}, Variables: {d.Variables}, Text: {d.SourceLine}" );
             }
         };
 
-        var expression = Xs.Parse( script, debugInfo );
+        var expression = Xs.Parse( script, debugger );
 
         var code = expression.ToExpressionString();
 

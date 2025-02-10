@@ -1,24 +1,24 @@
 ---
 layout: default
 title: Extensions
-nav_order: 4
+nav_order: 5
 ---
 # Extensions
 
-XS supports extensibility by allowing developers to define **custom expressions** and integrate them directly into the parser. 
-This provides a clean and flexible way to extend the language syntax for specific use cases or additional functionality.
+XS supports extensibility by allowing developers to integrate **custom expressions** and syntax directly into the parser. 
 
-## **Steps to Add a Custom Expression**
+## **Steps to Extend XS**
 
-1. Create a custom Expression
-2. Create a parser Extension that defines the syntax for the custom Expression
-3. Register the extension with the parser
+1. Create a custom Expression.
+2. Create a parser Extension that defines the syntax for the custom Expression.
+3. Register the Extension with the parser.
+4. Use the Extension in your scripts .
 
 ## **Example: A Custom `RepeatExpression`**
 
 The `RepeatExpression` executes a block of code a specified number of times, similar to a `for` loop.
 
-### **1. Define a Custom Expression**
+### **1. Create a Custom Expression**
 
 ```csharp
 public class RepeatExpression : Expression
@@ -54,19 +54,20 @@ public class RepeatExpression : Expression
 }
 ```
 
-### **2. Create the Parser Extension Plugin**
+### **2. Create a Parser Extension**
 
-A plugin object includes logic to parse the `repeat` syntax and generate the custom `RepeatExpression`. The extension implements `IParserExtension`:
+An extension class includes logic to parse the `repeat` syntax and instantiate the custom `RepeatExpression`. Extensions implement `IParserExtension`:
 
+```csharp
 public interface IParseExtension
 {
     ExtensionType Type { get; }
     string Key { get; }
     Parser<Expression> CreateParser( ExtensionBinder binder );
 }
+```
 
-
-**Plugin Implementation:**
+**Repeat Parser Extension:**
 
 ```csharp
 public class RepeatParseExtension : IParseExtension
@@ -98,14 +99,14 @@ public class RepeatParseExtension : IParseExtension
 }
 ```
 
-### **3. Register the Custom Expression in the Parser**
+### **3. Register the Extension**
 
 ```csharp
 var config = new XsConfig { Extensions = [ new RepeatParseExtension() ] };
 var parser = new XsParser( config );
 ```
 
-### **4. Use the Custom Expression**
+### **4. Use the Extension**
 
 With the parser updated, you can now use the `repeat` keyword in your scripts:
 
@@ -120,9 +121,7 @@ repeat (5) {
 
 By using extensions, developers can:
 
-1. Introduce new syntax into XS.
-2. Implement custom expressions like `RepeatExpression`.
-3. Keep the parser modular and extensible.
-4. Integrate the custom expressions into the generated expression tree pipeline.
-
-This approach ensures that XS remains flexible, extensible, and adaptable to domain-specific needs with minimal effort.
+* Introduce new syntax into XS.
+* Implement custom expressions like `RepeatExpression`.
+* Keep the parser modular and extensible.
+* Integrate the custom expressions into the generated expression tree pipeline.
