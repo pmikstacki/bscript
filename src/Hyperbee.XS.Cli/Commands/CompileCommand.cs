@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Hyperbee.XS;
+using Hyperbee.XS.Core;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -12,7 +13,7 @@ internal class CompileCommand : Command<CompileCommand.Settings>
     internal sealed class Settings : RunSettings
     {
         [Description( "File to compile" )]
-        [CommandArgument( 0, "[file]" )]
+        [CommandArgument( 0, "<file>" )]
         public string ScriptFile { get; init; }
 
         [Description( "File path for the saved assembly" )]
@@ -38,16 +39,8 @@ internal class CompileCommand : Command<CompileCommand.Settings>
 
     public override int Execute( [NotNull] CommandContext context, [NotNull] Settings settings )
     {
-        if ( !File.Exists( settings.ScriptFile ) )
-        {
-            AnsiConsole.Markup( "[red]Invalid file[/]" );
-            return 1;
-        }
-
         try
         {
-            var xsConfig = new XsConfig( references => references.AddReference( AssemblyHelper.GetAssembly( settings.References ) ) );
-
             var script = File.ReadAllText( settings.ScriptFile );
 
             var result = Script.Compile(
@@ -57,7 +50,7 @@ internal class CompileCommand : Command<CompileCommand.Settings>
                 settings.ModuleName,
                 settings.ClassName,
                 settings.FunctionName,
-                xsConfig );
+                settings.CreateConfig() );
 
             AnsiConsole.MarkupInterpolated( $"[green]Result:[/] {result}\n" );
         }

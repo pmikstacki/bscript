@@ -69,13 +69,14 @@ public partial class ReferenceManager
         return _assemblyLoadContext.LoadFromAssemblyPath( assemblyPath );
     }
 
-    public async Task<IEnumerable<Assembly>> LoadPackageAsync( string packageId, string version = default, CancellationToken cancellation = default )
+    public async Task<IEnumerable<Assembly>> LoadPackageAsync( string packageId, string version = default, ILogger logger = default, CancellationToken cancellation = default )
     {
         version ??= "latest";
 
         var packagePath = await GetPackageAsync(
             packageId,
             version,
+            logger ?? NullLogger.Instance,
             cancellation
         ).ConfigureAwait( false );
 
@@ -85,7 +86,7 @@ public partial class ReferenceManager
         return LoadAssembliesFromPackage( packagePath );
     }
 
-    private async Task<string> GetPackageAsync( string packageId, string version, CancellationToken cancellation )
+    private async Task<string> GetPackageAsync( string packageId, string version, ILogger logger, CancellationToken cancellation )
     {
         var packageResource = await GetPackageResourceAsync( cancellation )
             .ConfigureAwait( false );
@@ -93,6 +94,7 @@ public partial class ReferenceManager
         var resolvedPackages = await ResolvePackageDependenciesAsync(
             packageId,
             version,
+            logger,
             cancellation
         ).ConfigureAwait( false );
 
@@ -136,7 +138,7 @@ public partial class ReferenceManager
             .ConfigureAwait( false );
     }
 
-    private static async Task<List<PackageIdentity>> ResolvePackageDependenciesAsync( string packageId, string version, CancellationToken cancellation )
+    private static async Task<List<PackageIdentity>> ResolvePackageDependenciesAsync( string packageId, string version, ILogger logger, CancellationToken cancellation )
     {
         var repository = Repository.Factory.GetCoreV3( NuGetSource );
 
@@ -148,7 +150,7 @@ public partial class ReferenceManager
             true,
             false,
             NullSourceCacheContext.Instance,
-            NullLogger.Instance,
+            logger,
             cancellation
         ).ConfigureAwait( false );
 
