@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Compile
+title: Repl
 parent: Cli
 nav_order: 3
 ---
