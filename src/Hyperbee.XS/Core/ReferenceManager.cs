@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Text.RegularExpressions;
+using Hyperbee.Collections;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Packaging;
