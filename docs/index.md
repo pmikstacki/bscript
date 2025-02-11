@@ -97,9 +97,9 @@ better than-handwritten expression trees.
 [FastExpressionCompiler (FEC)](https://github.com/dadhi/FastExpressionCompiler)), giving developers full control over 
 how to execute scripts.
 
-- Lightweight Parsing: XS is built on Parlot, a high-performance parser combinator that outperforms alternatives 
-like Sprache and Superpower in both speed and memory usage. XS avoids the bloat of Roslyn while still offering advanced
-language features, ensuring a lightweight and efficient runtime.
+- Lightweight Parsing: XS is built on [Parlot](https://github.com/sebastienros/parlot), a high-performance parser 
+combinator that outperforms alternatives like Sprache and Superpower in both speed and memory usage. XS avoids the 
+bloat of Roslyn while still offering advanced language features, ensuring a lightweight and efficient runtime.
 
 - No Overhead After Compilation: While parsing adds some overhead initially, once XS compiles a script into an 
 expression tree, the compiled tree can be reused repeatedly without additional parsing or runtime costs.
