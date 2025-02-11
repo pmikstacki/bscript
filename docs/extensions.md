@@ -56,16 +56,7 @@ public class RepeatExpression : Expression
 
 ### **2. Create a Parser Extension**
 
-An extension class includes logic to parse the `repeat` syntax and instantiate the custom `RepeatExpression`. Extensions implement `IParserExtension`:
-
-```csharp
-public interface IParseExtension
-{
-    ExtensionType Type { get; }
-    string Key { get; }
-    Parser<Expression> CreateParser( ExtensionBinder binder );
-}
-```
+An extension class includes logic to parse the `repeat` syntax and instantiate the custom `RepeatExpression`. 
 
 **Repeat Parser Extension:**
 
@@ -82,7 +73,7 @@ public class RepeatParseExtension : IParseExtension
         return Between(
             Terms.Char('('),
             expression,
-            Terms.Char(')
+            Terms.Char(')')
         )
         .And( 
              Between(
@@ -108,7 +99,7 @@ var parser = new XsParser( config );
 
 ### **4. Use the Extension**
 
-With the parser updated, you can now use the `repeat` keyword in your scripts:
+You can now use the `repeat` keyword in your scripts:
 
 ```plaintext
 var x = 0;
