@@ -5,17 +5,23 @@ using Microsoft.DotNet.Interactive.Formatting;
 
 namespace Hyperbee.XS.Interactive;
 
-public class XsKernelShow() :
-    XsBaseKernel( "xs-show" ),
+public class XsKernelShow : XsBaseKernel,
     IKernelCommandHandler<SubmitCode>
 {
+    public XsKernelShow() : base( "xs-show" )
+    {
+        KernelInfo.LanguageName = "XS (show)";
+        KernelInfo.Description = """
+                                 Show Expression Script as a C# expression tree
+                                 """;
+    }
+
     public Task HandleAsync( SubmitCode command, KernelInvocationContext context )
     {
         try
         {
-            var parser = Parser.Value;
-
-            parser.Parse( command.Code )
+            Parser.Value
+                .Parse( command.Code )
                 .ToExpressionString()
                 .Display( PlainTextFormatter.MimeType );
         }

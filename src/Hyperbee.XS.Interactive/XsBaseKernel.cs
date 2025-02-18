@@ -14,6 +14,9 @@ public class XsBaseKernel : Kernel
 
     public XsBaseKernel( string name ) : base( name )
     {
+        KernelInfo.LanguageVersion = "1.2";
+        KernelInfo.DisplayName = $"{KernelInfo.LocalName} - Expression Script";
+
         var typeResolver = TypeResolver.Create(
             typeof( object ).Assembly,
             typeof( Enumerable ).Assembly,

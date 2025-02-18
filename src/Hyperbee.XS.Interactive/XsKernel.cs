@@ -11,13 +11,20 @@ using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Interactive;
 
-public class XsKernel() :
-    XsBaseKernel( "xs" ),
+public class XsKernel : XsBaseKernel,
     IKernelCommandHandler<RequestValue>,
     IKernelCommandHandler<RequestValueInfos>,
     IKernelCommandHandler<SendValue>,
     IKernelCommandHandler<SubmitCode>
 {
+    public XsKernel() : base( "xs" )
+    {
+        KernelInfo.LanguageName = "XS";
+        KernelInfo.Description = """
+                                 Compile and run Expression Script
+                                 """;
+    }
+
     Task IKernelCommandHandler<SubmitCode>.HandleAsync( SubmitCode command, KernelInvocationContext context )
     {
         try

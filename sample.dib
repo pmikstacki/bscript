@@ -1,10 +1,10 @@
 #!meta
 
-{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"languageName":"csharp","name":"csharp"},{"aliases":[],"name":"razor"}]}}
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"languageName":"csharp","name":"csharp"},{"aliases":[],"name":"razor"},{"aliases":[],"name":"xs"},{"aliases":[],"name":"xs-show"}]}}
 
 #!pwsh
 
-$version = "1.2.1"
+$version = "1.2.2"
 dotnet pack -c Release
 
 copy src\Hyperbee.XS\bin\Release\Hyperbee.XS.$version.nupkg C:\Development\.nuget
@@ -37,12 +37,8 @@ x;
 
 #!xs
 
-#!xs
-
 var y = "hi";
 y;
-
-#!xs
 
 #!xs
 
@@ -79,7 +75,7 @@ display(complex);
 display(zSimple);
 zComplex.Name;
 
-#!xs
+#!csharp
 
 #!xs
 
