@@ -14,16 +14,7 @@ namespace Hyperbee.XS.Interactive.Tests;
 [TestClass]
 public class PackageParseExtensionTests
 {
-    public ExpressionVisitorConfig Config = new( "Expression.", "\t", "expression",
-            XsExtensions.Extensions().OfType<IExpressionWriter>().ToArray() );
-
-    public XsVisitorConfig XsConfig = new( "\t",
-            XsExtensions.Extensions().OfType<IXsWriter>().ToArray() );
-
-
     private Kernel _kernel;
-
-    private SubscribedList<KernelEvent> KernelEvents { get; set; }
 
     [TestInitialize]
     public async Task InitializeKernel()
@@ -36,15 +27,12 @@ public class PackageParseExtensionTests
         };
 
         await new XsKernelExtension().OnLoadAsync( _kernel );
-
-        KernelEvents = _kernel.KernelEvents.ToSubscribedList();
     }
 
     [TestCleanup]
     public void CleanUpKernel()
     {
         _kernel?.Dispose();
-        KernelEvents?.Dispose();
     }
 
     [TestMethod]
@@ -82,8 +70,10 @@ public class PackageParseExtensionTests
     {
         using var events = _kernel.KernelEvents.ToSubscribedList();
 
-        await _kernel.SubmitCodeAsync( """
+        await _kernel.SubmitCodeAsync( 
+            """
             #!xs
+
             var x = 40;
             #!whos
             """ );
@@ -114,8 +104,10 @@ public class PackageParseExtensionTests
     {
         using var events = _kernel.KernelEvents.ToSubscribedList();
 
-        await _kernel.SubmitCodeAsync( """
+        await _kernel.SubmitCodeAsync( 
+            """
             #!xs
+
             var x = 123;
             var y = "hello";
             #!whos
@@ -131,6 +123,7 @@ public class PackageParseExtensionTests
         await _kernel.SubmitCodeAsync(
             """
             #!xs
+
             var x = "world";
             #!whos
             """ );
@@ -149,8 +142,10 @@ public class PackageParseExtensionTests
     {
         using var events = _kernel.KernelEvents.ToSubscribedList();
 
-        await _kernel.SubmitCodeAsync( """
+        await _kernel.SubmitCodeAsync( 
+            """
             #!csharp
+
             var simple = "test";
             """ );
 
@@ -159,6 +154,7 @@ public class PackageParseExtensionTests
         await _kernel.SubmitCodeAsync(
             """
             #!xs
+
             #!share --from csharp --name "simple" --as "zSimple"
             #!whos
             """ );

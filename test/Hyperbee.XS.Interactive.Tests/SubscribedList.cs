@@ -4,7 +4,7 @@ namespace Hyperbee.XS.Interactive.Tests;
 
 public class SubscribedList<T> : IReadOnlyList<T>, IDisposable
 {
-    private ImmutableArray<T> _list = ImmutableArray<T>.Empty;
+    private ImmutableArray<T> _list = [];
     private readonly IDisposable _subscription;
 
     public SubscribedList( IObservable<T> source )
@@ -25,5 +25,5 @@ public class SubscribedList<T> : IReadOnlyList<T>, IDisposable
 
     public void Dispose() => _subscription.Dispose();
 
-    public void Clear() => _list = ImmutableArray<T>.Empty;
+    public void Clear() => _list = [];
 }
