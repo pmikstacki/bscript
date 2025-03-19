@@ -1,4 +1,5 @@
-﻿using static System.Linq.Expressions.Expression;
+﻿using Hyperbee.XS.Core.Writer;
+using static System.Linq.Expressions.Expression;
 
 namespace Hyperbee.XS.Tests;
 
@@ -7,8 +8,11 @@ public class XsParserReturnTests
 {
     public static XsParser Xs { get; } = new();
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithVoidReturn()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithVoidReturn( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -21,14 +25,16 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Action>( expression );
-        var compiled = lambda.Compile();
 
-        // Assert no exceptions occur
-        compiled();
+        var function = lambda.Compile( compiler );
+        function(); // No exceptions should be thrown
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithIntReturn()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithIntReturn( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -41,14 +47,18 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldFail_WithVoidAndIntReturnTypeMismatch()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldFail_WithVoidAndIntReturnTypeMismatch( CompilerType compiler )
     {
         try
         {
@@ -70,8 +80,11 @@ public class XsParserReturnTests
         }
     }
 
-    [TestMethod]
-    public void Compile_ShouldFail_WithMixedReturnTypes()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldFail_WithMixedReturnTypes( CompilerType compiler )
     {
         try
         {
@@ -93,8 +106,11 @@ public class XsParserReturnTests
         }
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithMatchingNestedReturns()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithMatchingNestedReturns( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -110,14 +126,18 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithReturnInLoop()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithReturnInLoop( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -131,14 +151,18 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithReturnInSwitch()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithReturnInSwitch( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -156,14 +180,18 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithVoidReturnInSwitch()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithVoidReturnInSwitch( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -181,9 +209,8 @@ public class XsParserReturnTests
             """ );
 
         var lambda = Lambda<Action>( expression );
-        var compiled = lambda.Compile();
 
-        // Assert no exceptions occur
-        compiled();
+        var function = lambda.Compile( compiler );
+        function(); // No exceptions should be thrown
     }
 }

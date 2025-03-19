@@ -18,15 +18,18 @@ public class XsParserExtensionsTests
         }
     );
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithExtensions()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithExtensions( CompilerType compiler )
     {
         var expression = Xs.Parse( "answer; // answer to everything" );
 
         var lambda = Lambda<Func<int>>( expression );
 
-        var compiled = lambda.Compile();
-        var result = compiled();
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }

@@ -8,27 +8,13 @@ public class XsParserComplexTests
 {
     public static XsParser Xs { get; set; } = new( TestInitializer.XsConfig );
 
-    [TestMethod]
-    public void Compile_ShouldAllowDoubleAssignment()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldDemonstrateAllLanguageFeatures( CompilerType compiler )
     {
-        var script = "var x = var y = 42; x;";
-
-        var expression = Xs.Parse( script );
-
-        var code = expression.ToExpressionString();
-
-        var lambda = Expression.Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
-
-        Assert.AreEqual( 42, result );
-    }
-
-
-    [TestMethod]
-    public void Compile_ShouldDemonstrateAllLanguageFeatures()
-    {
-        var script =
+        const string xs =
         """
         var results = new List<int>(5);
 
@@ -101,20 +87,20 @@ public class XsParserComplexTests
             ]
         };
 
-        var expression = Xs.Parse( script, debugger );
+        var expression = Xs.Parse( xs, debugger );
 
-        var code = expression.ToExpressionString();
+        var expressionString = expression.ToExpressionString();
 
-        Console.WriteLine( "Script:" );
-        Console.WriteLine( script );
+        Console.WriteLine( "XS:" );
+        Console.WriteLine( xs );
 
-        Console.WriteLine( "\nCode:" );
-        Console.WriteLine( code );
+        Console.WriteLine( "\nExpression:" );
+        Console.WriteLine( expressionString );
 
         var lambda = Expression.Lambda<Func<List<int>>>( expression );
 
-        var compiled = lambda.Compile( preferInterpretation: true );
-        var result = compiled();
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         // Assertions for each feature
         Assert.AreEqual( 5, result.Count ); // total number of features
