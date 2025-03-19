@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Hyperbee.Collections;
 using Hyperbee.XS.Core;
 using Hyperbee.XS.Core.Parsers;
 using Parlot;
@@ -12,8 +13,8 @@ namespace Hyperbee.XS;
 
 public partial class XsParser
 {
-    private readonly Parser<Expression> _xs;
-    private readonly XsConfig _config;
+    private Parser<Expression> _xs;
+    private XsConfig _config;
 
     public XsParser()
         : this( default )
@@ -24,6 +25,18 @@ public partial class XsParser
     {
         _config = config ?? new XsConfig();
         _xs = CreateParser( _config );
+    }
+
+    public void Reset( XsConfig config )
+    {
+        _config = config ?? new XsConfig();
+        _xs = CreateParser( _config );
+    }
+
+    public void AddExtensions( params IParseExtension[] extension )
+    {
+        _config.Extensions.AddRange( extension );
+        Reset( _config );
     }
 
     // Parse
@@ -283,14 +296,14 @@ public partial class XsParser
             "using",
             Terms.NamespaceIdentifier().ElseInvalidIdentifier()
                 .AndSkip( Terms.Char( ';' ) )
-                .Then( ( ctx, parts ) =>
+                .Then<Expression>( ( ctx, parts ) =>
                 {
                     var ns = parts.ToString();
 
                     if ( ctx is XsContext xsContext )
                         xsContext.Namespaces.Add( ns );
 
-                    return new DirectiveExpression( $"using {ns}" ) as Expression;
+                    return new DirectiveExpression( $"using {ns}" );
                 } )
         );
     }
@@ -339,7 +352,7 @@ public partial class XsParser
 
         var finalType = expressions[^1].Type;
         var returnLabel = scope.Frame.ReturnLabel;
-        var locals = scope.Variables.EnumerateValues( Collections.KeyScope.Current ).ToArray();
+        var locals = scope.Variables.EnumerateValues( LinkedNode.Current ).ToArray();
 
         if ( expressions.Count == 1 && locals.Length == 0 )
             return expressions[0];

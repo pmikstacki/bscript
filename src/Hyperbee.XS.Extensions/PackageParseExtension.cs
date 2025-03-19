@@ -20,7 +20,7 @@ public class PackageParseExtension : IParseExtension, IExpressionWriter, IXsWrit
         return Terms.NamespaceIdentifier()
             .And(
                 ZeroOrOne(
-                    Terms.Char( ':' ).SkipAnd( Terms.Identifier() )
+                    Terms.Char( ':' ).SkipAnd( Terms.String() )
                 )
             )
             .AndSkip( Terms.Char( ';' ) )
@@ -32,15 +32,16 @@ public class PackageParseExtension : IParseExtension, IExpressionWriter, IXsWrit
                 var packageId = parts.Item1.ToString();
                 var version = parts.Item2.ToString();
 
-                AsyncCurrentThreadHelper.RunSync( async () =>
-                {
-                    var resolver = xsContext.Resolver;
-                    var assemblies = await resolver.ReferenceManager.LoadPackageAsync( packageId, version );
-                    resolver.RegisterExtensionMethods( assemblies );
-                } );
+                AsyncCurrentThreadHelper.RunSync( async () => await Resolve( packageId, version, xsContext.Resolver ) );
 
                 return XsExpressionExtensions.Directive( $"package {packageId}{(!string.IsNullOrWhiteSpace( version ) ? $":{version}" : string.Empty)}" );
             } );
+    }
+
+    public static async Task Resolve( string packageId, string version, TypeResolver resolver )
+    {
+        var assemblies = await resolver.ReferenceManager.LoadPackageAsync( packageId, version );
+        resolver.RegisterExtensionMethods( assemblies );
     }
 
     public bool CanWrite( Expression node )
@@ -67,4 +68,3 @@ public class PackageParseExtension : IParseExtension, IExpressionWriter, IXsWrit
         writer.Write( directiveExpression.Directive );
     }
 }
-

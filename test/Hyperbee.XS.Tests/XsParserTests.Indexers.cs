@@ -7,8 +7,11 @@ public class XsParserIndexTests
 {
     public static XsParser Xs { get; set; } = new( TestInitializer.XsConfig );
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithIndexResult()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithIndexResult( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -17,14 +20,18 @@ public class XsParserIndexTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithMultiDimensionalIndexResult()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithMultiDimensionalIndexResult( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -33,14 +40,18 @@ public class XsParserIndexTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithIndexChaining()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithIndexChaining( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -48,14 +59,18 @@ public class XsParserIndexTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
-    public void Compile_ShouldSucceed_WithMethodChainingIndexResult()
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
+    public void Compile_ShouldSucceed_WithMethodChainingIndexResult( CompilerType compiler )
     {
         var expression = Xs.Parse(
             """
@@ -64,15 +79,19 @@ public class XsParserIndexTests
             """ );
 
         var lambda = Lambda<Func<int>>( expression );
-        var compiled = lambda.Compile();
-        var result = compiled();
+
+        var function = lambda.Compile( compiler );
+        var result = function();
 
         Assert.AreEqual( 42, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
+    [DataRow( CompilerType.Fast )]
+    [DataRow( CompilerType.System )]
+    [DataRow( CompilerType.Interpret )]
     [ExpectedException( typeof( SyntaxException ) )]
-    public void Compile_ShouldFail_WithUnclosedBracket()
+    public void Compile_ShouldFail_WithUnclosedBracket( CompilerType compiler )
     {
         try
         {
