@@ -17,16 +17,16 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 With a type:
 
 ```
-var service = inject<IService>();
+var service = inject<IService>;
 ```
 
 Or with a key:
 
 ```
-var service = inject<IService>("key");
+var service = inject<IService>::key;
 ```
 
-> Note: `inject` is only allowed when using the `Compile( serviceProvider )` that takes an IServicesProvider as an argument.
+> Note: `inject` is only allowed when using the `lambda.Compile( serviceProvider )` that takes an IServicesProvider as an argument.
 > ```csharp
 > var host = Host
 >     .CreateDefaultBuilder()

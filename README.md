@@ -9,6 +9,8 @@ who want to use dynamic code in their applications.
 XS lowers the barrier for developers who want to leverage expression trees, eliminating the complexity of manually constructing, 
 extending, and navigating expression tree syntax.
 
+See [XS documentation](https://stillpoint-software.github.io/hyperbee.xs/) for more details.
+
 ---
 
 ### **Why Does XS Matter?**
@@ -290,8 +292,8 @@ lightweight design, and advanced extensibility, XS helps developers build robust
 
 Special thanks to:
 
-- [Parlot](https://github.com/sebastienros/parlot) for the fast .NET parser combinator.
-- [Fast Expression Compiler](https://github.com/dadhi/FastExpressionCompiler) for improved performance.
+- [Parlot](https://github.com/sebastienros/parlot) for the fast .NET parser combinator. :heart:
+- [Fast Expression Compiler](https://github.com/dadhi/FastExpressionCompiler) for improved performance. :heart:
 - [Just The Docs](https://github.com/just-the-docs/just-the-docs) for the documentation theme.
 
 ## Contributing

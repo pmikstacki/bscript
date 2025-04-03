@@ -13,11 +13,17 @@ This construct requires the `Hyperbee.XS.Extensions` package.
 
 ## Usage
 
+With default type `string`:
 ```
-config<string>("config_key");
+config::config_key;
 ```
 
-> Note: `config` is only allowed when using the `Compile( serviceProvider )` that takes an IServicesProvider as an argument.
+With type:
+```
+config<int>::port.number;
+```
+
+> Note: `config` is only allowed when using the `lambda.Compile( serviceProvider )` that takes an IServicesProvider as an argument.
 > ```csharp
 > var host = Host
 >     .CreateDefaultBuilder()
@@ -26,6 +32,7 @@ config<string>("config_key");
 >         config.AddInMemoryCollection( new Dictionary<string, string>
 >         {
 >             {"config_key", "value"}
+>             {"port:number", "5001"}
 >         } );
 >     } )
 >     .Build();
