@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -21,9 +20,6 @@ public class TestService : ITestService
 
 public static class ServiceProvider
 {
-    public const string Key = "Hello";
-    public const string Value = "Hello, World!";
-
     public static IServiceProvider GetServiceProvider()
     {
         var host = Host.CreateDefaultBuilder()
@@ -36,7 +32,9 @@ public static class ServiceProvider
             {
                 config.AddInMemoryCollection( new Dictionary<string, string>
                 {
-                    {Key, Value}
+                    {"hello", "Hello, World!"},
+                    {"number", "10"},
+                    {"connections:sql:secure", "true"},
                 } );
             } )
             .Build();
