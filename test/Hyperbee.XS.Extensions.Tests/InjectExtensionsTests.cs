@@ -15,7 +15,7 @@ public class InjectExtensionsTests
         var expression = Xs.Parse(
             """
             using Hyperbee.XS.Extensions.Tests;
-            inject<ITestService>();
+            inject<ITestService>;
             """ );
 
         var lambda = Lambda<Func<ITestService>>( expression );
@@ -33,7 +33,7 @@ public class InjectExtensionsTests
         var expression = Xs.Parse(
             """
             using Hyperbee.XS.Extensions.Tests;
-            var service = inject<ITestService>();
+            var service = inject<ITestService>;
             service.DoSomething();
             """ );
 
@@ -52,7 +52,7 @@ public class InjectExtensionsTests
         var expression = Xs.Parse(
             """
             using Hyperbee.XS.Extensions.Tests;
-            inject<ITestService>("TestKey");
+            inject<ITestService>::TestKey;
             """ );
 
         var lambda = Lambda<Func<ITestService>>( expression );

@@ -196,7 +196,7 @@ public class ExpressionTreeStringTests
     public async Task ToExpressionTreeString_ShouldCreate_Inject()
     {
         var script = """
-                     inject<Hyperbee.XS.Extensions.Tests.ITestService>("TestKey").DoSomething();
+                     (inject<ITestService>::TestKey).DoSomething();
                      """;
 
         var expression = Xs.Parse( script );
@@ -215,7 +215,7 @@ public class ExpressionTreeStringTests
     public async Task ToExpressionTreeString_ShouldCreate_Config()
     {
         var script = """
-                     config<string>("Hello");
+                     config::Hello;
                      """;
 
         var expression = Xs.Parse( script );
@@ -447,7 +447,7 @@ public class ExpressionTreeStringTests
     public async Task ToXsString_ShouldCreate_Inject()
     {
         var script = """
-                     var service = inject<Hyperbee.XS.Extensions.Tests.ITestService>("TestKey");
+                     var service = inject<Hyperbee.XS.Extensions.Tests.ITestService>::TestKey;
                      service.DoSomething();
                      """;
 
@@ -470,7 +470,7 @@ public class ExpressionTreeStringTests
     public async Task ToXsString_ShouldCreate_Config()
     {
         var script = """
-                     config<string>("Hello");
+                     config<string>::hello;
                      """;
 
         var expression = Xs.Parse( script );

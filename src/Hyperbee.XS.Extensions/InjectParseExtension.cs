@@ -1,7 +1,5 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.Collections;
 using Hyperbee.Expressions;
-using Hyperbee.XS;
 using Hyperbee.XS.Core;
 using Hyperbee.XS.Core.Parsers;
 using Hyperbee.XS.Core.Writer;
@@ -17,16 +15,17 @@ public class InjectParseExtension : IParseExtension, IExpressionWriter, IXsWrite
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
+        //var myService = inject<IService>::Key;
         return Between(
                 Terms.Char( '<' ),
                 XsParsers.TypeRuntime(),
                 Terms.Char( '>' )
             )
             .And(
-                Between(
-                    Terms.Char( '(' ),
-                    ZeroOrOne( Terms.String( StringLiteralQuotes.Double ) ),
-                    Terms.Char( ')' )
+                ZeroOrOne( Terms.Text( "::" )
+                    .SkipAnd(
+                        Terms.NamespaceIdentifier()
+                    )
                 )
             )
             .Then<Expression>( static ( _, parts ) =>
@@ -72,13 +71,8 @@ public class InjectParseExtension : IParseExtension, IExpressionWriter, IXsWrite
 
         if ( injectExpression.Key != null )
         {
-            writer.Write( "(" );
-            writer.Write( $"\"{injectExpression.Key}\"" );
-            writer.Write( ")" );
-        }
-        else
-        {
-            writer.Write( "()" );
+            writer.Write( "::" );
+            writer.Write( injectExpression.Key );
         }
     }
 }

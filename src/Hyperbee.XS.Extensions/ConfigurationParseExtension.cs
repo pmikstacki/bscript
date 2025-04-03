@@ -1,7 +1,5 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.Collections;
 using Hyperbee.Expressions;
-using Hyperbee.XS;
 using Hyperbee.XS.Core;
 using Hyperbee.XS.Core.Parsers;
 using Hyperbee.XS.Core.Writer;
@@ -17,22 +15,27 @@ public class ConfigurationParseExtension : IParseExtension, IExpressionWriter, I
 
     public Parser<Expression> CreateParser( ExtensionBinder binder )
     {
-        return Between(
-                Terms.Char( '<' ),
-                XsParsers.TypeRuntime(),
-                Terms.Char( '>' )
-            )
-            .And(
+        // var mongo = config::connections.mongo;
+        // var isSecure = config<bool>::connections.sql.secure;
+
+        return ZeroOrOne(
                 Between(
-                    Terms.Char( '(' ),
-                    ZeroOrOne( Terms.String( StringLiteralQuotes.Double ) ),
-                    Terms.Char( ')' )
+                    Terms.Char( '<' ),
+                    XsParsers.TypeRuntime(),
+                    Terms.Char( '>' )
                 )
             )
+            .AndSkip( Terms.Text( "::" ) )
+            .And( Terms.NamespaceIdentifier() )
             .Then<Expression>( static ( _, parts ) =>
                 {
                     var (type, key) = parts;
-                    return ExpressionExtensions.ConfigurationValue( type, key.ToString() );
+
+                    if ( key == null )
+                        throw new InvalidOperationException( "Key must be specified." );
+
+                    var configKey = key.ToString()!.Replace( '.', ':' );
+                    return ExpressionExtensions.ConfigurationValue( type ?? typeof( string ), configKey );
                 }
             )
             .Named( "config" );
@@ -72,13 +75,8 @@ public class ConfigurationParseExtension : IParseExtension, IExpressionWriter, I
 
         if ( configurationExpression.Key != null )
         {
-            writer.Write( "(" );
-            writer.Write( $"\"{configurationExpression.Key}\"" );
-            writer.Write( ")" );
-        }
-        else
-        {
-            writer.Write( "()" );
+            writer.Write( "::" );
+            writer.Write( configurationExpression.Key.Replace( ':', '.' ) );
         }
     }
 }
