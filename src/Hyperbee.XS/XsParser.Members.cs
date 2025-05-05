@@ -19,7 +19,7 @@ public partial class XsParser
                     CloseBracket
                 )
             )
-            .Then( (ctx, indexes) =>
+            .Then( ( ctx, indexes ) =>
             {
                 var (_, resolver) = ctx;
 
