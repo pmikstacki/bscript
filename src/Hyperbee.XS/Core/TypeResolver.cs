@@ -11,11 +11,14 @@ public interface ITypeResolver
     Type ResolveType( string typeName );
     MethodInfo ResolveMethod( Type type, string methodName, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args );
     MemberInfo ResolveMember( Type type, string memberName );
-    Expression ResolveIndexerExpression( Expression targetExpression, IReadOnlyList<Expression> indexes );
-    Expression ResolveMemberExpression( Expression targetExpression, string name, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args );
+}
+public interface ITypeRewriter
+{
+    Expression RewriteIndexerExpression( Expression targetExpression, IReadOnlyList<Expression> indexes );
+    Expression RewriteMemberExpression( Expression targetExpression, string name, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args );
 }
 
-public class TypeResolver : ITypeResolver
+public class TypeResolver : ITypeResolver, ITypeRewriter
 {
     public ReferenceManager ReferenceManager { get; }
 
@@ -168,7 +171,7 @@ public class TypeResolver : ITypeResolver
         return type.GetMember( memberName, BindingAttr ).FirstOrDefault();
     }
 
-    public virtual Expression ResolveIndexerExpression( Expression targetExpression, IReadOnlyList<Expression> indexes )
+    public virtual Expression RewriteIndexerExpression( Expression targetExpression, IReadOnlyList<Expression> indexes )
     {
         var indexers = targetExpression.Type.GetProperties()
             .Where( p => p.GetIndexParameters().Length == indexes.Count )
@@ -193,7 +196,7 @@ public class TypeResolver : ITypeResolver
         return Expression.Property( targetExpression, indexer, indexes.ToArray() );
     }
 
-    public virtual Expression ResolveMemberExpression( Expression targetExpression, string name, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args )
+    public virtual Expression RewriteMemberExpression( Expression targetExpression, string name, IReadOnlyList<Type> typeArgs, IReadOnlyList<Expression> args )
     {
         var type = TypeOf( targetExpression );
 

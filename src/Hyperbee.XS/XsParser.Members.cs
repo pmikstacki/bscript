@@ -23,7 +23,7 @@ public partial class XsParser
             {
                 var (_, resolver) = ctx;
 
-                return resolver.ResolveIndexerExpression( targetExpression, indexes );
+                return resolver.RewriteIndexerExpression( targetExpression, indexes );
             }
         );
     }
@@ -43,10 +43,12 @@ public partial class XsParser
                             )
                         )
                         .And(
-                            Between(
-                                Terms.Char( '(' ),
-                                ArgsParser( expression ),
-                                Terms.Char( ')' )
+                            ZeroOrOne(
+                                Between(
+                                    Terms.Char( '(' ),
+                                    ArgsParser( expression ),
+                                    Terms.Char( ')' )
+                                )
                             )
                         )
                     )
@@ -60,7 +62,7 @@ public partial class XsParser
 
                 var (_, resolver) = ctx;
 
-                return resolver.ResolveMemberExpression( targetExpression, name, typeArgs, args );
+                return resolver.RewriteMemberExpression( targetExpression, name, typeArgs, args );
             } );
     }
 }
