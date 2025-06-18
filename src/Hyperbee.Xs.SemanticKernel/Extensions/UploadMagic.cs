@@ -62,13 +62,13 @@ public static class UploadMagic
 
         try
         {
-            KernelInvocationContextExtensions.Display( ctx,"about to upload", HtmlFormatter.MimeType );
+            KernelInvocationContextExtensions.Display( ctx, "about to upload", HtmlFormatter.MimeType );
             await fileHandler.UploadToAzureAsync( path );
             KernelInvocationContextExtensions.Display( ctx, $"Uploaded **{Path.GetFileName( path )}**", HtmlFormatter.MimeType );
         }
         catch ( Exception ex )
         {
-            ctx.Fail( cmd, message: ex.Message);
+            ctx.Fail( cmd, message: ex.Message );
         }
     }
 }

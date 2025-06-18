@@ -1,4 +1,4 @@
-using Microsoft.DotNet.Interactive.Commands;
+﻿using Microsoft.DotNet.Interactive.Commands;
 
 namespace Hyperbee.XS.SemanticKernel.Extensions;
 
