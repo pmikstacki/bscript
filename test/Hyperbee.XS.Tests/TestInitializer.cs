@@ -11,7 +11,7 @@ public static class TestInitializer
     public static XsConfig XsConfig { get; set; }
 
     [AssemblyInitialize]
-    public static void Initialize( TestContext _ )
+    public static void Initialize( FastExpressionCompiler.TestContext _ )
     {
         var typeResolver = TypeResolver.Create( Assembly.GetExecutingAssembly() );
 

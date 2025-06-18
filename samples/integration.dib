@@ -1,10 +1,10 @@
 #!meta
 
-{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"languageName":"csharp","name":"csharp"},{"aliases":[],"name":"razor"},{"aliases":[],"name":"xs"},{"aliases":[],"name":"xs-show"}]}}
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"razor"},{"name":"value"},{"name":"xs"},{"name":"xs-show"}]}}
 
 #!pwsh
 
-$version = "1.2.11"
+$version = "1.3.3"
 $config = "Debug"
 $nugetPath = "C:\Development\.nuget"
 dotnet pack "..\Hyperbee.XS.sln" -c $config
@@ -12,6 +12,7 @@ dotnet pack "..\Hyperbee.XS.sln" -c $config
 copy ..\src\Hyperbee.XS\bin\$config\Hyperbee.XS.$version.nupkg $nugetPath
 copy ..\src\Hyperbee.XS.Extensions\bin\$config\Hyperbee.XS.Extensions.$version.nupkg $nugetPath
 copy ..\src\Hyperbee.XS.Interactive\bin\$config\Hyperbee.XS.Interactive.$version.nupkg $nugetPath
+copy ..\src\Hyperbee.XS.SemanticKernel\bin\$config\Hyperbee.XS.SemanticKernel.$version.nupkg $nugetPath
 
 #!csharp
 
@@ -19,6 +20,7 @@ copy ..\src\Hyperbee.XS.Interactive\bin\$config\Hyperbee.XS.Interactive.$version
 #r "nuget:Hyperbee.XS"
 #r "nuget:Hyperbee.XS.Extensions"
 #r "nuget:Hyperbee.XS.Interactive"
+#r "nuget:Hyperbee.XS.SemanticKernel"
 
 #!xs
 
@@ -81,3 +83,11 @@ zComplex.Name;
 #!xs
 
 #!whos
+
+#!xs
+
+#!ask "how many strikes where in the GameID 63771?"
+
+#!xs
+
+#!upload "C:\Developer\Stillpoint\Matri\PitchByPitch.csv"
