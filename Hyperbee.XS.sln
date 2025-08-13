@@ -22,6 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\issue_branch.yml = .github\workflows\issue_branch.yml
 		.github\workflows\pack_publish.yml = .github\workflows\pack_publish.yml
 		.github\workflows\run_tests.yml = .github\workflows\run_tests.yml
+		.github\workflows\unlist_package.yml = .github\workflows\unlist_package.yml
 	EndProjectSection
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "docs", "docs\docs.shproj", "{FC3B0A95-4DA0-43A0-A19D-624152BDF2F6}"
