@@ -45,6 +45,7 @@
     <PackageReference Include="Hyperbee.Expressions" Version="1.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageReference Include="Parlot" Version="1.4.0" />
+    <PackageReference Include="System.Formats.Asn1" Version="6.0.1" />
     <ProjectReference Include="..\Hyperbee.XS\Hyperbee.XS.csproj" />
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>

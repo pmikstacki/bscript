@@ -300,3 +300,17 @@ Special thanks to:
 
 We welcome contributions! Please see our [Contributing Guide](https://github.com/Stillpoint-Software/.github/blob/main/.github/CONTRIBUTING.md) 
 for more details.
+
+
+# Status
+
+| Branch     | Action                                                                                                                                                                                                                      |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `develop`  | [![Build status](https://github.com/Stillpoint-Software/Hyperbee.XS/actions/workflows/pack_publish.yml/badge.svg?branch=develop)](https://github.com/Stillpoint-Software/Hyperbee.XS/actions/workflows/pack_publish.yml)  |
+| `main`     | [![Build status](https://github.com/Stillpoint-Software/Hyperbee.XS/actions/workflows/pack_publish.yml/badge.svg)](https://github.com/Stillpoint-Software/Hyperbee.XS/actions/workflows/pack_publish.yml)                 |
+
+# Help
+ See [Todo](https://github.com/Stillpoint-Software/Hyperbee.XS/blob/main/docs/todo.md)
+
+[![Hyperbee.XS](https://github.com/Stillpoint-Software/Hyperbee.XS/blob/main/assets/hyperbee.svg?raw=true)](https://github.com/Stillpoint-Software/Hyperbee.XS)
+
