@@ -39,7 +39,6 @@
           Pack="true"
           PackagePath="\"
     Link="README.md" />
-
     <None Include="$(MSBuildThisFileDirectory)LICENSE"
           Pack="true"
           PackagePath="\"
