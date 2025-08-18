@@ -7,7 +7,7 @@ public class XsParserNewTests
 {
     public static XsParser Xs { get; set; } = new( TestInitializer.XsConfig );
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -28,7 +28,7 @@ public class XsParserNewTests
         Assert.AreEqual( 42, result.PropertyValue );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -55,7 +55,7 @@ public class XsParserNewTests
         }
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -74,7 +74,7 @@ public class XsParserNewTests
         Assert.AreEqual( 5, result.Length );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -93,7 +93,7 @@ public class XsParserNewTests
         Assert.AreEqual( 10, result.Length );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -114,7 +114,7 @@ public class XsParserNewTests
         Assert.AreEqual( 2, result.Length );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -135,7 +135,7 @@ public class XsParserNewTests
         Assert.AreEqual( 2, result.Count );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -167,7 +167,7 @@ public class XsParserNewTests
 
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -186,7 +186,7 @@ public class XsParserNewTests
         Assert.IsInstanceOfType<List<int>>( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -206,7 +206,7 @@ public class XsParserNewTests
         Assert.AreEqual( 0, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -226,15 +226,14 @@ public class XsParserNewTests
         Assert.IsNull( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithDefaultInvalid( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
                 """
@@ -248,18 +247,16 @@ public class XsParserNewTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidImport( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
             """
@@ -272,18 +269,16 @@ public class XsParserNewTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidImportMissingIdentifier( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
             """
@@ -295,6 +290,5 @@ public class XsParserNewTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 }

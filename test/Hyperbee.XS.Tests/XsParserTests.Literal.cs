@@ -11,7 +11,7 @@ public class XsParserLiteralTests
 {
     public static XsParser Xs { get; } = new();
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -27,7 +27,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( "Some String", result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -42,7 +42,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 'c', result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -57,7 +57,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 12345, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -72,7 +72,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 12345, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -87,7 +87,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 12345L, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -102,7 +102,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 123.45F, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -117,7 +117,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 123.45D, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -132,7 +132,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 123.45D, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -147,7 +147,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( "123.45", result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -162,7 +162,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( "130.45", result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -177,7 +177,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 12345, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     //[DataRow( CompilerType.Fast )]  // Issue: https://github.com/dadhi/FastExpressionCompiler/pull/456
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -192,7 +192,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 12345, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     //[DataRow( CompilerType.Fast )]  // Issue: https://github.com/dadhi/FastExpressionCompiler/pull/456
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -207,7 +207,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( null, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     //[DataRow( CompilerType.Fast )]  // Issue: https://github.com/dadhi/FastExpressionCompiler/pull/456
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -222,7 +222,7 @@ public class XsParserLiteralTests
         Assert.AreEqual( 10, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     //[DataRow( CompilerType.Fast )]  // Issue: https://github.com/dadhi/FastExpressionCompiler/pull/456
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -237,15 +237,14 @@ public class XsParserLiteralTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithUnclosedString( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
                 """
@@ -258,18 +257,16 @@ public class XsParserLiteralTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithUnclosedParenthesis( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
                 """
@@ -282,18 +279,16 @@ public class XsParserLiteralTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidCharacter( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
                 """
@@ -306,7 +301,6 @@ public class XsParserLiteralTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 }
 

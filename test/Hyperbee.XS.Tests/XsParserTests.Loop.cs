@@ -7,7 +7,7 @@ public class XsParserLoopTests
 {
     public static XsParser Xs { get; } = new();
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -36,11 +36,10 @@ public class XsParserLoopTests
     }
 
     [TestMethod]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithMissingBrace()
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse(
             """
@@ -61,7 +60,6 @@ public class XsParserLoopTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 }
 

@@ -7,7 +7,7 @@ public class XsParserExpressionTests
 {
     public static XsParser Xs { get; } = new();
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -23,7 +23,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 5, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -39,7 +39,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 2, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -55,7 +55,7 @@ public class XsParserExpressionTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -71,7 +71,7 @@ public class XsParserExpressionTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -87,7 +87,7 @@ public class XsParserExpressionTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -103,7 +103,7 @@ public class XsParserExpressionTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -119,7 +119,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 22, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -135,7 +135,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 36, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -151,7 +151,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 44, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -167,7 +167,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 44, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -183,7 +183,7 @@ public class XsParserExpressionTests
         Assert.IsTrue( result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -199,7 +199,7 @@ public class XsParserExpressionTests
         Assert.AreEqual( 8, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -215,15 +215,14 @@ public class XsParserExpressionTests
         Assert.AreEqual( 25, result );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidOperator( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse( "x = 5 $ 10;" );
         }
@@ -232,18 +231,16 @@ public class XsParserExpressionTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidMathOperator( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse( "5 ++ 10;" );
         }
@@ -252,18 +249,16 @@ public class XsParserExpressionTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithInvalidGrouping( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse( "(5 **) 2;" );
         }
@@ -272,18 +267,16 @@ public class XsParserExpressionTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
+    [ExpectedException( typeof( SyntaxException ) )]
     public void Compile_ShouldFail_WithMissingRight( CompilerType compiler )
     {
-        Assert.ThrowsExactly<SyntaxException>( () =>
-        {
-            try
+        try
         {
             Xs.Parse( "5 +;" );
         }
@@ -292,6 +285,5 @@ public class XsParserExpressionTests
             Console.WriteLine( ex.Message );
             throw;
         }
-        } );
     }
 }
