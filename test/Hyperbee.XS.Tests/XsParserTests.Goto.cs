@@ -7,7 +7,7 @@ public class XsParserGotoTests
 {
     public static XsParser Xs { get; } = new();
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]

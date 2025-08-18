@@ -18,7 +18,7 @@ public class XsParserExtensionsTests
         }
     );
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]

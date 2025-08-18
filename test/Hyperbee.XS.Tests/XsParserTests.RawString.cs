@@ -8,7 +8,7 @@ public class XsParserRawStringTests
 {
     public static XsParser Xs { get; set; } = new( TestInitializer.XsConfig );
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
@@ -29,7 +29,7 @@ public class XsParserRawStringTests
     }
 
 
-    [TestMethod]
+    [DataTestMethod]
     [DataRow( CompilerType.Fast )]
     [DataRow( CompilerType.System )]
     [DataRow( CompilerType.Interpret )]
