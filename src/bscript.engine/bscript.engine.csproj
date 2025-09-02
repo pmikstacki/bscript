@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>true</IsPackable>
+    
+    <Authors>Stillpoint Software, Inc.</Authors>
+    <PackageId>bscript.engine</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>expressions;script</PackageTags>
+
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://stillpoint-software.github.io/hyperbee.xs/</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Copyright>Stillpoint Software, Inc.</Copyright>
+    <Title>Hyperbee Expression Script [XS]</Title>
+    <Description>XS: A Lightweight, Extensible Scripting Language for Expression Trees.</Description>
+    <RepositoryUrl>https://github.com/Stillpoint-Software/Hyperbee.XS</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>https://github.com/Stillpoint-Software/Hyperbee.XS/releases/latest</PackageReleaseNotes>
+    <RootNamespace>bscript</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="$(MSBuildProjectName).csproj.DotSettings" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Benchmark</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\assets\icon.png" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="..\..\LICENSE" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="..\..\NOTICES" Pack="true" Visible="false" PackagePath="/" />
+    <PackageReference Include="Hyperbee.Collections" Version="2.4.0" />
+    <PackageReference Include="Hyperbee.Expressions" Version="1.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <PackageReference Include="NuGet.Configuration" Version="6.13.2" />
+    <PackageReference Include="NuGet.DependencyResolver.Core" Version="6.13.2" />
+    <PackageReference Include="NuGet.Packaging" Version="6.13.2" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.13.2" />
+    <PackageReference Include="NuGet.Protocol" Version="6.13.2" />
+    <PackageReference Include="Parlot" Version="1.3.6" />
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

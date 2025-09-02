@@ -25,10 +25,10 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageIcon>assets/icon.png</PackageIcon>
-    <PackageReleaseNotes>https://github.com/Stillpoint-Software/Hyperbee.XS/releases/latest</PackageReleaseNotes>
-    <RepositoryUrl>https://github.com/Stillpoint-Software/Hyperbee.XS</RepositoryUrl>
+    <PackageReleaseNotes>https://github.com/Stillpoint-Software/bscript.XS/releases/latest</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/Stillpoint-Software/bscript.XS</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/Stillpoint-Software/Hyperbee.XS</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Stillpoint-Software/bscript.XS</PackageProjectUrl>
   </PropertyGroup>
 
   <!-- Pull README & LICENSE into the package root -->
