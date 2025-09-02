@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 using FastExpressionCompiler;
-using Hyperbee.XS;
+
 using static System.Linq.Expressions.Expression;
 
 namespace bscript.Tests;

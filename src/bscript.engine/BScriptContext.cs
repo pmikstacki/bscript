@@ -6,7 +6,7 @@ using Parlot.Fluent;
 
 namespace bscript;
 
-public class XsContext : ParseContext
+public class BScriptContext : ParseContext
 {
     public TypeResolver Resolver { get; }
 
@@ -17,13 +17,13 @@ public class XsContext : ParseContext
 
     public bool RequireTermination { get; set; } = true;
 
-    public XsDebugger Debugger { get; init; }
+    public BScriptDebugger Debugger { get; init; }
 
 #if DEBUG
     public Stack<object> ParserStack { get; } = new();
 #endif
 
-    public XsContext( XsConfig config, XsDebugger debugger, Scanner scanner, ParseScope scope = null, bool useNewLines = false )
+    public BScriptContext( BScriptConfig config, BScriptDebugger debugger, Scanner scanner, ParseScope scope = null, bool useNewLines = false )
         : base( scanner, useNewLines )
     {
         Resolver = config.Resolver;
@@ -63,7 +63,7 @@ public static class XsContextExtensions
 {
     public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver )
     {
-        if ( context is XsContext xsContext )
+        if ( context is BScriptContext xsContext )
         {
             (scope, resolver) = xsContext;
             return;
@@ -75,7 +75,7 @@ public static class XsContextExtensions
 
     public static void Deconstruct( this ParseContext context, out ParseScope scope, out TypeResolver resolver, out Frame frame )
     {
-        if ( context is XsContext xsContext )
+        if ( context is BScriptContext xsContext )
         {
             (scope, resolver, frame) = xsContext;
             return;
@@ -89,7 +89,7 @@ public static class XsContextExtensions
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public static ParseScope Scope( this ParseContext context )
     {
-        if ( context is not XsContext xsContext )
+        if ( context is not BScriptContext xsContext )
             throw new NotImplementedException( "Context does not implement Scope." );
 
         return xsContext.Scope;

@@ -1,12 +1,13 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS;
+using bscript.Core.Writer;
+
 
 namespace bscript.Tests;
 
 [TestClass]
 public class XsStringTests
 {
-    public static BScriptParser BScript { get; set; } = new( TestInitializer.XsConfig );
+    public static BScriptParser BScript { get; set; } = new( TestInitializer.BScriptConfig );
 
     [TestMethod]
     public void ToXS_ShouldCreate_NestedLambdas()

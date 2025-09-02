@@ -5,7 +5,7 @@ using Parlot.Fluent;
 
 namespace bscript;
 
-public class XsConfig( TypeResolver resolver = null )
+public class BScriptConfig( TypeResolver resolver = null )
 {
     public List<IParseExtension> Extensions { get; init; } = [];
     internal TypeResolver Resolver { get; } = resolver ?? new TypeResolver( new ReferenceManager() );

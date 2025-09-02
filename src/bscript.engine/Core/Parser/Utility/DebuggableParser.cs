@@ -12,8 +12,8 @@ public static partial class XsParsers
     {
         return parser.Then( ( context, statement ) =>
         {
-            if ( context is not XsContext xsContext )
-                throw new InvalidOperationException( $"Context must be of type {nameof( XsContext )}." );
+            if ( context is not BScriptContext xsContext )
+                throw new InvalidOperationException( $"Context must be of type {nameof( BScriptContext )}." );
 
             if ( xsContext.Debugger == null || xsContext.Debugger.BreakMode != BreakMode.Statements )
                 return statement;

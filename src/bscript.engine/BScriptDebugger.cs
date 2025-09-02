@@ -11,14 +11,14 @@ public enum BreakMode
 
 public struct DebugBreak
 {
-    public XsDebugger Debugger { get; init; }
+    public BScriptDebugger Debugger { get; init; }
     public int Line { get; init; }
     public int Column { get; init; }
     public string SourceLine { get; init; }
     public ReadOnlyDictionary<string, object> Variables { get; init; }
 }
 
-public class XsDebugger
+public class BScriptDebugger
 {
     public List<Breakpoint> Breakpoints { get; set; }
     public DebuggerCallback Handler { private get; init; }

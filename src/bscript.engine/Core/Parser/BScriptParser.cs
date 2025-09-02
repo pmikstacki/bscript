@@ -14,22 +14,22 @@ namespace bscript;
 public partial class BScriptParser
 {
     private Parser<Expression> _xs;
-    private XsConfig _config;
+    private BScriptConfig _config;
 
     public BScriptParser()
         : this( default )
     {
     }
 
-    public BScriptParser( XsConfig config )
+    public BScriptParser( BScriptConfig config )
     {
-        _config = config ?? new XsConfig();
+        _config = config ?? new BScriptConfig();
         _xs = CreateParser( _config );
     }
 
-    public void Reset( XsConfig config )
+    public void Reset( BScriptConfig config )
     {
-        _config = config ?? new XsConfig();
+        _config = config ?? new BScriptConfig();
         _xs = CreateParser( _config );
     }
 
@@ -41,10 +41,10 @@ public partial class BScriptParser
 
     // Parse
 
-    public Expression Parse( string script, XsDebugger debugger = null, ParseScope scope = null )
+    public Expression Parse( string script, BScriptDebugger debugger = null, ParseScope scope = null )
     {
         var scanner = new Scanner( script );
-        var context = new XsContext( _config, debugger, scanner, scope ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
+        var context = new BScriptContext( _config, debugger, scanner, scope ) { WhiteSpaceParser = WhitespaceOrNewLineOrComment() };
 
         try
         {
@@ -58,7 +58,7 @@ public partial class BScriptParser
 
     // Parsers
 
-    private static Parser<Expression> CreateParser( XsConfig config )
+    private static Parser<Expression> CreateParser( BScriptConfig config )
     {
         var statement = Deferred<Expression>();
 
@@ -102,7 +102,7 @@ public partial class BScriptParser
         return SynthesizeMethod( xs );
     }
 
-    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, XsConfig config )
+    private static Parser<Expression> ExpressionParser( Deferred<Expression> statement, BScriptConfig config )
     {
         var expression = Deferred<Expression>();
 
@@ -300,7 +300,7 @@ public partial class BScriptParser
                 {
                     var ns = parts.ToString();
 
-                    if ( ctx is XsContext xsContext )
+                    if ( ctx is BScriptContext xsContext )
                         xsContext.Namespaces.Add( ns );
 
                     return new DirectiveExpression( $"using {ns}" );
@@ -313,7 +313,7 @@ public partial class BScriptParser
         return Bounded(
             static ctx =>
             {
-                if ( ctx is not XsContext xsContext || xsContext.InitialScope )
+                if ( ctx is not BScriptContext xsContext || xsContext.InitialScope )
                     ctx.EnterScope( FrameType.Method );
             },
             parser.Then( ( ctx, parts ) =>
@@ -323,7 +323,7 @@ public partial class BScriptParser
             } ),
             static ctx =>
             {
-                if ( ctx is not XsContext xsContext || xsContext.InitialScope )
+                if ( ctx is not BScriptContext xsContext || xsContext.InitialScope )
                     ctx.ExitScope();
 
                 ThrowIfNotEof( ctx );

@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS;
+using bscript.Core.Writer;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
@@ -16,7 +16,7 @@ public class ExpressionStringTests
         ]
     );
 
-    public static BScriptParser BScript { get; set; } = new( TestInitializer.XsConfig );
+    public static BScriptParser BScript { get; set; } = new( TestInitializer.BScriptConfig );
 
     [TestMethod]
     public async Task ToExpressionString_ShouldCreate_NestedLambdas()

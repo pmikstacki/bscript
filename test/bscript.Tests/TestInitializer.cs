@@ -2,22 +2,20 @@
 using System.Reflection;
 using bscript.Core;
 using FastExpressionCompiler;
-using Hyperbee.XS;
-using Hyperbee.XS.Core;
 
 namespace bscript.Tests;
 
 [TestClass]
 public static class TestInitializer
 {
-    public static XsConfig XsConfig { get; set; }
+    public static BScriptConfig BScriptConfig { get; set; }
 
     [AssemblyInitialize]
     public static void Initialize( TestContext _ )
     {
         var typeResolver = TypeResolver.Create( Assembly.GetExecutingAssembly() );
 
-        XsConfig = new XsConfig( typeResolver );
+        BScriptConfig = new BScriptConfig( typeResolver );
     }
 }
 

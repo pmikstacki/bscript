@@ -1,4 +1,4 @@
-﻿using Hyperbee.XS;
+﻿
 using static System.Linq.Expressions.Expression;
 
 namespace bscript.Tests;
@@ -6,7 +6,7 @@ namespace bscript.Tests;
 [TestClass]
 public class XsParserRawStringTests
 {
-    public static BScriptParser BScript { get; set; } = new( TestInitializer.XsConfig );
+    public static BScriptParser BScript { get; set; } = new( TestInitializer.BScriptConfig );
 
     [DataTestMethod]
     [DataRow( CompilerType.Fast )]

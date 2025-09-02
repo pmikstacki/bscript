@@ -1,12 +1,13 @@
 ﻿using System.Linq.Expressions;
-using Hyperbee.XS;
+using bscript.Core.Writer;
+
 
 namespace bscript.Tests;
 
 [TestClass]
 public class XsParserComplexTests
 {
-    public static BScriptParser BScript { get; set; } = new( TestInitializer.XsConfig );
+    public static BScriptParser BScript { get; set; } = new( TestInitializer.BScriptConfig );
 
     [DataTestMethod]
     [DataRow( CompilerType.Fast )]
@@ -75,7 +76,7 @@ public class XsParserComplexTests
         results;
         """;
 
-        var debugger = new XsDebugger()
+        var debugger = new BScriptDebugger()
         {
             Handler = d =>
             {

@@ -114,7 +114,7 @@ internal class TypeRuntimeParser : Parser<Type>
         {
             // Check namespaces if any
 
-            if ( context is XsContext xsContext )
+            if ( context is BScriptContext xsContext )
             {
                 foreach ( var ns in xsContext.Namespaces )
                 {

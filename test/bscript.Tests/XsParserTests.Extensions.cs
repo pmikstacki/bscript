@@ -1,8 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using bscript.Core;
-using Hyperbee.XS;
-using Hyperbee.XS.Core;
+
 using Parlot.Fluent;
 using static System.Linq.Expressions.Expression;
 using static Parlot.Fluent.Parsers;
@@ -14,7 +13,7 @@ public class XsParserExtensionsTests
 {
     public static BScriptParser BScript { get; set; } = new
     (
-        new XsConfig( new TypeResolver( ReferenceManager.Create( Assembly.GetExecutingAssembly() ) ) )
+        new BScriptConfig( new TypeResolver( ReferenceManager.Create( Assembly.GetExecutingAssembly() ) ) )
         {
             Extensions = [new AnswerToEverythingParseExtension(), new RepeatParseExtension()]
         }

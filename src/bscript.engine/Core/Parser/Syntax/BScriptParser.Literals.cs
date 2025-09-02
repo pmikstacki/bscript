@@ -8,7 +8,7 @@ namespace bscript;
 
 public partial class BScriptParser
 {
-    private static Parser<Expression> LiteralParser( XsConfig config, Deferred<Expression> expression )
+    private static Parser<Expression> LiteralParser( BScriptConfig config, Deferred<Expression> expression )
     {
         var integerLiteral = Terms.Number<int>( NumberOptions.AllowLeadingSign )
             .AndSkip( ZeroOrOne( Terms.Text( "N", caseInsensitive: true ) ) )
